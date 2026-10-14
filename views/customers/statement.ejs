@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <title>Statement · <%= customer.name %></title>
+  <link rel="stylesheet" href="/static/print.css">
+</head>
+<body>
+  <div class="noprint"><button onclick="window.print()">Print or save as PDF</button> <a href="/customers/<%= customer.id %>">Back</a> · <a href="/customers/<%= customer.id %>/statement<%= all ? '' : '?show=all' %>"><%= all ? 'Unpaid only' : 'Show all invoices' %></a></div>
+  <header class="doc-head">
+    <div>
+      <h1><%= settings.business_name %></h1>
+      <% if (settings.abn) { %><div>ABN <%= settings.abn %></div><% } %>
+      <div class="pre"><%= settings.address %></div>
+      <div><%= settings.phone %><%= settings.phone && settings.email ? ' · ' : '' %><%= settings.email %></div>
+    </div>
+    <div class="doc-title">
+      <h2>STATEMENT</h2>
+      <table class="meta"><tr><th>Date</th><td><%= u.fmtDate(today) %></td></tr></table>
+    </div>
+  </header>
+  <section class="parties">
+    <div><h3>To</h3><strong><%= customer.name %></strong><div class="pre"><%= customer.address %></div><div><%= customer.phone %></div><div><%= customer.email %></div></div>
+  </section>
+  <table class="items">
+    <thead><tr><th>Invoice</th><th>Date</th><th>Due</th><th>Vehicle</th><th class="num">Total</th><th class="num">Paid</th><th class="num">Balance</th></tr></thead>
+    <tbody>
+      <% for (const d of docs) { %>
+        <tr><td><%= u.docNumber(d) %></td><td><%= u.fmtDate(d.issue_date) %></td><td class="<%= d.state === 'overdue' ? 'urgent' : '' %>"><%= u.fmtDate(d.due_date) %></td><td><%= u.vehicleLabel(d) %></td><td class="num"><%= u.money(d.total) %></td><td class="num"><%= u.money(d.paid) %></td><td class="num"><%= u.money(d.balance) %></td></tr>
+      <% } %>
+      <% if (!docs.length) { %><tr><td colspan="7">Nothing outstanding.</td></tr><% } %>
+    </tbody>
+  </table>
+  <table class="sum">
+    <tr class="grand"><th>Total owing</th><td><%= u.money(owing) %></td></tr>
+  </table>
+  <% if (settings.bank_details) { %><h3>Pay by bank transfer</h3><div class="box pre"><%= settings.bank_details %></div><% } %>
+  <p class="muted small"><%= settings.invoice_terms %></p>
+</body>
+</html>

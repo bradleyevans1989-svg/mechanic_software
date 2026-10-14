@@ -132,13 +132,32 @@ module.exports = function (app) {
   });
 
   app.get('/reports', requireOwner, async (req, res) => {
-    const year = parseIntOrNull(req.query.year) || Number(res.locals.today.slice(0, 4));
-    const [invoices, payments] = await Promise.all([
-      listDocs(req.db, res.locals.today, `d.type = 'invoice' AND d.status != 'void' AND d.issue_date LIKE $1`, [`${year}-%`]),
+    const today = res.locals.today;
+    const year = parseIntOrNull(req.query.year) || Number(today.slice(0, 4));
+    const [invoices, payments, unpaidAll, byMechanic, hoursByMechanic] = await Promise.all([
+      listDocs(req.db, today, `d.type = 'invoice' AND d.status != 'void' AND d.issue_date LIKE $1`, [`${year}-%`]),
       req.db.all(
         `SELECT p.* FROM payments p JOIN documents d ON d.id = p.document_id
          WHERE d.status != 'void' AND p.date LIKE $1`,
         [`${year}-%`]
+      ),
+      listDocs(req.db, today, `d.type = 'invoice' AND d.status != 'void'`, [], 'ORDER BY d.due_date'),
+      // Sales credited to the mechanic on the job behind each invoice.
+      req.db.all(
+        `SELECT COALESCE(m.name, 'No mechanic') AS name, COUNT(*) AS count,
+           COALESCE(SUM((SELECT SUM(ROUND((qty * unit_cents)::numeric)) FROM line_items WHERE document_id = d.id)), 0) AS subtotal,
+           COALESCE(SUM((SELECT SUM(ROUND((qty * unit_cents)::numeric)) FROM line_items WHERE document_id = d.id AND kind = 'labour')), 0) AS labour
+         FROM documents d LEFT JOIN jobs j ON j.id = d.job_id LEFT JOIN users m ON m.id = j.mechanic_id
+         WHERE d.type = 'invoice' AND d.status != 'void' AND d.issue_date LIKE $1
+         GROUP BY m.name ORDER BY subtotal DESC`,
+        [`${year}-%`]
+      ),
+      req.db.all(
+        `SELECT COALESCE(u.name, 'Unknown') AS name,
+           SUM(EXTRACT(EPOCH FROM (COALESCE(t.ended_at, now()) - t.started_at)) / 60) AS minutes
+         FROM time_entries t LEFT JOIN users u ON u.id = t.user_id
+         WHERE to_char(t.started_at AT TIME ZONE $2, 'YYYY') = $1 GROUP BY u.name`,
+        [String(year), req.tz]
       ),
     ]);
     const months = [];
@@ -156,7 +175,50 @@ module.exports = function (app) {
     }
     const sum = (k) => months.reduce((s, m) => s + m[k], 0);
     const totals = { count: sum('count'), subtotal: sum('subtotal'), gst: sum('gst'), total: sum('total'), received: sum('received') };
-    res.render('reports', { year, months, totals });
+
+    // BAS quarters: what to report as G1 (total sales) and 1A (GST on sales).
+    const quarters = [['Jan – Mar', 0], ['Apr – Jun', 3], ['Jul – Sep', 6], ['Oct – Dec', 9]].map(([label, start]) => {
+      const q = months.slice(start, start + 3);
+      return { label, count: q.reduce((s, m) => s + m.count, 0), total: q.reduce((s, m) => s + m.total, 0), gst: q.reduce((s, m) => s + m.gst, 0) };
+    });
+
+    // Aged receivables: how long unpaid invoices have been overdue.
+    const unpaid = unpaidAll.filter((d) => d.balance > 0);
+    const daysLate = (d) => (d.due_date ? Math.round((Date.UTC(...today.split('-').map(Number)) - Date.UTC(...d.due_date.split('-').map(Number))) / 864e5) : 0);
+    const buckets = [
+      { label: 'Not yet due', test: (n) => n <= 0 },
+      { label: '1–30 days', test: (n) => n > 0 && n <= 30 },
+      { label: '31–60 days', test: (n) => n > 30 && n <= 60 },
+      { label: '61–90 days', test: (n) => n > 60 && n <= 90 },
+      { label: 'Over 90 days', test: (n) => n > 90 },
+    ].map((b) => {
+      const docs = unpaid.filter((d) => b.test(daysLate(d)));
+      return { ...b, count: docs.length, amount: docs.reduce((s, d) => s + d.balance, 0) };
+    });
+    const debtors = Object.values(
+      unpaid.reduce((acc, d) => {
+        const c = acc[d.customer_id] || (acc[d.customer_id] = { id: d.customer_id, name: d.customer_name, count: 0, amount: 0, oldest: 0 });
+        c.count++;
+        c.amount += d.balance;
+        c.oldest = Math.max(c.oldest, daysLate(d));
+        return acc;
+      }, {})
+    ).sort((a, b) => b.amount - a.amount);
+
+    // Best customers this year.
+    const customers = Object.values(
+      invoices.reduce((acc, d) => {
+        const c = acc[d.customer_id] || (acc[d.customer_id] = { id: d.customer_id, name: d.customer_name, count: 0, total: 0 });
+        c.count++;
+        c.total += d.total;
+        return acc;
+      }, {})
+    )
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 10);
+
+    for (const m of byMechanic) m.minutes = (hoursByMechanic.find((h) => h.name === m.name) || {}).minutes || 0;
+    res.render('reports', { year, months, totals, quarters, buckets, debtors, customers, byMechanic, owing: unpaid.reduce((s, d) => s + d.balance, 0) });
   });
 
   // Invoice list for the accountant / BAS.

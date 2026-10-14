@@ -27,6 +27,60 @@
 </table>
 <p class="hint">Sales are counted on the invoice date (accrual). Payments received are counted on the payment date (cash). Void invoices are left out.</p>
 
+<div class="grid-2 wide">
+  <section class="card">
+    <h2>Who owes you <span class="muted"><%= u.money(owing) %></span></h2>
+    <table class="table">
+      <thead><tr><th>Age</th><th class="num">Invoices</th><th class="num">Owing</th></tr></thead>
+      <% for (const b of buckets) { %>
+        <tr class="<%= b.amount && b.label.startsWith('Over') ? 'urgent' : '' %>"><td><%= b.label %></td><td class="num"><%= b.count %></td><td class="num"><%= u.money(b.amount) %></td></tr>
+      <% } %>
+    </table>
+    <% if (debtors.length) { %>
+      <h3>By customer</h3>
+      <table class="table">
+        <% for (const c of debtors.slice(0, 15)) { %>
+          <tr><td><a href="/customers/<%= c.id %>"><%= c.name %></a></td><td class="num"><%= c.count %> inv</td><td class="num <%= c.oldest > 30 ? 'late' : '' %>"><%= c.oldest > 0 ? c.oldest + ' days' : 'current' %></td><td class="num"><%= u.money(c.amount) %></td><td><a class="small" href="/customers/<%= c.id %>/statement" target="_blank">Statement</a></td></tr>
+        <% } %>
+      </table>
+    <% } %>
+  </section>
+
+  <section class="card">
+    <h2>GST for your BAS <span class="muted"><%= year %></span></h2>
+    <p class="hint">Invoice basis. G1 is total sales including GST; 1A is the GST you collected.</p>
+    <table class="table">
+      <thead><tr><th>Quarter</th><th class="num">Invoices</th><th class="num">G1 sales inc GST</th><th class="num">1A GST collected</th></tr></thead>
+      <% for (const q of quarters) { %>
+        <tr><td><%= q.label %></td><td class="num"><%= q.count %></td><td class="num"><%= u.money(q.total) %></td><td class="num"><%= u.money(q.gst) %></td></tr>
+      <% } %>
+    </table>
+    <p class="hint">GST you paid on purchases (1B) isn't tracked here; your accountant takes that from your bank or Xero.</p>
+  </section>
+
+  <section class="card">
+    <h2>By mechanic <span class="muted"><%= year %></span></h2>
+    <table class="table">
+      <thead><tr><th>Mechanic</th><th class="num">Invoices</th><th class="num">Labour ex GST</th><th class="num">Sales ex GST</th><th class="num">Hours clocked</th></tr></thead>
+      <% for (const m of byMechanic) { %>
+        <tr><td><%= m.name %></td><td class="num"><%= m.count %></td><td class="num"><%= u.money(m.labour) %></td><td class="num"><%= u.money(m.subtotal) %></td><td class="num"><%= (m.minutes / 60).toFixed(1) %></td></tr>
+      <% } %>
+      <% if (!byMechanic.length) { %><tr><td class="muted">No invoices this year.</td></tr><% } %>
+    </table>
+    <p class="hint">Sales go to the mechanic on the job card the invoice came from. Hours come from the time clock.</p>
+  </section>
+
+  <section class="card">
+    <h2>Top customers <span class="muted"><%= year %></span></h2>
+    <table class="table">
+      <% for (const c of customers) { %>
+        <tr><td><a href="/customers/<%= c.id %>"><%= c.name %></a></td><td class="num"><%= c.count %> inv</td><td class="num"><%= u.money(c.total) %></td></tr>
+      <% } %>
+      <% if (!customers.length) { %><tr><td class="muted">No invoices this year.</td></tr><% } %>
+    </table>
+  </section>
+</div>
+
 <section class="card">
   <h2>Export invoices for your accountant</h2>
   <form action="/reports/invoices.csv" class="inline-form">

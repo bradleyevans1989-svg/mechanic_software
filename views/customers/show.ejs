@@ -14,7 +14,7 @@
     <a class="btn primary" href="/customers/<%= customer.id %>/vehicles/new">Add vehicle</a>
   </div>
 </div>
-<% if (owing > 0) { %><p class="banner warn">Owes <%= u.money(owing) %></p><% } %>
+<% if (owing > 0) { %><p class="banner warn">Owes <%= u.money(owing) %> · <a href="/customers/<%= customer.id %>/statement" target="_blank">Print statement</a></p><% } %>
 
 <section class="card">
   <h2>Vehicles</h2>
@@ -48,7 +48,7 @@
       <% } %>
       <% if (!docs.length) { %><tr><td class="muted">None yet.</td></tr><% } %>
     </table>
-    <p><a href="/documents/new?type=invoice&customer_id=<%= customer.id %>">New invoice</a> · <a href="/documents/new?type=quote&customer_id=<%= customer.id %>">New quote</a></p>
+    <p><a href="/documents/new?type=invoice&customer_id=<%= customer.id %>">New invoice</a> · <a href="/documents/new?type=quote&customer_id=<%= customer.id %>">New quote</a> · <a href="/customers/<%= customer.id %>/statement?show=all" target="_blank">Statement</a></p>
   </section>
   <section class="card">
     <h2>Jobs</h2>

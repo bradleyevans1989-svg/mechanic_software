@@ -143,3 +143,35 @@ test('job card: checklist, time clock, activity log, promised time and service i
   assert.equal((await other.post(`/jobs/${jobId}/clock-on`)).status, 404);
   assert.equal((await other.db.all('SELECT * FROM job_checks')).length, 0);
 });
+
+test('reports: aged debts, BAS quarters, by mechanic; customer statement', async () => {
+  const ws = await t.signup('Report Co', 'report@example.com');
+  await ws.post('/customers', { name: 'Slow Payer', v_rego: 'SLOW01' });
+  const v = await ws.db.get(`SELECT * FROM vehicles WHERE rego = 'SLOW01'`);
+  const me = await t.store.system.get('SELECT id FROM users WHERE email = $1', ['report@example.com']);
+  const jobId = idFrom(await ws.post('/jobs', { vehicle_id: v.id, description: 'Brakes' }));
+  await ws.post(`/jobs/${jobId}`, {
+    status: 'ready', mechanic_id: String(me.id), description: 'Brakes',
+    'lines[0][kind]': 'labour', 'lines[0][description]': 'Labour', 'lines[0][qty]': '2', 'lines[0][price]': '100', 'lines[0][gst]': '1',
+    'lines[1][kind]': 'part', 'lines[1][description]': 'Pads', 'lines[1][qty]': '1', 'lines[1][price]': '80', 'lines[1][gst]': '1',
+  });
+  const invId = idFrom(await ws.post(`/jobs/${jobId}/invoice`));
+  // Make it 45 days overdue and part paid.
+  await ws.db.run(`UPDATE documents SET issue_date = '2026-08-01', due_date = '2026-08-30' WHERE id = $1`, [invId]);
+  await ws.post(`/documents/${invId}/payments`, { amount: '100', date: '2026-09-01', method: 'cash' });
+
+  const page = await ws.get('/reports?year=2026');
+  assert.equal(page.status, 200);
+  assert.match(page.text, /Who owes you <span class="muted">\$208\.00/);
+  assert.match(page.text, /31–60 days<\/td><td class="num">1<\/td><td class="num">\$208\.00/);
+  assert.match(page.text, /Jul – Sep<\/td><td class="num">1<\/td><td class="num">\$308\.00<\/td><td class="num">\$28\.00/);
+  assert.match(page.text, /Report Co Owner<\/td><td class="num">1<\/td><td class="num">\$200\.00<\/td><td class="num">\$280\.00/);
+  assert.match(page.text, /Slow Payer/);
+
+  const customer = await ws.db.get('SELECT id FROM customers');
+  const st = await ws.get(`/customers/${customer.id}/statement`);
+  assert.match(st.text, /STATEMENT/);
+  assert.match(st.text, /INV-1001[\s\S]*\$308\.00[\s\S]*\$100\.00[\s\S]*\$208\.00/);
+  assert.match(st.text, /Total owing<\/th><td>\$208\.00/);
+  assert.equal((await other.get(`/customers/${customer.id}/statement`)).status, 404);
+});

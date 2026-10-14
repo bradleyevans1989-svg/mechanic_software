@@ -104,6 +104,16 @@ module.exports = function (app, { xero }) {
     res.render('customers/show', { customer, vehicles, jobs, docs, owing, bookings });
   });
 
+  // Printable statement of unpaid invoices (or everything in a period).
+  app.get('/customers/:id/statement', async (req, res, next) => {
+    const customer = await getCustomer(req.db, req.params.id);
+    if (!customer) return next();
+    const all = req.query.show === 'all';
+    const docs = (await listDocs(req.db, res.locals.today, `d.customer_id = $1 AND d.type = 'invoice' AND d.status != 'void'`, [customer.id], 'ORDER BY d.issue_date, d.number'))
+      .filter((d) => all || d.balance > 0);
+    res.render('customers/statement', { customer, docs, all, owing: docs.reduce((s, d) => s + Math.max(d.balance, 0), 0) });
+  });
+
   app.get('/customers/:id/edit', async (req, res, next) => {
     const customer = await getCustomer(req.db, req.params.id);
     if (!customer) return next();
