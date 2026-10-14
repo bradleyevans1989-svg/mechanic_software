@@ -1,0 +1,42 @@
+<%- include('partials/header', { title: 'Plan and billing' }) %>
+<div class="page-head">
+  <h1>Plan and billing</h1>
+  <div class="actions"><a class="btn" href="/settings">Back to settings</a></div>
+</div>
+<% if (checkout === 'success') { %><p class="flash">Thanks, you're subscribed. It can take a few seconds to show here.</p><% } %>
+<% if (checkout === 'cancelled') { %><p class="banner warn">No worries, nothing was charged.</p><% } %>
+<% if (error) { %><p class="error"><%= error %></p><% } %>
+
+<section class="card">
+  <h2><%= workshop.name %> <%- include('partials/pill', { state: standing.ok ? 'paid' : 'overdue', label: standing.label }) %></h2>
+  <% if (standing.reason === 'trial') { %>
+    <p>Your free trial has <strong><%= standing.trialDaysLeft %> day<%= standing.trialDaysLeft === 1 ? '' : 's' %></strong> left (ends <%= u.fmtDate(new Date(workshop.trial_ends_at).toISOString()) %>). Subscribe now and you keep the rest of the trial; your card isn't charged until it ends.</p>
+  <% } else if (standing.reason === 'trial_ended') { %>
+    <p>Your free trial has ended. Subscribe to keep using <%= settings.business_name %>'s data. Nothing has been deleted.</p>
+  <% } else if (standing.reason === 'past_due') { %>
+    <p>Your last payment didn't go through. Update your card below; the subscription carries on once it's paid.</p>
+  <% } else if (standing.reason === 'canceled' || standing.reason === 'unpaid' || standing.reason === 'incomplete_expired') { %>
+    <p>Your subscription has ended. Subscribe again to carry on. Your data is still here.</p>
+  <% } else if (standing.reason === 'comped') { %>
+    <p>This workshop is on a free plan.</p>
+  <% } else { %>
+    <p>You're subscribed<% if (workshop.current_period_end) { %>, next payment on <%= u.fmtDate(new Date(workshop.current_period_end).toISOString()) %><% } %>.
+      <% if (workshop.cancel_at_period_end) { %><strong>It's set to cancel at the end of this period.</strong><% } %></p>
+  <% } %>
+
+  <% if (!billingEnabled) { %>
+    <p class="hint">Billing isn't switched on for this server, so there's nothing to pay.</p>
+  <% } else { %>
+    <div class="actions">
+      <% const subscribed = ['active', 'trialing', 'past_due'].includes(workshop.subscription_status); %>
+      <% if (!subscribed) { %>
+        <form method="post" action="/billing/checkout"><button class="btn primary">Subscribe<%= price ? ' · ' + price : '' %></button></form>
+      <% } %>
+      <% if (workshop.stripe_customer_id) { %>
+        <form method="post" action="/billing/portal"><button class="btn">Manage card, receipts or cancel</button></form>
+      <% } %>
+    </div>
+    <p class="hint">Payments are handled by Stripe. We never see your card details.</p>
+  <% } %>
+</section>
+<%- include('partials/footer') %>

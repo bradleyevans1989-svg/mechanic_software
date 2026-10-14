@@ -28,6 +28,14 @@ services:
         sync: false
       - key: SIGNUP_CODE       # optional: only people with this code can sign up a workshop
         sync: false
+      - key: STRIPE_SECRET_KEY # from dashboard.stripe.com; leave blank to run without billing
+        sync: false
+      - key: STRIPE_PRICE_ID
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: PLAN_PRICE_LABEL
+        value: "$49/month"
       - key: XERO_CLIENT_ID    # from developer.xero.com; leave blank until you connect Xero
         sync: false
       - key: XERO_CLIENT_SECRET

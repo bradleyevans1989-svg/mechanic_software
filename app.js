@@ -3,6 +3,8 @@ const path = require('path');
 const util = require('./lib/util');
 const auth = require('./lib/auth');
 const { createXero } = require('./lib/xero');
+const { createBilling } = require('./lib/stripe');
+const billingRoutes = require('./routes/billing');
 
 const JOB_STATUSES = {
   open: 'Booked in',
@@ -59,13 +61,18 @@ function createApp(store, { autoSync = true } = {}) {
     app.param(name, (req, res, next, value) => (/^\d{1,9}$/.test(value) ? next() : next('route')));
   }
 
-  auth.setup(app, store);
-
+  const billing = createBilling(store);
   const xero = createXero(store);
   xero.setAutoSync(autoSync);
   app.locals.xero = xero;
+  app.locals.billing = billing;
+  const ctx = { store, xero, billing, JOB_STATUSES, BOOKING_STATUSES, QUOTE_STATUSES };
 
-  const ctx = { store, xero, JOB_STATUSES, BOOKING_STATUSES, QUOTE_STATUSES };
+  billingRoutes.webhook(app, ctx);
+  auth.setup(app, store);
+  billingRoutes.gate(app, ctx);
+  billingRoutes.pages(app, ctx);
+
   require('./routes/main')(app, ctx);
   require('./routes/staff')(app, ctx);
   require('./routes/customers')(app, ctx);

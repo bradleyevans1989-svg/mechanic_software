@@ -14,6 +14,7 @@ Workshop software for mechanics, built to be sold to many workshops on one share
 - **Staff logins**: each person has their own email and password. Owners see reports and settings and manage staff; staff do everything else.
 - **Xero sync**: customers, invoices and payments are sent to the workshop's own Xero automatically. Edits, removed payments and voids follow.
 - **Many workshops**: self-serve sign-up, per-workshop settings, numbering and timezone.
+- **Subscriptions**: 14-day free trial, then a monthly plan paid through Stripe. Workshops that stop paying are locked (never deleted) until they subscribe again.
 
 Prices are entered **excluding GST**. GST is 10% of each taxable line, rounded per line the same way Xero does it (set GST to "No" on a line for GST-free items).
 
@@ -56,10 +57,23 @@ That comfortably runs dozens of workshops. As you grow, move the database to a b
 | `APP_URL` | The app's public address, used for the Xero redirect. | taken from the request |
 | `SIGNUP_CODE` | If set, sign-up needs this code. | open sign-up |
 | `XERO_CLIENT_ID`, `XERO_CLIENT_SECRET` | From your Xero app. Needed for any workshop to connect Xero. | none |
+| `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, `STRIPE_WEBHOOK_SECRET` | Turn on subscription billing (see below). Without them every workshop is free. | none |
+| `PLAN_PRICE_LABEL` | Shown on the Subscribe button, e.g. `$49/month`. | none |
 | `PGSSL` | Set to `require` if your database needs SSL from outside its network. | off |
 | `PORT` | Port to listen on. | `3000` |
 
 Each workshop sets its business name, ABN, bank details, labour rate, timezone and next invoice number under **Settings**.
+
+## Charging workshops (Stripe)
+
+1. Create a [Stripe](https://stripe.com) account and, under **Product catalogue**, add a product with a recurring monthly price (say AU$49). Copy the price id (`price_...`).
+2. Under **Developers → Webhooks**, add an endpoint for `<APP_URL>/stripe/webhook` with these events: `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`. Copy its signing secret (`whsec_...`).
+3. Under **Settings → Billing → Customer portal**, turn the portal on so owners can change cards and cancel.
+4. Set `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, `STRIPE_WEBHOOK_SECRET` and `PLAN_PRICE_LABEL` on the server.
+
+Every new workshop gets a 14-day trial. The owner subscribes under **Settings → Plan and billing**; whatever is left of the trial carries over, so the card isn't charged until it ends. If a payment fails, Stripe retries and the workshop stays open for 7 days. A cancelled or lapsed workshop is locked, with the owner sent to the billing page and staff shown a notice. Nothing is deleted.
+
+To give a workshop free use (your own, or a mate's), set its `status` to `comped` in the `workshops` table.
 
 ## Connecting Xero
 

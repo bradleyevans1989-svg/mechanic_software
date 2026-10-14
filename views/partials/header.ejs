@@ -27,4 +27,10 @@
     </div>
   <% } %>
 </header>
+<% if (typeof standing !== 'undefined' && standing && user && user.role === 'owner' && billingEnabled && (standing.reason === 'trial' || standing.reason === 'past_due' || !standing.ok)) { %>
+  <div class="banner">
+    <% if (standing.reason === 'trial') { %>Free trial: <%= standing.trialDaysLeft %> day<%= standing.trialDaysLeft === 1 ? '' : 's' %> left.<% } else if (standing.reason === 'past_due') { %>Your last payment failed.<% } else { %>Your trial has ended.<% } %>
+    <a href="/billing"><%= standing.reason === 'trial' ? 'Subscribe' : 'Fix billing' %></a>
+  </div>
+<% } %>
 <main class="page">
