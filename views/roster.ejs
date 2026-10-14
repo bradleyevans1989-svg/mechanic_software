@@ -1,0 +1,35 @@
+<%- include('partials/header', { title: 'Roster' }) %>
+<div class="page-head">
+  <h1>Roster <span class="muted">week of <%= u.fmtDate(start) %></span></h1>
+  <div class="actions">
+    <a class="btn" href="/roster?week=<%= prev %>">← Prev</a>
+    <a class="btn" href="/roster">This week</a>
+    <a class="btn" href="/roster?week=<%= next %>">Next →</a>
+    <a class="btn" href="/clocking">Clocking</a>
+    <% if (canEdit) { %><form method="post" action="/roster/copy"><input type="hidden" name="week" value="<%= start %>"><button class="btn primary">Copy last week</button></form><% } %>
+  </div>
+</div>
+<table class="table card roster">
+  <thead>
+    <tr><th>Staff</th><% const names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']; days.forEach((d, i) => { %><th class="<%= d === today ? 'today' : '' %>"><%= names[i] %> <span class="muted small"><%= u.fmtDate(d).slice(0, 5) %></span></th><% }) %></tr>
+  </thead>
+  <tbody>
+    <% for (const r of rows) { %>
+      <tr>
+        <td><strong><%= r.name %></strong><%= r.id === user.id ? ' (you)' : '' %></td>
+        <% for (const c of r.cells) { const s = c.shift; %>
+          <td class="shift-cell">
+            <% const inner = c.leave && !s ? '<span class="shift leave">On leave</span>'
+                 : !s ? '<span class="shift none">–</span>'
+                 : s.kind === 'shift' ? `<span class="shift"><b>${s.start_time}–${s.end_time}</b>${s.note ? '<br><small>' + s.note.replace(/</g, '&lt;') + '</small>' : ''}</span>`
+                 : `<span class="shift ${s.kind}">${SHIFT_KINDS[s.kind]}</span>`; %>
+            <% if (canEdit) { %><a href="/roster/edit?user_id=<%= r.id %>&date=<%= c.date %>" class="shift-link"><%- inner %></a><% } else { %><%- inner %><% } %>
+          </td>
+        <% } %>
+      </tr>
+    <% } %>
+    <% if (!rows.length) { %><tr><td colspan="8" class="muted">No staff yet.</td></tr><% } %>
+  </tbody>
+</table>
+<p class="hint"><%= canEdit ? 'Click a day to set the shift. Leave booked on the calendar shows here too.' : 'Your owner sets the roster. Leave booked on the calendar shows here too.' %></p>
+<%- include('partials/footer') %>

@@ -1,0 +1,80 @@
+<%- include('partials/header', { title: 'Clocking' }) %>
+<div class="page-head">
+  <h1>Clocking <span class="muted">start, breaks and finish</span></h1>
+  <div class="actions">
+    <a class="btn" href="/roster">Roster</a>
+    <% if (user.role === 'owner') { %><a class="btn" href="/timesheets">Timesheets</a><% } %>
+  </div>
+</div>
+<div class="grid-2">
+  <section class="card clock-card <%= entry ? (onBreak ? 'on-break' : 'on-shift') : '' %>">
+    <h2>You</h2>
+    <% if (!entry) { %>
+      <p class="clock-big">Not clocked in</p>
+      <% if (shift) { %><p class="muted">Next shift: <%= shift.date === today ? 'today' : u.fmtDate(shift.date) %> <%= shift.start_time %>–<%= shift.end_time %></p><% } %>
+      <form method="post" action="/clocking/start"><button class="btn lime">Start shift</button></form>
+    <% } else { %>
+      <% const m = u.minutesBetween(entry.started_at, null); %>
+      <p class="clock-big"><%= onBreak ? 'On a break' : 'On shift' %> <span class="muted">since <%= u.fmtTime(entry.started_at, settings.timezone) %> · <%= u.fmtMinutes(m) %></span></p>
+      <% if (onBreak) { %><p class="muted">Break started <%= u.fmtTime(onBreak.started_at, settings.timezone) %>.</p><% } %>
+      <div class="actions">
+        <% if (onBreak) { %>
+          <form method="post" action="/clocking/resume"><button class="btn lime">Back from break</button></form>
+        <% } else { %>
+          <form method="post" action="/clocking/break"><button class="btn">Start break</button></form>
+        <% } %>
+        <form method="post" action="/clocking/finish" class="inline-form">
+          <input name="note" placeholder="Note for the day (optional)" class="grow">
+          <button class="btn primary" data-confirm-btn="Finish your shift now?">Finish shift</button>
+        </form>
+      </div>
+    <% } %>
+  </section>
+  <section class="card">
+    <h2>Who's in now</h2>
+    <ul class="list compact">
+      <% for (const t of team) { %>
+        <li>
+          <span><%= t.name %><%= t.id === user.id ? ' (you)' : '' %></span>
+          <% if (t.now && t.now.break_started) { %><span class="pill plain pill-unpaid">On break since <%= u.fmtTime(t.now.break_started, settings.timezone) %></span>
+          <% } else if (t.now) { %><span class="pill plain pill-paid">In since <%= u.fmtTime(t.now.started_at, settings.timezone) %></span>
+          <% } else { %><span class="pill">Out</span><% } %>
+        </li>
+      <% } %>
+    </ul>
+  </section>
+</div>
+
+<div class="page-head mt">
+  <h2>Your week <span class="muted">from <%= u.fmtDate(start) %> · <%= u.fmtMinutes(weekMinutes) %> worked</span></h2>
+  <div class="actions">
+    <a class="btn small" href="/clocking?week=<%= prev %>">← Prev</a>
+    <a class="btn small" href="/clocking">This week</a>
+    <a class="btn small" href="/clocking?week=<%= next %>">Next →</a>
+  </div>
+</div>
+<div class="week-strip">
+  <% const names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']; days.forEach((d, i) => { %>
+    <div class="tile <%= d.date === today ? 'today' : '' %>"><span class="muted small"><%= names[i] %> <%= u.fmtDate(d.date).slice(0, 5) %></span><strong><%= d.minutes ? u.fmtMinutes(d.minutes) : '–' %></strong></div>
+  <% }) %>
+</div>
+<% if (entries.length) { %>
+  <table class="table card">
+    <thead><tr><th>Day</th><th>Started</th><th>Finished</th><th class="num">Breaks</th><th class="num">Worked</th><th>Note</th></tr></thead>
+    <tbody>
+      <% for (const e of entries) { %>
+        <tr>
+          <td><%= u.fmtDate(e.day) %></td>
+          <td><%= u.fmtTime(e.started_at, settings.timezone) %></td>
+          <td><% if (e.ended_at) { %><%= u.fmtTime(e.ended_at, settings.timezone) %><% } else { %><span class="ok">still on</span><% } %></td>
+          <td class="num"><%= e.rest ? u.fmtMinutes(e.rest) : '' %><%= e.breaks.length > 1 ? ' (' + e.breaks.length + ')' : '' %></td>
+          <td class="num"><strong><%= u.fmtMinutes(e.worked) %></strong></td>
+          <td class="muted"><%= e.note %></td>
+        </tr>
+      <% } %>
+    </tbody>
+  </table>
+<% } else { %>
+  <p class="muted">No shifts clocked this week.</p>
+<% } %>
+<%- include('partials/footer') %>

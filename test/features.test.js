@@ -277,3 +277,44 @@ test('calendar: month view with leave, holidays and multi-day jobs; other worksh
   await owner.post(`/calendar/${leave.id}/delete`);
   assert.equal((await owner.get(`/calendar/${leave.id}/edit`)).status, 404);
 });
+
+test('clocking: start, break, finish; roster with next shift on the dashboard', async () => {
+  const { workedMinutes } = require('../routes/clocking');
+  const e = { id: 1, started_at: '2026-10-14T07:00:00Z', ended_at: '2026-10-14T15:30:00Z' };
+  assert.deepEqual(workedMinutes(e, [{ entry_id: 1, started_at: '2026-10-14T11:00:00Z', ended_at: '2026-10-14T11:30:00Z' }]), { total: 510, rest: 30, worked: 480 });
+
+  assert.match((await owner.get('/')).text, /Not clocked in/);
+  let res = await owner.post('/clocking/start', { back: '/' });
+  assert.equal(res.status, 302);
+  await owner.post('/clocking/start'); // a second start does nothing
+  assert.equal((await owner.db.get('SELECT COUNT(*) AS n FROM clock_entries WHERE ended_at IS NULL')).n, 1);
+  assert.match((await owner.get('/')).text, /On shift/);
+  await owner.post('/clocking/break');
+  assert.match((await owner.get('/clocking')).text, /On a break/);
+  await owner.post('/clocking/resume');
+  assert.match((await owner.get('/clocking')).text, /Start break/);
+  await owner.post('/clocking/finish', { note: 'Good day' });
+  const done = await owner.db.get('SELECT * FROM clock_entries ORDER BY id DESC LIMIT 1');
+  assert.ok(done.ended_at);
+  assert.equal(done.note, 'Good day');
+  assert.equal((await owner.db.get('SELECT COUNT(*) AS n FROM clock_breaks WHERE ended_at IS NULL')).n, 0);
+  assert.match((await owner.get('/timesheets')).text, /Shift hours/);
+
+  // Roster: owner sets a shift, it becomes "my next shift".
+  const me = await owner.db.get('SELECT id FROM users WHERE email = $1', ['deep@example.com']);
+  res = await owner.post('/roster', { user_id: me.id, date: '2099-01-05', kind: 'shift', start_time: '07:30', end_time: '16:00' });
+  assert.equal(res.status, 302);
+  assert.match((await owner.get('/roster?week=2099-01-05')).text, /07:30–16:00/);
+  assert.match((await owner.get('/')).text, /My next shift: <strong class="ink">05\/01\/2099 07:30–16:00/);
+  res = await owner.post('/roster', { user_id: me.id, date: '2099-01-06', kind: 'off' });
+  assert.match((await owner.get('/roster?week=2099-01-05')).text, /Day off/);
+  await owner.post('/roster/copy', { week: '2099-01-12' });
+  assert.equal((await owner.db.get(`SELECT kind FROM shifts WHERE date = '2099-01-12'`)).kind, 'shift');
+  await owner.post('/roster', { user_id: me.id, date: '2099-01-06', kind: 'off', clear: '1' });
+  assert.equal(await owner.db.get(`SELECT id FROM shifts WHERE date = '2099-01-06'`), undefined);
+
+  // Another workshop can't see or set it.
+  assert.doesNotMatch((await other.get('/roster?week=2099-01-05')).text, /07:30–16:00/);
+  await other.post('/roster', { user_id: me.id, date: '2099-01-07', kind: 'shift', start_time: '08:00', end_time: '16:00' });
+  assert.equal(await owner.db.get(`SELECT id FROM shifts WHERE date = '2099-01-07'`), undefined);
+});

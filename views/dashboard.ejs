@@ -20,6 +20,22 @@
   <div class="stat"><span>In the workshop</span><strong><%= jobs.length %></strong><small>open jobs<% const urgent = jobs.filter(j => j.priority === 'urgent').length; if (urgent) { %><b class="badge down"><%= urgent %> urgent</b><% } %></small></div>
 </div>
 
+<div class="me-strip <%= clock.entry ? (clock.onBreak ? 'on-break' : 'on-shift') : '' %>">
+  <span class="dot" aria-hidden="true"></span>
+  <% if (clock.entry) { %>
+    <span><strong><%= clock.onBreak ? 'On a break' : 'On shift' %></strong> <span class="muted">since <%= u.fmtTime(clock.entry.started_at, settings.timezone) %></span></span>
+    <% if (clock.onBreak) { %><form method="post" action="/clocking/resume"><input type="hidden" name="back" value="/"><button class="btn small lime">Back from break</button></form>
+    <% } else { %><form method="post" action="/clocking/break"><input type="hidden" name="back" value="/"><button class="btn small">Start break</button></form><% } %>
+    <form method="post" action="/clocking/finish"><input type="hidden" name="back" value="/"><button class="btn small primary" data-confirm-btn="Finish your shift now?">Finish shift</button></form>
+  <% } else { %>
+    <span><strong>Not clocked in</strong></span>
+    <form method="post" action="/clocking/start"><input type="hidden" name="back" value="/"><button class="btn small lime">Start shift</button></form>
+  <% } %>
+  <span class="spacer"></span>
+  <span class="muted">My next shift: <% if (nextShift) { %><strong class="ink"><%= nextShift.date === today ? 'today' : u.fmtDate(nextShift.date) %> <%= nextShift.start_time %>–<%= nextShift.end_time %></strong><% } else { %>nothing rostered<% } %></span>
+  <a class="btn small" href="/roster">Roster</a>
+</div>
+
 <div class="dash">
   <section class="card">
     <h2>Today's bookings</h2>

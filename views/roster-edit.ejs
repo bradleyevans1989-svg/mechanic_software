@@ -1,0 +1,22 @@
+<%- include('partials/header', { title: 'Roster' }) %>
+<h1><%= person.name %> <span class="muted"><%= u.fmtDate(shift.date) %></span></h1>
+<form method="post" action="/roster" class="card form">
+  <input type="hidden" name="user_id" value="<%= person.id %>">
+  <input type="hidden" name="date" value="<%= shift.date %>">
+  <div class="grid-3">
+    <label>Day
+      <select name="kind">
+        <% for (const [k, label] of Object.entries(SHIFT_KINDS)) { %><option value="<%= k %>" <%= shift.kind === k ? 'selected' : '' %>><%= label %></option><% } %>
+      </select>
+    </label>
+    <label>Start <input type="time" name="start_time" value="<%= shift.start_time %>" step="900"></label>
+    <label>Finish <input type="time" name="end_time" value="<%= shift.end_time %>" step="900"></label>
+  </div>
+  <label>Note <input name="note" value="<%= shift.note %>" placeholder="e.g. Late start, covering front desk"></label>
+  <div class="form-actions">
+    <button class="btn primary">Save</button>
+    <% if (shift.id) { %><button class="btn danger" name="clear" value="1">Clear day</button><% } %>
+    <a class="btn" href="/roster?week=<%= shift.date %>">Cancel</a>
+  </div>
+</form>
+<%- include('partials/footer') %>

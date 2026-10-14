@@ -29,7 +29,8 @@ module.exports = function (app) {
     const db = req.db;
     const monthStart = t.slice(0, 8) + '01';
     const lastMonthStart = addMonths(monthStart, -1);
-    const [bookings, jobs, unpaidAll, month, lastMonth, due] = await Promise.all([
+    const { clockState, nextShift } = require('./clocking');
+    const [bookings, jobs, unpaidAll, month, lastMonth, due, clock, shift] = await Promise.all([
       db.all(
         `SELECT b.*, c.name AS customer_name, c.phone AS customer_phone, v.rego, v.make, v.model
          FROM bookings b JOIN customers c ON c.id = b.customer_id LEFT JOIN vehicles v ON v.id = b.vehicle_id
@@ -52,6 +53,8 @@ module.exports = function (app) {
          ORDER BY LEAST(COALESCE(v.next_service_date, '9999'), COALESCE(v.rego_due, '9999'))`,
         [addDays(t, -30), addDays(t, 30)]
       ),
+      clockState(db, req.user.id),
+      nextShift(db, req.user.id, t, res.locals.timeNow),
     ]);
     const unpaid = unpaidAll.filter((d) => d.balance > 0);
     res.render('dashboard', {
@@ -60,6 +63,8 @@ module.exports = function (app) {
       unpaid,
       due,
       welcome: false,
+      clock,
+      nextShift: shift,
       stats: {
         monthTotal: month.reduce((s, d) => s + d.total, 0),
         monthCount: month.length,

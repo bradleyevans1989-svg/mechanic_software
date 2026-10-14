@@ -10,6 +10,38 @@
 <% if (onClock.length) { %>
   <p class="banner warn">On the clock now: <% onClock.forEach((e, i) => { %><%= i ? ', ' : '' %><a href="/jobs/<%= e.job_id %>"><%= rows.find(r => r.id === e.user_id)?.name || 'Someone' %> on J<%= e.job_number %></a><% }) %></p>
 <% } %>
+<h2>Shift hours <span class="muted">from clocking, breaks taken out</span></h2>
+<% if (openShifts.length) { %>
+  <div class="card">
+    <p class="banner warn">Shifts never finished:</p>
+    <% for (const c of openShifts) { %>
+      <form method="post" action="/clocking/<%= c.id %>/fix" class="inline-form mt">
+        <span><strong><%= rows.find(r => r.id === c.user_id)?.name || 'Someone' %></strong> started <%= u.fmtDateTime(c.started_at, settings.timezone) %></span>
+        <label>Finished at <input type="datetime-local" name="ended_at" value="<%= c.day %>T17:00" required></label>
+        <button class="btn small primary">Fix</button>
+      </form>
+    <% } %>
+  </div>
+<% } %>
+<table class="table card">
+  <thead>
+    <tr><th>Staff</th><% const dn = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']; days.forEach((d, i) => { %><th class="num <%= d === today ? 'today' : '' %>"><%= dn[i] %><br><span class="muted small"><%= u.fmtDate(d).slice(0, 5) %></span></th><% }) %><th class="num">Week</th></tr>
+  </thead>
+  <tbody>
+    <% for (const r of rows) { %>
+      <tr>
+        <td><%= r.name %><%= r.active ? '' : ' (inactive)' %></td>
+        <% r.shiftByDay.forEach((m) => { %><td class="num"><%= m ? (m / 60).toFixed(2) : '' %></td><% }) %>
+        <td class="num"><strong><%= (r.shiftTotal / 60).toFixed(2) %></strong></td>
+      </tr>
+    <% } %>
+    <% if (!rows.length) { %><tr><td colspan="9" class="muted">No staff yet.</td></tr><% } %>
+  </tbody>
+  <tfoot>
+    <tr><th>Total hours</th><% shiftDayTotals.forEach((m) => { %><th class="num"><%= m ? (m / 60).toFixed(2) : '' %></th><% }) %><th class="num"><%= (shiftDayTotals.reduce((s, m) => s + m, 0) / 60).toFixed(2) %></th></tr>
+  </tfoot>
+</table>
+<h2>Hours on jobs <span class="muted">from the clock on each job card</span></h2>
 <table class="table card">
   <thead>
     <tr><th>Staff</th><% const names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']; days.forEach((d, i) => { %><th class="num <%= d === today ? 'today' : '' %>"><%= names[i] %><br><span class="muted small"><%= u.fmtDate(d).slice(0, 5) %></span></th><% }) %><th class="num">Week</th></tr>
