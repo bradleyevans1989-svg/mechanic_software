@@ -53,3 +53,93 @@ test('price list: add, search, starter items, picker json, edit and hide', async
   assert.match((await owner.get(`/jobs/${idFrom(j)}`)).text, /Add from price list/);
   void job;
 });
+
+test('job card: checklist, time clock, activity log, promised time and service intervals', async () => {
+  await owner.post('/customers', { name: 'Chuck List', phone: '0400 111 222', v_rego: 'CHK001', v_make: 'Ford', v_model: 'Ranger', v_odometer: '50000' });
+  const vehicle = await owner.db.get(`SELECT * FROM vehicles WHERE rego = 'CHK001'`);
+  await owner.db.run('UPDATE vehicles SET service_interval_months = 6, service_interval_km = 10000 WHERE id = $1', [vehicle.id]);
+
+  let res = await owner.post('/jobs', { vehicle_id: vehicle.id, description: 'Logbook service and check brakes', due_date: '2026-10-20' });
+  const jobId = idFrom(res);
+  let job = await owner.db.get('SELECT * FROM jobs WHERE id = $1', [jobId]);
+  assert.equal(job.is_service, true);
+  assert.equal(job.due_date, '2026-10-20');
+
+  // Checklist from the default template.
+  res = await owner.post(`/jobs/${jobId}/checklist`);
+  assert.equal(res.status, 302);
+  await owner.post(`/jobs/${jobId}/checklist`); // no duplicates
+  const checks = await owner.db.all('SELECT * FROM job_checks WHERE job_id = $1 ORDER BY sort', [jobId]);
+  assert.equal(checks.length, 25);
+  assert.equal(checks[0].heading, true);
+  const pads = checks.find((c) => /Front brake pads/.test(c.item));
+  const oil = checks.find((c) => /Engine oil/.test(c.item));
+
+  // Saving the job saves results, priority and the promised time.
+  const fields = {
+    status: 'in_progress', mechanic_id: '', priority: 'urgent', odometer: '50500', due_date: '2026-10-21', due_time: '15:30', is_service: '1',
+    description: 'Logbook service and check brakes', tech_notes: 'Pads at 2mm',
+  };
+  fields[`checks[c${pads.id}][result]`] = 'urgent';
+  fields[`checks[c${pads.id}][note]`] = '2mm left';
+  fields[`checks[c${oil.id}][result]`] = 'ok';
+  res = await owner.post(`/jobs/${jobId}`, fields);
+  assert.equal(res.status, 302);
+  job = await owner.db.get('SELECT * FROM jobs WHERE id = $1', [jobId]);
+  assert.equal(job.priority, 'urgent');
+  assert.equal(job.due_time, '15:30');
+  const page = await owner.get(`/jobs/${jobId}`);
+  assert.match(page.text, /1 item need attention/);
+  assert.match(page.text, /Status changed to In progress/);
+  const report = await owner.get(`/jobs/${jobId}/inspection`);
+  assert.match(report.text, /Needs your attention/);
+  assert.match(report.text, /Front brake pads and rotors[\s\S]*2mm left[\s\S]*Urgent/);
+
+  // The jobs list shows urgency and the promised time; the board view groups by status.
+  const list = await owner.get('/jobs');
+  assert.match(list.text, /Urgent/);
+  assert.match(list.text, /21\/10\/2026 15:30/);
+  const board = await owner.get('/jobs?view=board');
+  assert.match(board.text, /class="tile urgent"/);
+
+  // Time clock: clocking on to a second job closes the first.
+  const res2 = await owner.post('/jobs', { vehicle_id: vehicle.id, description: 'Wipers' });
+  const job2 = idFrom(res2);
+  await owner.post(`/jobs/${jobId}/clock-on`);
+  assert.match((await owner.get(`/jobs/${jobId}`)).text, /You're on the clock/);
+  await owner.post(`/jobs/${job2}/clock-on`);
+  let open = await owner.db.all('SELECT * FROM time_entries WHERE ended_at IS NULL');
+  assert.equal(open.length, 1);
+  assert.equal(open[0].job_id, job2);
+  await owner.post(`/jobs/${job2}/clock-off`, { note: 'done' });
+  open = await owner.db.all('SELECT * FROM time_entries WHERE ended_at IS NULL');
+  assert.equal(open.length, 0);
+
+  // Manual time, then billed as labour in quarter hours at the workshop rate.
+  await owner.post(`/jobs/${jobId}/time`, { hours: '1.4', note: 'Brakes' });
+  res = await owner.post(`/jobs/${jobId}/time/bill`);
+  assert.equal(res.status, 302);
+  let lines = await owner.db.all('SELECT * FROM line_items WHERE job_id = $1 ORDER BY sort', [jobId]);
+  assert.equal(lines.length, 1);
+  assert.equal(lines[0].kind, 'labour');
+  assert.equal(lines[0].qty, 1.5);
+  assert.equal(lines[0].unit_cents, 12000);
+  await owner.post(`/jobs/${jobId}/time/bill`); // nothing left to bill
+  lines = await owner.db.all('SELECT * FROM line_items WHERE job_id = $1', [jobId]);
+  assert.equal(lines.length, 1);
+
+  // Invoicing a service sets the next service due from the intervals.
+  res = await owner.post(`/jobs/${jobId}/invoice`);
+  assert.equal(res.status, 302);
+  const v = await owner.db.get('SELECT * FROM vehicles WHERE id = $1', [vehicle.id]);
+  assert.equal(v.next_service_km, 60500);
+  assert.equal(v.last_service_date, (await owner.get('/')).text.match(/\d{2}\/\d{2}\/\d{4}/) ? v.last_service_date : null);
+  assert.match(v.next_service_date, /^\d{4}-\d{2}-\d{2}$/);
+  const events = await owner.db.all('SELECT kind, text FROM job_events WHERE job_id = $1 ORDER BY id', [jobId]);
+  assert.deepEqual(events.map((e) => e.kind), ['created', 'checklist', 'status', 'clock', 'clock', 'labour', 'invoice']);
+
+  // Other workshops can't see or touch any of it.
+  assert.equal((await other.get(`/jobs/${jobId}/inspection`)).status, 404);
+  assert.equal((await other.post(`/jobs/${jobId}/clock-on`)).status, 404);
+  assert.equal((await other.db.all('SELECT * FROM job_checks')).length, 0);
+});

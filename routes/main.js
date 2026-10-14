@@ -1,6 +1,7 @@
 const { addDays, parseDollars, parseIntOrNull, docNumber, vehicleLabel } = require('../lib/util');
 const { listDocs } = require('../lib/docs');
 const { requireOwner } = require('../lib/auth');
+const { DEFAULT_CHECKLIST } = require('../lib/records');
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -37,7 +38,7 @@ module.exports = function (app) {
         `SELECT j.*, c.name AS customer_name, v.rego, v.make, v.model, m.name AS mechanic_name FROM jobs j
          JOIN customers c ON c.id = j.customer_id LEFT JOIN vehicles v ON v.id = j.vehicle_id
          LEFT JOIN users m ON m.id = j.mechanic_id
-         WHERE j.status NOT IN ('invoiced', 'cancelled') ORDER BY j.created_at`
+         WHERE j.status NOT IN ('invoiced', 'cancelled') ORDER BY j.priority = 'urgent' DESC, j.due_date NULLS LAST, j.due_time, j.created_at`
       ),
       listDocs(db, t, `d.type = 'invoice' AND d.status != 'void'`, [], 'ORDER BY d.due_date'),
       listDocs(db, t, `d.type = 'invoice' AND d.status != 'void' AND d.issue_date >= $1`, [t.slice(0, 8) + '01']),
@@ -100,7 +101,7 @@ module.exports = function (app) {
   });
 
   app.get('/settings', requireOwner, (req, res) =>
-    res.render('settings', { saved: req.query.saved === '1', welcome: req.query.welcome === '1', TIMEZONES })
+    res.render('settings', { saved: req.query.saved === '1', welcome: req.query.welcome === '1', TIMEZONES, DEFAULT_CHECKLIST })
   );
 
   app.post('/settings', requireOwner, async (req, res) => {
@@ -109,7 +110,7 @@ module.exports = function (app) {
     await req.db.run(
       `UPDATE settings SET business_name = $1, abn = $2, address = $3, phone = $4, email = $5, bank_details = $6,
          invoice_terms = $7, labour_rate_cents = $8, payment_days = $9, next_invoice_no = $10, next_quote_no = $11,
-         next_job_no = $12, timezone = $13`,
+         next_job_no = $12, timezone = $13, checklist = $14`,
       [
         g('business_name') || 'My Workshop',
         g('abn'),
@@ -124,6 +125,7 @@ module.exports = function (app) {
         n('next_quote_no', 1),
         n('next_job_no', 1),
         TIMEZONES[req.body.timezone] ? req.body.timezone : 'Australia/Sydney',
+        String(req.body.checklist ?? '').trim().slice(0, 10000),
       ]
     );
     res.redirect('/settings?saved=1');

@@ -1,30 +1,68 @@
 <%- include('../partials/header', { title: 'Jobs' }) %>
 <div class="page-head">
   <h1>Jobs</h1>
-  <div class="actions"><a class="btn primary" href="/jobs/new">New job</a></div>
+  <div class="actions">
+    <a class="btn <%= view === 'list' ? 'active' : '' %>" href="/jobs?status=<%= filter %>">List</a>
+    <a class="btn <%= view === 'board' ? 'active' : '' %>" href="/jobs?status=<%= filter %>&view=board">Board</a>
+    <a class="btn primary" href="/jobs/new">New job</a>
+  </div>
 </div>
+<% const q = view === 'board' ? '&view=board' : ''; %>
 <nav class="tabs">
-  <a href="/jobs" class="<%= filter === 'active' ? 'active' : '' %>">In the workshop</a>
+  <a href="/jobs?status=active<%= q %>" class="<%= filter === 'active' ? 'active' : '' %>">In the workshop</a>
+  <a href="/jobs?status=mine<%= q %>" class="<%= filter === 'mine' ? 'active' : '' %>">My jobs</a>
   <% for (const [k, label] of Object.entries(JOB_STATUSES)) { %>
-    <a href="/jobs?status=<%= k %>" class="<%= filter === k ? 'active' : '' %>"><%= label %></a>
+    <a href="/jobs?status=<%= k %><%= q %>" class="<%= filter === k ? 'active' : '' %>"><%= label %></a>
   <% } %>
-  <a href="/jobs?status=all" class="<%= filter === 'all' ? 'active' : '' %>">All</a>
+  <a href="/jobs?status=all<%= q %>" class="<%= filter === 'all' ? 'active' : '' %>">All</a>
 </nav>
+
+<% function due(j) {
+     if (!j.due_date) return '';
+     const late = j.due_date < today && j.status !== 'invoiced' && j.status !== 'cancelled';
+     return `<span class="${late ? 'late' : ''}">${j.due_date === today ? 'Today' : u.fmtDate(j.due_date)} ${j.due_time || ''}</span>`;
+   } %>
+
+<% if (view === 'board') { %>
+  <% const cols = Object.entries(JOB_STATUSES).filter(([k]) => filter === 'all' || !['invoiced', 'cancelled'].includes(k) || filter === k); %>
+  <div class="board">
+    <% for (const [k, label] of cols) { const col = jobs.filter(j => j.status === k); %>
+      <div class="col">
+        <h3><%= label %> <span class="muted"><%= col.length %></span></h3>
+        <% for (const j of col) { %>
+          <a class="tile <%= j.priority === 'urgent' ? 'urgent' : '' %>" href="/jobs/<%= j.id %>">
+            <strong>J<%= j.number %></strong> <%= j.rego ? j.rego.toUpperCase() : '' %> <%= j.make %> <%= j.model %>
+            <div class="muted"><%= j.customer_name %></div>
+            <div class="desc"><%= j.description %></div>
+            <div class="meta">
+              <% if (j.mechanic_name) { %><span><%= j.mechanic_name %></span><% } %>
+              <% if (j.clocked_on) { %><span title="Someone is clocked on">⏱</span><% } %>
+              <% if (j.flagged) { %><span class="late">⚠ <%= j.flagged %></span><% } %>
+              <%- due(j) %>
+            </div>
+          </a>
+        <% } %>
+        <% if (!col.length) { %><p class="muted small">None</p><% } %>
+      </div>
+    <% } %>
+  </div>
+<% } else { %>
 <table class="table card">
-  <thead><tr><th>Job</th><th>Vehicle</th><th>Customer</th><th>Work</th><th>Mechanic</th><th>Opened</th><th>Status</th></tr></thead>
+  <thead><tr><th>Job</th><th>Vehicle</th><th>Customer</th><th>Work</th><th>Mechanic</th><th>Promised</th><th>Status</th></tr></thead>
   <tbody>
     <% for (const j of jobs) { %>
-      <tr>
-        <td><a href="/jobs/<%= j.id %>">J<%= j.number %></a></td>
+      <tr class="<%= j.priority === 'urgent' ? 'urgent' : '' %>">
+        <td><a href="/jobs/<%= j.id %>">J<%= j.number %></a><% if (j.priority === 'urgent') { %> <span class="late">Urgent</span><% } %></td>
         <td><%= j.rego || '' %> <%= j.make %> <%= j.model %></td>
         <td><%= j.customer_name %></td>
-        <td><%= j.description %></td>
-        <td><%= j.mechanic_name || '' %></td>
-        <td><%= u.fmtDate(j.created_at) %></td>
+        <td><%= j.description %><% if (j.flagged) { %> <span class="late">⚠ <%= j.flagged %></span><% } %></td>
+        <td><%= j.mechanic_name || '' %><%= j.clocked_on ? ' ⏱' : '' %></td>
+        <td><%- due(j) || '<span class="muted">' + u.fmtDate(j.created_at) + '</span>' %></td>
         <td><%- include('../partials/pill', { state: j.status, label: JOB_STATUSES[j.status] }) %></td>
       </tr>
     <% } %>
     <% if (!jobs.length) { %><tr><td colspan="7" class="muted">No jobs here.</td></tr><% } %>
   </tbody>
 </table>
+<% } %>
 <%- include('../partials/footer') %>

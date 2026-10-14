@@ -33,6 +33,10 @@
     </label>
   </div>
 
+  <h2>Inspection checklist</h2>
+  <p class="hint">One item per line. Start a line with # for a heading. This is what "Add inspection checklist" puts on a job card.</p>
+  <label>Checklist <textarea name="checklist" rows="10"><%= settings.checklist || DEFAULT_CHECKLIST %></textarea></label>
+
   <h2>Numbering</h2>
   <p class="hint">Set these to carry on from your Mechanic Desk numbers.</p>
   <div class="grid-3">

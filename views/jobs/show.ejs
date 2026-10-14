@@ -1,15 +1,24 @@
 <%- include('../partials/header', { title: 'Job J' + job.number }) %>
 <div class="page-head">
   <div>
-    <h1>Job J<%= job.number %> <%- include('../partials/pill', { state: job.status, label: JOB_STATUSES[job.status] }) %></h1>
+    <h1>Job J<%= job.number %> <%- include('../partials/pill', { state: job.status, label: JOB_STATUSES[job.status] }) %>
+      <% if (job.priority === 'urgent') { %><%- include('../partials/pill', { state: 'overdue', label: 'Urgent' }) %><% } %>
+    </h1>
     <p>
       <% if (job.vehicle_id) { %><a href="/vehicles/<%= job.vehicle_id %>"><%= u.vehicleLabel(job) %></a> · <% } %>
       <a href="/customers/<%= job.customer_id %>"><%= job.customer_name %></a>
       <% if (job.customer_phone) { %> · <a href="tel:<%= job.customer_phone %>"><%= job.customer_phone %></a><% } %>
+      <% if (job.due_date) { %> · Promised <%= u.fmtDate(job.due_date) %> <%= job.due_time %><% } %>
     </p>
   </div>
   <div class="actions">
+    <% if (myOpenEntry) { %>
+      <form method="post" action="/jobs/<%= job.id %>/clock-off"><button class="btn clocked">⏱ Clock off</button></form>
+    <% } else if (job.status !== 'invoiced' && job.status !== 'cancelled') { %>
+      <form method="post" action="/jobs/<%= job.id %>/clock-on"><button class="btn">⏱ Clock on</button></form>
+    <% } %>
     <a class="btn" href="/jobs/<%= job.id %>/print" target="_blank">Print job card</a>
+    <% if (checks.length) { %><a class="btn" href="/jobs/<%= job.id %>/inspection" target="_blank">Inspection report</a><% } %>
     <% if (job.invoice_id) { %>
       <a class="btn primary" href="/documents/<%= job.invoice_id %>">View invoice</a>
     <% } else { %>
@@ -18,6 +27,8 @@
   </div>
 </div>
 <% if (saved) { %><p class="flash">Saved.</p><% } %>
+<% if (myOpenEntry) { %><p class="banner warn">You're on the clock for this job since <%= u.fmtTime(myOpenEntry.started_at, settings.timezone) %>.</p><% } %>
+
 <form method="post" action="/jobs/<%= job.id %>" class="card form" data-dirty-check>
   <div class="grid-4">
     <label>Status
@@ -31,17 +42,108 @@
         <% for (const m of mechanics) { %><option value="<%= m.id %>" <%= job.mechanic_id === m.id ? 'selected' : '' %>><%= m.name %></option><% } %>
       </select>
     </label>
+    <label>Priority
+      <select name="priority">
+        <% for (const [k, label] of Object.entries(PRIORITIES)) { %><option value="<%= k %>" <%= job.priority === k ? 'selected' : '' %>><%= label %></option><% } %>
+      </select>
+    </label>
     <label>Odometer (km) <input name="odometer" inputmode="numeric" value="<%= job.odometer ?? '' %>"></label>
+    <label>Promised by <input type="date" name="due_date" value="<%= job.due_date || '' %>"></label>
+    <label>Time <input type="time" name="due_time" value="<%= job.due_time || '' %>"></label>
     <label>Opened <input value="<%= u.fmtDate(job.created_at) %>" disabled></label>
   </div>
+  <label class="check"><input type="checkbox" name="is_service" value="1" <%= job.is_service ? 'checked' : '' %>> Counts as a service <span class="muted">(sets the vehicle's next service due when invoiced)</span></label>
   <label>Work requested <textarea name="description" rows="2"><%= job.description %></textarea></label>
   <label>Mechanic's notes <textarea name="tech_notes" rows="3" placeholder="What was found, what was done, recommendations"><%= job.tech_notes %></textarea></label>
+
+  <h2 id="inspection">Inspection
+    <% if (job.flagged) { %><span class="muted small"><%= job.flagged %> item<%= job.flagged === 1 ? '' : 's' %> need attention</span><% } %>
+  </h2>
+  <% if (!checks.length) { %>
+    <p class="hint">No checklist on this job. <button type="submit" class="btn small" formaction="/jobs/<%= job.id %>/checklist" formnovalidate>Add inspection checklist</button> <span class="muted">(from the template in Settings)</span></p>
+  <% } else { %>
+    <table class="checks">
+      <% for (const c of checks) { %>
+        <% if (c.heading) { %>
+          <tr class="heading"><th colspan="3"><%= c.item %></th></tr>
+        <% } else { %>
+          <tr class="r-<%= c.result || 'none' %>">
+            <td class="item"><%= c.item %></td>
+            <td class="results">
+              <% for (const [k, label] of Object.entries(CHECK_RESULTS)) { %>
+                <label class="res res-<%= k %>"><input type="radio" name="checks[c<%= c.id %>][result]" value="<%= k %>" <%= c.result === k ? 'checked' : '' %>> <%= label %></label>
+              <% } %>
+            </td>
+            <td class="note"><input name="checks[c<%= c.id %>][note]" value="<%= c.note %>" placeholder="Note"></td>
+          </tr>
+        <% } %>
+      <% } %>
+    </table>
+    <p class="hint">Results save with the job. <button type="submit" class="link small" formaction="/jobs/<%= job.id %>/checklist/remove" formnovalidate data-confirm-btn="Remove the checklist from this job?">Remove checklist</button></p>
+  <% } %>
+
   <h2>Labour and parts</h2>
   <%- include('../partials/lines', { lines, totals }) %>
   <div class="form-actions sticky">
     <button class="btn primary">Save job</button>
   </div>
 </form>
+
+<div class="grid-2">
+  <section class="card" id="time">
+    <h2>Time on the job <span class="muted small"><%= u.fmtMinutes(totalMinutes) %> total</span></h2>
+    <% if (!time.length) { %><p class="muted">Nobody has clocked on yet. Use "Clock on" at the top, or add time below.</p><% } %>
+    <table class="table compact">
+      <% for (const t of time) { %>
+        <tr class="<%= t.billed ? 'muted' : '' %>">
+          <td><%= t.user_name || 'Someone' %></td>
+          <td><%= u.fmtDateTime(t.started_at, settings.timezone) %><%= t.ended_at ? ' – ' + u.fmtTime(t.ended_at, settings.timezone) : ' – now' %></td>
+          <td class="num"><%= u.fmtMinutes(t.minutes) %></td>
+          <td><%= t.note %><%= t.billed ? ' (billed)' : '' %></td>
+          <td><form method="post" action="/jobs/<%= job.id %>/time/<%= t.id %>/delete" data-confirm="Delete this time entry?"><button class="icon" title="Delete">×</button></form></td>
+        </tr>
+      <% } %>
+    </table>
+    <% if (unbilledHours > 0) { %>
+      <form method="post" action="/jobs/<%= job.id %>/time/bill" class="inline-form" data-confirm="Add <%= unbilledHours %> hrs as a labour line at your hourly rate? Save the job first if you have unsaved edits.">
+        <button class="btn small primary">Add <%= unbilledHours %> hrs to labour</button>
+        <span class="muted small"><%= u.fmtMinutes(unbilledMinutes) %> not yet billed, rounded up to the quarter hour</span>
+      </form>
+    <% } %>
+    <details class="mt">
+      <summary>Add time by hand</summary>
+      <form method="post" action="/jobs/<%= job.id %>/time" class="inline-form">
+        <label>Hours <input name="hours" inputmode="decimal" placeholder="1.5" style="width:6rem"></label>
+        <label>Who
+          <select name="user_id">
+            <% for (const m of mechanics) { %><option value="<%= m.id %>" <%= m.id === user.id ? 'selected' : '' %>><%= m.name %></option><% } %>
+          </select>
+        </label>
+        <label>Note <input name="note" placeholder="Optional"></label>
+        <button class="btn small">Add</button>
+      </form>
+    </details>
+  </section>
+
+  <section class="card" id="activity">
+    <h2>Activity</h2>
+    <form method="post" action="/jobs/<%= job.id %>/notes" class="inline-form">
+      <label class="grow">Add a note <input name="text" placeholder="Rang customer, approved extra work…" maxlength="2000"></label>
+      <button class="btn small">Post</button>
+    </form>
+    <ul class="timeline">
+      <% for (const e of events) { %>
+        <li class="ev-<%= e.kind %>">
+          <span class="when"><%= u.fmtDateTime(e.at, settings.timezone) %></span>
+          <span class="who"><%= e.user_name || '' %></span>
+          <span class="what"><%= e.text %></span>
+        </li>
+      <% } %>
+      <% if (!events.length) { %><li class="muted">Nothing yet.</li><% } %>
+    </ul>
+  </section>
+</div>
+
 <form method="post" action="/jobs/<%= job.id %>/delete" data-confirm="Delete this job card?">
   <button class="btn danger small">Delete job</button>
 </form>

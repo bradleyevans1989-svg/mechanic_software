@@ -28,3 +28,12 @@ h3 { font-size: 9pt; text-transform: uppercase; color: #555; margin: 1rem 0 .3re
 .terms { color: #444; font-size: 9.5pt; }
 .signoff { display: flex; justify-content: space-between; margin-top: 2rem; }
 @media print { .noprint { display: none; } body { padding: 0; } }
+
+/* Inspection report */
+.checks-print tr.heading th { text-align: left; background: #eee; font-size: .8rem; text-transform: uppercase; padding: .3rem .4rem; }
+.checks-print td.ok { color: #2e7d32; }
+.checks-print td.attention, td.attention { color: #8a5a00; font-weight: 700; }
+.checks-print td.urgent, td.urgent { color: #b3261e; font-weight: 700; }
+.checks-print td.na { color: #888; }
+.muted { color: #666; }
+.small { font-size: .85em; }

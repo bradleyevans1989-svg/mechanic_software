@@ -1,6 +1,6 @@
 const { now, addDays, mondayOf } = require('../lib/util');
 const { nextNumber } = require('../lib/db');
-const { vehicleOptions, customerOptions, resolveParty } = require('../lib/records');
+const { vehicleOptions, customerOptions, resolveParty, logEvent } = require('../lib/records');
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -99,11 +99,12 @@ module.exports = function (app, { BOOKING_STATUSES }) {
       if (b.job_id) return b.job_id;
       const v = b.vehicle_id ? await db.get('SELECT odometer FROM vehicles WHERE id = $1', [b.vehicle_id]) : null;
       const job = await db.get(
-        `INSERT INTO jobs (number, customer_id, vehicle_id, status, description, odometer, created_at)
-         VALUES ($1, $2, $3, 'in_progress', $4, $5, $6) RETURNING id`,
-        [await nextNumber(db, 'job'), b.customer_id, b.vehicle_id, b.description, v ? v.odometer : null, now(req.tz)]
+        `INSERT INTO jobs (number, customer_id, vehicle_id, status, description, odometer, created_at, due_date, is_service)
+         VALUES ($1, $2, $3, 'in_progress', $4, $5, $6, $7, $8) RETURNING id`,
+        [await nextNumber(db, 'job'), b.customer_id, b.vehicle_id, b.description, v ? v.odometer : null, now(req.tz), b.date, /service/i.test(b.description)]
       );
       await db.run(`UPDATE bookings SET status = 'arrived', job_id = $1 WHERE id = $2`, [job.id, b.id]);
+      await logEvent(db, job.id, req.user.id, 'created', `Job opened from the booking for ${b.date}`);
       return job.id;
     });
     if (!jobId) return next();

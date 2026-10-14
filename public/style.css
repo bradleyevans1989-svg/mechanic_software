@@ -176,3 +176,41 @@ code { background: #ecebe5; padding: .1rem .35rem; border-radius: 4px; word-brea
 .picker-results li { padding: .4rem .6rem; cursor: pointer; display: flex; justify-content: space-between; gap: .5rem; }
 .picker-results li:hover, .picker-results li.hot { background: #f0efea; }
 .picker-results li .muted { white-space: nowrap; }
+
+/* Job card extras */
+label.check { display: flex; align-items: center; gap: .5rem; font-weight: 600; }
+label.check input { width: auto; min-height: 0; margin: 0; }
+.btn.active { background: var(--accent); border-color: var(--accent); }
+.btn.clocked { background: var(--warn-bg); border-color: var(--accent); }
+.late { color: var(--danger); font-weight: 600; }
+.mt { margin-top: .75rem; }
+.inline-form .grow { flex: 1; }
+.checks { width: 100%; border-collapse: collapse; margin-bottom: .5rem; }
+.checks td, .checks th { padding: .35rem .4rem; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.checks tr.heading th { text-align: left; background: #f0efea; font-size: .8rem; text-transform: uppercase; color: var(--muted); }
+.checks .item { width: 32%; }
+.checks .results { white-space: nowrap; }
+.checks .res { display: inline-flex; align-items: center; gap: .25rem; margin: 0 .6rem 0 0; font-weight: normal; font-size: .9rem; cursor: pointer; }
+.checks .res input { width: auto; min-height: 0; margin: 0; }
+.checks .note input { min-height: 2rem; padding: .3rem .5rem; }
+.checks tr.r-attention .item { color: #8a5a00; font-weight: 600; }
+.checks tr.r-urgent .item { color: var(--danger); font-weight: 600; }
+.checks tr.r-ok .item { color: var(--ok); }
+.timeline { list-style: none; padding: 0; margin: .75rem 0 0; }
+.timeline li { display: grid; grid-template-columns: 9.5rem 1fr; gap: .25rem .75rem; padding: .4rem 0; border-top: 1px solid var(--line); font-size: .92rem; }
+.timeline .when { color: var(--muted); white-space: nowrap; }
+.timeline .who { font-weight: 600; grid-column: 2; }
+.timeline .what { grid-column: 2; white-space: pre-wrap; }
+.timeline li.ev-note .what { background: var(--warn-bg); padding: .25rem .5rem; border-radius: 6px; }
+.table.compact td { padding: .3rem .4rem; }
+tr.urgent td:first-child { border-left: 3px solid var(--danger); }
+
+/* Job board */
+.board { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(230px, 1fr); gap: .75rem; overflow-x: auto; padding-bottom: .5rem; }
+.board .col { background: #ebe9e3; border-radius: var(--radius); padding: .5rem; min-height: 10rem; }
+.board h3 { margin: .25rem .25rem .5rem; font-size: .9rem; text-transform: uppercase; color: var(--muted); }
+.board .tile { display: block; background: #fff; border: 1px solid var(--line); border-radius: 6px; padding: .5rem .6rem; margin-bottom: .5rem; color: var(--ink); font-size: .9rem; }
+.board .tile:hover { text-decoration: none; border-color: var(--primary); }
+.board .tile.urgent { border-left: 3px solid var(--danger); }
+.board .desc { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.board .meta { display: flex; gap: .5rem; flex-wrap: wrap; font-size: .8rem; color: var(--muted); margin-top: .25rem; }

@@ -1,7 +1,7 @@
 const { now, addDays, parseLines, parseIntOrNull, parseDollars, docNumber } = require('../lib/util');
 const { nextNumber, getLines, saveLines } = require('../lib/db');
 const { getDoc, listDocs } = require('../lib/docs');
-const { getCustomer, getVehicle, vehicleOptions, customerOptions, resolveParty } = require('../lib/records');
+const { getCustomer, getVehicle, vehicleOptions, customerOptions, resolveParty, logEvent } = require('../lib/records');
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -169,6 +169,7 @@ module.exports = function (app, { xero, QUOTE_STATUSES }) {
       );
       await saveLines(db, 'job', job.id, await getLines(db, 'document', quote.id));
       await db.run(`UPDATE documents SET status = 'accepted', job_id = $1 WHERE id = $2`, [job.id, quote.id]);
+      await logEvent(db, job.id, req.user.id, 'created', `Job opened from quote ${docNumber(quote)}`);
       return job.id;
     });
     res.redirect(`/jobs/${jobId}`);
@@ -180,7 +181,10 @@ module.exports = function (app, { xero, QUOTE_STATUSES }) {
     if (!doc || doc.type !== 'invoice') return next();
     await req.db.tx(async (db) => {
       await db.run(`UPDATE documents SET status = 'void' WHERE id = $1`, [doc.id]);
-      if (doc.job_id) await db.run(`UPDATE jobs SET status = 'ready' WHERE id = $1 AND status = 'invoiced'`, [doc.job_id]);
+      if (doc.job_id) {
+        await db.run(`UPDATE jobs SET status = 'ready' WHERE id = $1 AND status = 'invoiced'`, [doc.job_id]);
+        await logEvent(db, doc.job_id, req.user.id, 'invoice', `Invoice ${docNumber(doc)} voided`);
+      }
     });
     await xero.queueInvoice(req.db, doc.id);
     res.redirect(`/documents/${doc.id}`);

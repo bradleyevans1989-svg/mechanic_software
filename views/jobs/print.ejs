@@ -27,6 +27,18 @@
       <% for (let i = lines.length; i < 10; i++) { %><tr class="blank"><td>&nbsp;</td><td></td></tr><% } %>
     </tbody>
   </table>
+  <% if (checks.length) { %>
+    <h3>Inspection</h3>
+    <table class="items checks-print">
+      <tbody>
+        <% for (const c of checks) { %>
+          <% if (c.heading) { %><tr class="heading"><th colspan="2"><%= c.item %></th></tr><% } else { %>
+            <tr><td><%= c.item %></td><td class="num"><%= c.result ? CHECK_RESULTS[c.result] : '☐ OK  ☐ Attn  ☐ Urgent' %></td></tr>
+          <% } %>
+        <% } %>
+      </tbody>
+    </table>
+  <% } %>
   <h3>Mechanic's notes</h3>
   <div class="box pre tall"><%= job.tech_notes || ' ' %></div>
   <div class="signoff"><div>Mechanic: <%= job.mechanic_name || '____________________' %></div><div>Time: ________ hrs</div></div>

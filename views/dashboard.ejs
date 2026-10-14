@@ -47,6 +47,8 @@
         <li>
           <a href="/jobs/<%= j.id %>"><strong>J<%= j.number %></strong> · <%= j.rego || '' %> <%= j.make %> <%= j.model %></a>
           <%- include('partials/pill', { state: j.status, label: JOB_STATUSES[j.status] }) %>
+          <% if (j.priority === 'urgent') { %><span class="late small">Urgent</span><% } %>
+          <% if (j.due_date) { %><span class="small <%= j.due_date < today ? 'late' : 'muted' %>">Promised <%= j.due_date === today ? 'today' : u.fmtDate(j.due_date) %> <%= j.due_time %></span><% } %>
           <div class="muted full"><%= j.customer_name %> — <%= j.description %><%= j.mechanic_name ? ' · ' + j.mechanic_name : '' %></div>
         </li>
       <% } %>

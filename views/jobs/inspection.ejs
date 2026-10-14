@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <title>Inspection report J<%= job.number %></title>
+  <link rel="stylesheet" href="/static/print.css">
+</head>
+<body>
+  <div class="noprint"><button onclick="window.print()">Print</button> <a href="/jobs/<%= job.id %>">Back to job</a></div>
+  <header class="doc-head">
+    <div><h1><%= settings.business_name %></h1><div class="pre"><%= settings.address %></div><div><%= settings.phone %></div></div>
+    <div class="doc-title"><h2>VEHICLE INSPECTION</h2><div>Job J<%= job.number %></div><div><%= u.fmtDate(job.completed_at || job.created_at) %></div></div>
+  </header>
+  <section class="parties">
+    <div><h3>Customer</h3><strong><%= customer.name %></strong><div><%= customer.phone %></div></div>
+    <% if (vehicle) { %>
+      <div><h3>Vehicle</h3><strong><%= u.vehicleLabel(vehicle) %></strong><div>Odometer <%= job.odometer != null ? job.odometer.toLocaleString('en-AU') + ' km' : '—' %></div></div>
+    <% } %>
+  </section>
+  <% const flagged = checks.filter(c => !c.heading && (c.result === 'attention' || c.result === 'urgent')); %>
+  <% if (flagged.length) { %>
+    <h3>Needs your attention</h3>
+    <table class="items">
+      <tbody>
+        <% for (const c of flagged) { %>
+          <tr><td><strong><%= c.item %></strong><% if (c.note) { %><br><%= c.note %><% } %></td><td class="num <%= c.result %>"><%= CHECK_RESULTS[c.result] %></td></tr>
+        <% } %>
+      </tbody>
+    </table>
+  <% } else { %>
+    <p><strong>No problems found.</strong> Everything checked is in good order.</p>
+  <% } %>
+  <h3>Full checklist</h3>
+  <table class="items checks-print">
+    <tbody>
+      <% for (const c of checks) { %>
+        <% if (c.heading) { %><tr class="heading"><th colspan="2"><%= c.item %></th></tr><% } else { %>
+          <tr><td><%= c.item %><% if (c.note) { %> <span class="muted">— <%= c.note %></span><% } %></td><td class="num <%= c.result %>"><%= c.result ? CHECK_RESULTS[c.result] : 'Not checked' %></td></tr>
+        <% } %>
+      <% } %>
+    </tbody>
+  </table>
+  <% if (job.tech_notes) { %><h3>Mechanic's notes</h3><div class="box pre"><%= job.tech_notes %></div><% } %>
+  <p class="muted small">OK: in good order. Needs attention: will need work soon. Urgent: should be fixed before further driving. Mechanic: <%= job.mechanic_name || '' %></p>
+</body>
+</html>

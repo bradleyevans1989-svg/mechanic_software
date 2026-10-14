@@ -1,5 +1,10 @@
 // Small progressive enhancements; every page works without this file.
 
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-confirm-btn]');
+  if (btn && !window.confirm(btn.dataset.confirmBtn)) e.preventDefault();
+});
+
 document.addEventListener('submit', (e) => {
   const msg = e.target.dataset && e.target.dataset.confirm;
   if (msg && !window.confirm(msg)) e.preventDefault();
