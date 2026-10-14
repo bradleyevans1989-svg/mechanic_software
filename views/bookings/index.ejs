@@ -10,7 +10,7 @@
 </div>
 <div class="week">
   <% const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']; %>
-  <% days.forEach((d, i) => { const isToday = d.date === u.today(); %>
+  <% days.forEach((d, i) => { const isToday = d.date === today; %>
     <section class="day <%= isToday ? 'today' : '' %>">
       <header>
         <strong><%= dayNames[i] %></strong> <%= u.fmtDate(d.date).slice(0, 5) %>

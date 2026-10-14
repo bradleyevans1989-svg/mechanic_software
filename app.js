@@ -27,7 +27,7 @@ const QUOTE_STATUSES = {
   declined: 'Declined',
 };
 
-function createApp(db, { autoSync = true } = {}) {
+function createApp(store, { autoSync = true } = {}) {
   const app = express();
   app.set('view engine', 'ejs');
   app.set('views', path.join(__dirname, 'views'));
@@ -36,27 +36,36 @@ function createApp(db, { autoSync = true } = {}) {
 
   app.use(express.urlencoded({ extended: true, limit: '1mb' }));
   app.use('/static', express.static(path.join(__dirname, 'public'), { maxAge: '1h' }));
-  app.get('/healthz', (req, res) => res.send('ok'));
+  app.get('/healthz', async (req, res) => {
+    await store.system.get('SELECT 1');
+    res.send('ok');
+  });
 
   app.use((req, res, next) => {
     res.locals.u = util;
     res.locals.JOB_STATUSES = JOB_STATUSES;
     res.locals.BOOKING_STATUSES = BOOKING_STATUSES;
     res.locals.QUOTE_STATUSES = QUOTE_STATUSES;
-    res.locals.settings = db.prepare('SELECT * FROM settings WHERE id = 1').get();
+    res.locals.settings = { business_name: 'Workshop' };
+    res.locals.today = util.today();
     res.locals.path = req.path;
     res.locals.q = '';
     res.locals.user = null;
     next();
   });
 
-  auth.setup(app, db);
+  // Numeric ids only; anything else is a 404 rather than a database error.
+  for (const name of ['id', 'pid']) {
+    app.param(name, (req, res, next, value) => (/^\d{1,9}$/.test(value) ? next() : next('route')));
+  }
 
-  const xero = createXero(db);
+  auth.setup(app, store);
+
+  const xero = createXero(store);
   xero.setAutoSync(autoSync);
   app.locals.xero = xero;
 
-  const ctx = { db, xero, JOB_STATUSES, BOOKING_STATUSES, QUOTE_STATUSES };
+  const ctx = { store, xero, JOB_STATUSES, BOOKING_STATUSES, QUOTE_STATUSES };
   require('./routes/main')(app, ctx);
   require('./routes/staff')(app, ctx);
   require('./routes/customers')(app, ctx);
@@ -69,7 +78,7 @@ function createApp(db, { autoSync = true } = {}) {
 
   app.use((err, req, res, next) => {
     console.error(err);
-    res.status(500).render('message', { title: 'Something went wrong', message: err.message });
+    res.status(500).render('message', { title: 'Something went wrong', message: 'Please try again. If it keeps happening, let us know.' });
   });
 
   return app;

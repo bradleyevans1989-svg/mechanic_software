@@ -1,222 +1,203 @@
-const { now, today, addDays, parseLines, parseIntOrNull, parseDollars, docNumber } = require('../lib/util');
+const { now, addDays, parseLines, parseIntOrNull, parseDollars, docNumber } = require('../lib/util');
 const { nextNumber, getLines, saveLines } = require('../lib/db');
 const { getDoc, listDocs } = require('../lib/docs');
 const { getCustomer, getVehicle, vehicleOptions, customerOptions, resolveParty } = require('../lib/records');
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-module.exports = function (app, { db, xero, QUOTE_STATUSES }) {
-  function createDoc(type, fields, lines) {
-    return db.transaction(() => {
-      const settings = db.prepare('SELECT payment_days FROM settings WHERE id = 1').get();
-      const id = db
-        .prepare(
-          `INSERT INTO documents (type, number, customer_id, vehicle_id, job_id, issue_date, due_date, status, odometer, notes, created_at)
-           VALUES (@type, @number, @customer_id, @vehicle_id, @job_id, @issue_date, @due_date, @status, @odometer, @notes, @created_at)`
-        )
-        .run({
-          type,
-          number: nextNumber(db, type),
-          job_id: null,
-          odometer: null,
-          notes: '',
-          issue_date: today(),
-          // Quotes use due_date as "valid until".
-          due_date: addDays(today(), type === 'invoice' ? settings.payment_days : 30),
-          status: type === 'invoice' ? 'issued' : 'draft',
-          created_at: now(),
-          ...fields,
-        }).lastInsertRowid;
-      if (lines) saveLines(db, 'document', id, lines);
-      return id;
-    })();
+module.exports = function (app, { xero, QUOTE_STATUSES }) {
+  async function createDoc(db, req, type, fields, lines) {
+    const today = req.res.locals.today;
+    const settings = await db.get('SELECT payment_days FROM settings');
+    const f = {
+      job_id: null,
+      odometer: null,
+      notes: '',
+      issue_date: today,
+      // Quotes use due_date as "valid until".
+      due_date: addDays(today, type === 'invoice' ? settings.payment_days : 30),
+      status: type === 'invoice' ? 'issued' : 'draft',
+      ...fields,
+    };
+    const doc = await db.get(
+      `INSERT INTO documents (type, number, customer_id, vehicle_id, job_id, issue_date, due_date, status, odometer, notes, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`,
+      [type, await nextNumber(db, type), f.customer_id, f.vehicle_id, f.job_id, f.issue_date, f.due_date, f.status, f.odometer, f.notes, now(req.tz)]
+    );
+    if (lines) await saveLines(db, 'document', doc.id, lines);
+    return doc.id;
   }
 
-  app.get(['/invoices', '/quotes'], (req, res) => {
+  app.get(['/invoices', '/quotes'], async (req, res) => {
     const type = req.path === '/quotes' ? 'quote' : 'invoice';
     const filter = req.query.show || (type === 'invoice' ? 'unpaid' : 'open');
-    let docs = listDocs(db, 'd.type = ?', [type], 'ORDER BY d.issue_date DESC, d.number DESC LIMIT 1000');
+    let docs = await listDocs(req.db, res.locals.today, 'd.type = $1', [type], 'ORDER BY d.issue_date DESC, d.number DESC LIMIT 1000');
     if (type === 'invoice' && filter === 'unpaid') docs = docs.filter((d) => d.state !== 'void' && d.balance > 0);
     if (type === 'quote' && filter === 'open') docs = docs.filter((d) => ['draft', 'sent'].includes(d.status));
     res.render('documents/index', { type, docs, filter });
   });
 
-  app.get('/documents/new', (req, res) => {
-    const type = req.query.type === 'quote' ? 'quote' : 'invoice';
-    res.render('documents/new', {
-      type,
-      doc: { vehicle_id: Number(req.query.vehicle_id) || null, customer_id: Number(req.query.customer_id) || null },
-      vehicles: vehicleOptions(db),
-      customers: customerOptions(db),
-      error: null,
-    });
-  });
+  async function renderNew(req, res, type, doc, error) {
+    const [vehicles, customers] = await Promise.all([vehicleOptions(req.db), customerOptions(req.db)]);
+    res.render('documents/new', { type, doc, vehicles, customers, error });
+  }
 
-  app.post('/documents', (req, res) => {
+  app.get('/documents/new', (req, res) =>
+    renderNew(
+      req,
+      res,
+      req.query.type === 'quote' ? 'quote' : 'invoice',
+      { vehicle_id: Number(req.query.vehicle_id) || null, customer_id: Number(req.query.customer_id) || null },
+      null
+    )
+  );
+
+  app.post('/documents', async (req, res) => {
     const type = req.body.type === 'quote' ? 'quote' : 'invoice';
-    const party = resolveParty(db, req.body);
-    if (!party) {
-      return res.status(400).render('documents/new', {
-        type,
-        doc: req.body,
-        vehicles: vehicleOptions(db),
-        customers: customerOptions(db),
-        error: 'Pick a vehicle or customer.',
-      });
-    }
-    const vehicle = party.vehicle_id ? getVehicle(db, party.vehicle_id) : null;
-    const id = createDoc(type, {
-      ...party,
-      odometer: vehicle ? vehicle.odometer : null,
-      notes: String(req.body.notes || '').trim(),
-    });
+    const party = await resolveParty(req.db, req.body);
+    if (!party) return renderNew(req, res.status(400), type, req.body, 'Pick a vehicle or customer.');
+    const vehicle = party.vehicle_id ? await getVehicle(req.db, party.vehicle_id) : null;
+    const id = await req.db.tx((db) =>
+      createDoc(db, req, type, {
+        ...party,
+        odometer: vehicle ? vehicle.odometer : null,
+        notes: String(req.body.notes || '').trim().slice(0, 5000),
+      })
+    );
     res.redirect(`/documents/${id}`);
   });
 
-  app.get('/documents/:id', (req, res, next) => {
-    const doc = getDoc(db, req.params.id);
+  app.get('/documents/:id', async (req, res, next) => {
+    const doc = await getDoc(req.db, req.params.id, res.locals.today);
     if (!doc) return next();
-    const lines = getLines(db, 'document', doc.id);
-    const payments = db.prepare('SELECT * FROM payments WHERE document_id = ? ORDER BY date, id').all(doc.id);
-    const converted = db
-      .prepare(`SELECT id, type, number FROM documents WHERE job_id IS NOT NULL AND job_id = ? AND id != ?`)
-      .all(doc.job_id, doc.id);
-    const xeroStatus = doc.type === 'invoice' && xero.state().connected ? xero.invoiceStatus(doc.id) || { status: 'not sent' } : null;
-    res.render('documents/show', { doc, lines, payments, converted, xeroStatus, saved: req.query.saved === '1', today: today() });
+    const [lines, payments, converted] = await Promise.all([
+      getLines(req.db, 'document', doc.id),
+      req.db.all('SELECT * FROM payments WHERE document_id = $1 ORDER BY date, id', [doc.id]),
+      doc.job_id ? req.db.all('SELECT id, type, number FROM documents WHERE job_id = $1 AND id != $2', [doc.job_id, doc.id]) : [],
+    ]);
+    const xeroStatus = doc.type === 'invoice' && (await xero.isConnected(req.db)) ? (await xero.invoiceStatus(req.db, doc.id)) || { status: 'not sent' } : null;
+    res.render('documents/show', { doc, lines, payments, converted, xeroStatus, saved: req.query.saved === '1' });
   });
 
-  app.post('/documents/:id', (req, res, next) => {
-    const doc = getDoc(db, req.params.id);
+  app.post('/documents/:id', async (req, res, next) => {
+    const doc = await getDoc(req.db, req.params.id, res.locals.today);
     if (!doc) return next();
     const g = (k) => String(req.body[k] ?? '').trim();
-    let status = doc.status;
-    if (doc.type === 'quote' && QUOTE_STATUSES[g('status')]) status = g('status');
-    db.transaction(() => {
-      db.prepare(
-        `UPDATE documents SET issue_date = ?, due_date = ?, status = ?, odometer = ?, notes = ? WHERE id = ?`
-      ).run(
+    const status = doc.type === 'quote' && QUOTE_STATUSES[g('status')] ? g('status') : doc.status;
+    await req.db.tx(async (db) => {
+      await db.run(`UPDATE documents SET issue_date = $1, due_date = $2, status = $3, odometer = $4, notes = $5 WHERE id = $6`, [
         DATE_RE.test(g('issue_date')) ? g('issue_date') : doc.issue_date,
         DATE_RE.test(g('due_date')) ? g('due_date') : null,
         status,
         parseIntOrNull(req.body.odometer),
-        g('notes'),
-        doc.id
-      );
-      saveLines(db, 'document', doc.id, parseLines(req.body));
-    })();
-    xero.queueInvoice(doc.id);
+        g('notes').slice(0, 5000),
+        doc.id,
+      ]);
+      await saveLines(db, 'document', doc.id, parseLines(req.body));
+    });
+    await xero.queueInvoice(req.db, doc.id);
     res.redirect(`/documents/${doc.id}?saved=1`);
   });
 
-  app.get('/documents/:id/print', (req, res, next) => {
-    const doc = getDoc(db, req.params.id);
+  app.get('/documents/:id/print', async (req, res, next) => {
+    const doc = await getDoc(req.db, req.params.id, res.locals.today);
     if (!doc) return next();
     res.render('documents/print', {
       doc,
-      lines: getLines(db, 'document', doc.id),
-      payments: db.prepare('SELECT * FROM payments WHERE document_id = ? ORDER BY date, id').all(doc.id),
-      customer: getCustomer(db, doc.customer_id),
-      vehicle: doc.vehicle_id ? getVehicle(db, doc.vehicle_id) : null,
+      lines: await getLines(req.db, 'document', doc.id),
+      payments: await req.db.all('SELECT * FROM payments WHERE document_id = $1 ORDER BY date, id', [doc.id]),
+      customer: await getCustomer(req.db, doc.customer_id),
+      vehicle: doc.vehicle_id ? await getVehicle(req.db, doc.vehicle_id) : null,
     });
   });
 
-  app.post('/documents/:id/payments', (req, res, next) => {
-    const doc = getDoc(db, req.params.id);
+  app.post('/documents/:id/payments', async (req, res, next) => {
+    const doc = await getDoc(req.db, req.params.id, res.locals.today);
     if (!doc || doc.type !== 'invoice') return next();
     const amount = parseDollars(req.body.amount);
-    if (amount !== 0) {
-      db.prepare(`INSERT INTO payments (document_id, date, amount_cents, method, created_at) VALUES (?, ?, ?, ?, ?)`).run(
+    if (amount !== 0 && Math.abs(amount) < 1e9) {
+      await req.db.run(`INSERT INTO payments (document_id, date, amount_cents, method, created_at) VALUES ($1, $2, $3, $4, $5)`, [
         doc.id,
-        DATE_RE.test(req.body.date || '') ? req.body.date : today(),
+        DATE_RE.test(req.body.date || '') ? req.body.date : res.locals.today,
         amount,
-        String(req.body.method || '').trim(),
-        now()
-      );
-      xero.queueInvoice(doc.id);
+        String(req.body.method || '').trim().slice(0, 50),
+        now(req.tz),
+      ]);
+      await xero.queueInvoice(req.db, doc.id);
     }
     res.redirect(`/documents/${doc.id}`);
   });
 
-  app.post('/documents/:id/payments/:pid/delete', (req, res) => {
-    const payment = db.prepare('SELECT id FROM payments WHERE id = ? AND document_id = ?').get(req.params.pid, req.params.id);
-    if (payment) xero.queuePaymentDeleted(payment.id, Number(req.params.id));
-    db.prepare('DELETE FROM payments WHERE id = ? AND document_id = ?').run(req.params.pid, req.params.id);
+  app.post('/documents/:id/payments/:pid/delete', async (req, res) => {
+    const payment = await req.db.get('SELECT id FROM payments WHERE id = $1 AND document_id = $2', [req.params.pid, req.params.id]);
+    if (payment) {
+      await xero.queuePaymentDeleted(req.db, payment.id, Number(req.params.id));
+      await req.db.run('DELETE FROM payments WHERE id = $1', [payment.id]);
+    }
     res.redirect(`/documents/${req.params.id}`);
   });
 
   // Quote accepted: invoice it directly.
-  app.post('/documents/:id/invoice', (req, res, next) => {
-    const quote = getDoc(db, req.params.id);
+  app.post('/documents/:id/invoice', async (req, res, next) => {
+    const quote = await getDoc(req.db, req.params.id, res.locals.today);
     if (!quote || quote.type !== 'quote') return next();
-    const id = db.transaction(() => {
-      db.prepare(`UPDATE documents SET status = 'accepted' WHERE id = ?`).run(quote.id);
-      if (quote.job_id) db.prepare(`UPDATE jobs SET status = 'invoiced' WHERE id = ?`).run(quote.job_id);
+    const id = await req.db.tx(async (db) => {
+      await db.run(`UPDATE documents SET status = 'accepted' WHERE id = $1`, [quote.id]);
+      if (quote.job_id) await db.run(`UPDATE jobs SET status = 'invoiced' WHERE id = $1`, [quote.job_id]);
       return createDoc(
+        db,
+        req,
         'invoice',
-        {
-          customer_id: quote.customer_id,
-          vehicle_id: quote.vehicle_id,
-          job_id: quote.job_id,
-          odometer: quote.odometer,
-          notes: quote.notes,
-        },
-        getLines(db, 'document', quote.id)
+        { customer_id: quote.customer_id, vehicle_id: quote.vehicle_id, job_id: quote.job_id, odometer: quote.odometer, notes: quote.notes },
+        await getLines(db, 'document', quote.id)
       );
-    })();
-    xero.queueInvoice(id);
+    });
+    await xero.queueInvoice(req.db, id);
     res.redirect(`/documents/${id}`);
   });
 
   // Quote accepted: book the work in as a job card with the quoted lines.
-  app.post('/documents/:id/job', (req, res, next) => {
-    const quote = getDoc(db, req.params.id);
+  app.post('/documents/:id/job', async (req, res, next) => {
+    const quote = await getDoc(req.db, req.params.id, res.locals.today);
     if (!quote || quote.type !== 'quote') return next();
     if (quote.job_id) return res.redirect(`/jobs/${quote.job_id}`);
-    const jobId = db.transaction(() => {
-      const id = db
-        .prepare(
-          `INSERT INTO jobs (number, customer_id, vehicle_id, status, description, odometer, created_at)
-           VALUES (?, ?, ?, 'open', ?, ?, ?)`
-        )
-        .run(
-          nextNumber(db, 'job'),
-          quote.customer_id,
-          quote.vehicle_id,
-          quote.notes || `From quote ${docNumber(quote)}`,
-          quote.odometer,
-          now()
-        ).lastInsertRowid;
-      saveLines(db, 'job', id, getLines(db, 'document', quote.id));
-      db.prepare(`UPDATE documents SET status = 'accepted', job_id = ? WHERE id = ?`).run(id, quote.id);
-      return id;
-    })();
+    const jobId = await req.db.tx(async (db) => {
+      const job = await db.get(
+        `INSERT INTO jobs (number, customer_id, vehicle_id, status, description, odometer, created_at)
+         VALUES ($1, $2, $3, 'open', $4, $5, $6) RETURNING id`,
+        [await nextNumber(db, 'job'), quote.customer_id, quote.vehicle_id, quote.notes || `From quote ${docNumber(quote)}`, quote.odometer, now(req.tz)]
+      );
+      await saveLines(db, 'job', job.id, await getLines(db, 'document', quote.id));
+      await db.run(`UPDATE documents SET status = 'accepted', job_id = $1 WHERE id = $2`, [job.id, quote.id]);
+      return job.id;
+    });
     res.redirect(`/jobs/${jobId}`);
   });
 
   // Invoices are voided rather than deleted, so the numbering has no gaps.
-  app.post('/documents/:id/void', (req, res, next) => {
-    const doc = getDoc(db, req.params.id);
+  app.post('/documents/:id/void', async (req, res, next) => {
+    const doc = await getDoc(req.db, req.params.id, res.locals.today);
     if (!doc || doc.type !== 'invoice') return next();
-    db.transaction(() => {
-      db.prepare(`UPDATE documents SET status = 'void' WHERE id = ?`).run(doc.id);
-      if (doc.job_id) db.prepare(`UPDATE jobs SET status = 'ready' WHERE id = ? AND status = 'invoiced'`).run(doc.job_id);
-    })();
-    xero.queueInvoice(doc.id);
+    await req.db.tx(async (db) => {
+      await db.run(`UPDATE documents SET status = 'void' WHERE id = $1`, [doc.id]);
+      if (doc.job_id) await db.run(`UPDATE jobs SET status = 'ready' WHERE id = $1 AND status = 'invoiced'`, [doc.job_id]);
+    });
+    await xero.queueInvoice(req.db, doc.id);
     res.redirect(`/documents/${doc.id}`);
   });
 
-  app.post('/documents/:id/unvoid', (req, res, next) => {
-    const doc = getDoc(db, req.params.id);
+  app.post('/documents/:id/unvoid', async (req, res, next) => {
+    const doc = await getDoc(req.db, req.params.id, res.locals.today);
     if (!doc || doc.type !== 'invoice') return next();
-    db.prepare(`UPDATE documents SET status = 'issued' WHERE id = ?`).run(doc.id);
-    xero.queueInvoice(doc.id);
+    await req.db.run(`UPDATE documents SET status = 'issued' WHERE id = $1`, [doc.id]);
+    await xero.queueInvoice(req.db, doc.id);
     res.redirect(`/documents/${doc.id}`);
   });
 
-  app.post('/documents/:id/delete', (req, res, next) => {
-    const doc = getDoc(db, req.params.id);
+  app.post('/documents/:id/delete', async (req, res, next) => {
+    const doc = await getDoc(req.db, req.params.id, res.locals.today);
     if (!doc || doc.type !== 'quote') return next();
-    db.prepare('DELETE FROM documents WHERE id = ?').run(doc.id);
+    await req.db.run('DELETE FROM documents WHERE id = $1', [doc.id]);
     res.redirect('/quotes');
   });
 };

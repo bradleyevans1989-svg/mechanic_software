@@ -1,75 +1,86 @@
 # Workshop
 
-Simple workshop software for a one-person or small mechanic shop. It replaces the parts of Mechanic Desk most workshops use day to day.
+Workshop software for mechanics, built to be sold to many workshops on one shared system. Each workshop signs up, gets its own logins, and only ever sees its own data.
+
+## What it does
 
 - **Customers and vehicles**: rego, VIN, odometer, rego due date and next service, with full service history per car.
 - **Diary**: week view of bookings. Press "Car's here: start job" to turn a booking into a job card.
-- **Job cards**: work requested, mechanic's notes, labour and parts. Print a job card for the workshop floor.
+- **Job cards**: work requested, mechanic's notes, assigned mechanic, labour and parts. Print a job card for the floor.
 - **Quotes**: convert to a job or straight to an invoice.
-- **Tax invoices with GST**: ABN, GST breakdown, payments (EFTPOS, cash, transfer), balance owing, overdue tracking. Print or save as PDF.
+- **Tax invoices with GST**: ABN, GST breakdown, payments, balance owing, overdue tracking. Print or save as PDF.
 - **Today screen**: today's bookings, cars in the workshop, unpaid invoices, and services or rego coming due.
-- **Reports**: monthly sales, GST collected and payments received, plus a CSV export of invoices for your accountant or BAS.
-- **Staff logins**: each person has their own email and password. Owners see reports and settings; staff do everything else. Assign a mechanic to each job.
-- **Xero sync**: customers, invoices and payments are sent to Xero automatically. Edits, removed payments and voids follow.
+- **Reports**: monthly sales, GST collected and payments received, and a CSV export for the accountant or BAS.
+- **Staff logins**: each person has their own email and password. Owners see reports and settings and manage staff; staff do everything else.
+- **Xero sync**: customers, invoices and payments are sent to the workshop's own Xero automatically. Edits, removed payments and voids follow.
+- **Many workshops**: self-serve sign-up, per-workshop settings, numbering and timezone.
 
 Prices are entered **excluding GST**. GST is 10% of each taxable line, rounded per line the same way Xero does it (set GST to "No" on a line for GST-free items).
 
+## How workshops are kept apart
+
+All workshops share one Postgres database. Every row carries a `workshop_id`, and Postgres **row-level security** only lets a connection see rows for the workshop it is acting for. The app sets that workshop on every database connection from the logged-in user, so even a query that forgot a `WHERE` clause can't return another workshop's data. Links between records (a vehicle's customer, an invoice's job) are checked by the database to belong to the same workshop. `test/tenancy.test.js` tries to read and change one workshop's records from another and checks every attempt fails.
+
+The app must connect as an ordinary database user, not a superuser: Postgres lets superusers bypass row-level security. The app warns at startup if it is connected as one.
+
 ## Run it on your computer
 
-Needs Node.js 20 or newer.
+Needs Node.js 20+ and Postgres 15+.
 
 ```bash
 npm install
-npm run seed     # optional: adds demo customers so you can try it
+createdb workshop
+export DATABASE_URL=postgres://localhost/workshop
+npm run seed     # optional: a demo workshop, log in as demo@example.com / demo-password
 npm start        # http://localhost:3000
 ```
 
-On first visit you create the owner account. The setup code is printed in the server log (or set your own with `SETUP_CODE`). Add staff under **Settings → Staff logins**.
+Open `/signup` to create a workshop.
 
-## Put it online (about AU$12 a month)
+## Put it online (about US$13 a month to start)
 
-The cheapest reliable option is [Render](https://render.com):
+[Render](https://render.com) is the simplest:
 
 1. Push this folder to a GitHub repo.
-2. In Render, choose **New → Blueprint** and pick the repo. It reads `render.yaml`.
-3. When asked, set `SETUP_CODE` to any code you like and `APP_URL` to the address Render gives the service. Leave the Xero ones blank for now.
-4. Open the site, enter the setup code, and create your owner login.
+2. In Render choose **New → Blueprint** and pick the repo. It reads `render.yaml` and creates a Starter web service (US$7/month) and a Basic Postgres database (about US$6/month) in Singapore, the closest region to Australia.
+3. Set `APP_URL` to the address Render gives the service. Set `SIGNUP_CODE` if you want to control who can sign up while you're testing.
 
-That creates a Starter web service (US$7/month) with a 1 GB disk (US$0.25/month) that holds the database, in the Singapore region (closest to Australia). Render takes a daily snapshot of the disk.
+That comfortably runs dozens of workshops. As you grow, move the database to a bigger plan and run more than one web instance; the app keeps no state in memory that matters between requests.
 
 ## Settings
 
 | Variable | What it does | Default |
 | --- | --- | --- |
-| `SETUP_CODE` | Code needed to create the first (owner) login. | random, printed in the log |
-| `SESSION_SECRET` | Secret for login cookies. | generated and stored in the database |
+| `DATABASE_URL` | Postgres connection string. | required |
+| `SESSION_SECRET` | Secret for login cookies. | required in production |
 | `APP_URL` | The app's public address, used for the Xero redirect. | taken from the request |
-| `XERO_CLIENT_ID`, `XERO_CLIENT_SECRET` | From your Xero app. Needed to connect Xero. | none |
-| `DB_PATH` | Where the SQLite database file lives. | `data/workshop.db` |
-| `TZ` | Timezone for "today", due dates and the diary. | `Australia/Sydney` |
+| `SIGNUP_CODE` | If set, sign-up needs this code. | open sign-up |
+| `XERO_CLIENT_ID`, `XERO_CLIENT_SECRET` | From your Xero app. Needed for any workshop to connect Xero. | none |
+| `PGSSL` | Set to `require` if your database needs SSL from outside its network. | off |
 | `PORT` | Port to listen on. | `3000` |
 
-Business name, ABN, bank details, labour rate and the next invoice number are set in the app under **Settings**.
+Each workshop sets its business name, ABN, bank details, labour rate, timezone and next invoice number under **Settings**.
 
 ## Connecting Xero
 
-1. Sign in at [developer.xero.com](https://developer.xero.com/app/manage) with your Xero login and create a **Web app** (it's free).
-2. Set the redirect URI to `<APP_URL>/xero/callback`, for example `https://workshop-xxxx.onrender.com/xero/callback`.
-3. Generate a client secret, then put the Client ID and secret in the server settings as `XERO_CLIENT_ID` and `XERO_CLIENT_SECRET`.
-4. In the app, go to **Settings → Xero and add-ons → Connect to Xero**.
-5. Set the account codes (labour, parts, and the bank account payments go into).
+One Xero app serves every workshop; each workshop connects its own Xero organisation.
 
-Sync is one way: the app sends to Xero and never reads back. Invoices made before connecting are only sent if you choose "Send older invoices", so invoices already in Xero from Mechanic Desk aren't duplicated.
+1. Sign in at [developer.xero.com](https://developer.xero.com/app/manage) and create a **Web app** (free).
+2. Set the redirect URI to `<APP_URL>/xero/callback`.
+3. Put the Client ID and a client secret in the server settings as `XERO_CLIENT_ID` and `XERO_CLIENT_SECRET`.
+4. In the app, a workshop owner goes to **Settings → Xero and add-ons → Connect to Xero** and sets the account codes.
 
-## Backups
+Xero limits an uncertified app to 25 connected organisations. Before more than 25 workshops use Xero, apply to the [Xero App Partner program](https://developer.xero.com/documentation/xero-app-store/app-partner-guides/app-partner-steps/).
 
-All data is in one file (`DB_PATH`). To back it up, copy that file while the app is stopped, or use `sqlite3 workshop.db ".backup backup.db"` while it runs.
+Sync is one way: the app sends to Xero and never reads back. Invoices made before connecting are only sent if the owner chooses "Send older invoices", so invoices already in Xero aren't duplicated.
 
 ## Development
 
+Tests need a Postgres the test user can create databases on. Each test file makes and drops its own database.
+
 ```bash
-npm run dev   # restarts on changes
+export TEST_DATABASE_URL=postgres://workshop:workshop@localhost:5432/workshop   # user needs CREATEDB, not superuser
 npm test
 ```
 
-Stack: Node.js, Express, EJS templates, SQLite (better-sqlite3). No build step.
+Stack: Node.js, Express, EJS templates, Postgres (`pg`). No build step.

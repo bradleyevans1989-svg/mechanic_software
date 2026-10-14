@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign up · Workshop</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="login-page">
+  <form method="post" action="/signup" class="card login">
+    <h1>Create your workshop</h1>
+    <p class="muted">You'll be the owner. Add your staff once you're in.</p>
+    <% if (error) { %><p class="error"><%= error %></p><% } %>
+    <label>Workshop name <input name="workshop" value="<%= form.workshop || '' %>" required autofocus></label>
+    <label>Your name <input name="name" value="<%= form.name || '' %>" autocomplete="name" required></label>
+    <label>Email <input type="email" name="email" value="<%= form.email || '' %>" autocomplete="username" required></label>
+    <label>Password <input type="password" name="password" minlength="8" autocomplete="new-password" required></label>
+    <% if (codeRequired) { %>
+      <label>Sign-up code <input name="code" autocomplete="off" required></label>
+    <% } %>
+    <button class="btn primary">Create account</button>
+    <p class="hint">Already have a login? <a href="/login">Log in</a></p>
+  </form>
+</body>
+</html>

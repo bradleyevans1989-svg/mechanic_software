@@ -1,44 +1,25 @@
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
-const { open } = require('../lib/db');
-const { createApp } = require('../app');
 const util = require('../lib/util');
+const { startApp, idFrom } = require('./helpers');
 
-let server;
-let base;
+let t;
+let owner;
 let db;
-let cookie = '';
+const as = (c) => (typeof c === 'string' ? t.client(c) : c);
+const post = (path, fields, c = owner) => as(c).post(path, fields);
+const get = (path, c = owner) => as(c).get(path);
 
 before(async () => {
-  process.env.SETUP_CODE = 'test-setup';
-  db = open(':memory:');
-  server = createApp(db).listen(0);
-  await new Promise((r) => server.once('listening', r));
-  base = `http://localhost:${server.address().port}`;
-
-  // Fresh install sends everyone to setup, which creates the owner.
-  const first = await fetch(base + '/', { redirect: 'manual' });
-  assert.equal(first.headers.get('location'), '/setup');
-  const res = await post('/setup', { code: 'test-setup', name: 'Brad', email: 'Owner@Example.com', password: 'spanner-123' });
-  assert.equal(res.status, 302);
-  cookie = res.headers.get('set-cookie').split(';')[0];
+  t = await startApp({ autoSync: false });
+  // Not logged in: sent to login.
+  const first = await t.client().get('/');
+  assert.equal(first.location, '/login');
+  owner = await t.signup('Demo Motors', 'Owner@Example.com');
+  db = owner.db;
 });
 
-after(() => server.close());
-
-function post(path, fields, as = cookie) {
-  return fetch(base + path, {
-    method: 'POST',
-    redirect: 'manual',
-    headers: { 'content-type': 'application/x-www-form-urlencoded', cookie: as },
-    body: new URLSearchParams(fields).toString(),
-  });
-}
-
-async function get(path, as = cookie) {
-  const res = await fetch(base + path, { headers: { cookie: as }, redirect: 'manual' });
-  return { status: res.status, text: await res.text(), location: res.headers.get('location') };
-}
+after(() => t.stop());
 
 test('GST totals are 10% of the taxable lines', () => {
   const t = util.totals([
@@ -74,12 +55,12 @@ test('full workflow: customer, booking, job, invoice, payment', async () => {
   });
   assert.equal(res.status, 302);
   const customerId = Number(res.headers.get('location').split('/').pop());
-  const vehicle = db.prepare('SELECT * FROM vehicles WHERE customer_id = ?').get(customerId);
+  const vehicle = await db.get('SELECT * FROM vehicles WHERE customer_id = $1', [customerId]);
   assert.equal(vehicle.rego, 'ABC123');
 
   res = await post('/bookings', { vehicle_id: vehicle.id, date: util.today(), time: '08:30', description: 'Logbook service' });
   assert.equal(res.status, 302);
-  const booking = db.prepare('SELECT * FROM bookings').get();
+  const booking = await db.get('SELECT * FROM bookings');
   assert.equal(booking.customer_id, customerId);
 
   const diary = await get('/bookings');
@@ -87,7 +68,7 @@ test('full workflow: customer, booking, job, invoice, payment', async () => {
 
   res = await post(`/bookings/${booking.id}/start`, {});
   const jobId = Number(res.headers.get('location').split('/').pop());
-  const job = db.prepare('SELECT * FROM jobs WHERE id = ?').get(jobId);
+  const job = await db.get('SELECT * FROM jobs WHERE id = $1', [jobId]);
   assert.equal(job.description, 'Logbook service');
   assert.equal(job.odometer, 85000);
 
@@ -115,11 +96,11 @@ test('full workflow: customer, booking, job, invoice, payment', async () => {
 
   res = await post(`/jobs/${jobId}/invoice`, {});
   const invoiceId = Number(res.headers.get('location').split('/').pop());
-  const invoice = db.prepare('SELECT * FROM documents WHERE id = ?').get(invoiceId);
+  const invoice = await db.get('SELECT * FROM documents WHERE id = $1', [invoiceId]);
   assert.equal(invoice.type, 'invoice');
   assert.equal(invoice.number, 1001);
-  assert.equal(db.prepare('SELECT status FROM jobs WHERE id = ?').get(jobId).status, 'invoiced');
-  assert.equal(db.prepare('SELECT odometer FROM vehicles WHERE id = ?').get(vehicle.id).odometer, 85210);
+  assert.equal((await db.get('SELECT status FROM jobs WHERE id = $1', [jobId])).status, 'invoiced');
+  assert.equal((await db.get('SELECT odometer FROM vehicles WHERE id = $1', [vehicle.id])).odometer, 85210);
 
   // Invoicing twice returns the same invoice.
   res = await post(`/jobs/${jobId}/invoice`, {});
@@ -152,8 +133,8 @@ test('full workflow: customer, booking, job, invoice, payment', async () => {
 });
 
 test('quote converts to invoice with the same lines', async () => {
-  const c = db.prepare(`INSERT INTO customers (name, created_at) VALUES ('Quote Person', ?)`).run(util.now());
-  let res = await post('/documents', { type: 'quote', customer_id: c.lastInsertRowid });
+  const c = await db.get(`INSERT INTO customers (name, created_at) VALUES ('Quote Person', $1) RETURNING id`, [util.now()]);
+  let res = await post('/documents', { type: 'quote', customer_id: c.id });
   const quoteId = Number(res.headers.get('location').split('/').pop());
   await post(`/documents/${quoteId}`, {
     issue_date: util.today(),
@@ -168,7 +149,7 @@ test('quote converts to invoice with the same lines', async () => {
   const page = await get(`/documents/${invId}`);
   assert.match(page.text, /Brake pads/);
   assert.match(page.text, /\$110\.00/);
-  assert.equal(db.prepare('SELECT status FROM documents WHERE id = ?').get(quoteId).status, 'accepted');
+  assert.equal((await db.get('SELECT status FROM documents WHERE id = $1', [quoteId])).status, 'accepted');
 });
 
 test('every main page renders', async () => {
@@ -197,13 +178,13 @@ test('staff logins: owner adds staff, staff cannot see owner pages, deactivation
   assert.doesNotMatch((await get('/', mick)).text, /href="\/settings"/);
 
   // Mick can be put on a job.
-  const job = db.prepare('SELECT id FROM jobs LIMIT 1').get();
-  const mickId = db.prepare(`SELECT id FROM users WHERE email = 'mick@example.com'`).get().id;
+  const job = await db.get('SELECT id FROM jobs LIMIT 1');
+  const mickId = (await t.store.system.get(`SELECT id FROM users WHERE email = 'mick@example.com'`)).id;
   await post(`/jobs/${job.id}`, { status: 'in_progress', mechanic_id: mickId, description: 'x' }, mick);
   assert.match((await get('/jobs?status=all')).text, /Mick/);
 
   // The last owner can't demote themselves.
-  const ownerId = db.prepare(`SELECT id FROM users WHERE role = 'owner'`).get().id;
+  const ownerId = (await t.store.system.get(`SELECT id FROM users WHERE role = 'owner'`)).id;
   res = await post(`/staff/${ownerId}`, { name: 'Brad', email: 'owner@example.com', role: 'staff', active: '1' });
   assert.equal(res.status, 400);
 
@@ -222,7 +203,7 @@ test('password change keeps you signed in and checks the old password', async ()
   assert.equal(res.status, 400);
   res = await post('/account', { name: 'Brad', current_password: 'spanner-123', new_password: 'new-spanner-1' });
   assert.equal(res.status, 302);
-  assert.equal((await get('/', cookie)).location, '/login'); // old cookie is dead
-  cookie = res.headers.get('set-cookie').split(';')[0];
+  assert.equal((await get('/', owner.cookie)).location, '/login'); // old cookie is dead
+  owner.cookie = res.headers.get('set-cookie').split(';')[0];
   assert.equal((await get('/')).status, 200);
 });

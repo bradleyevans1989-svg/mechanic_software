@@ -1,10 +1,19 @@
-// Dates and "today" follow the workshop's timezone, not the server's.
-process.env.TZ = process.env.TZ || 'Australia/Sydney';
-
 const { createApp } = require('./app');
-const { open } = require('./lib/db');
+const { createStore } = require('./lib/db');
 
-const db = open();
-const port = process.env.PORT || 3000;
+async function main() {
+  const store = createStore();
+  await store.migrate();
+  if (await store.isSuperuser()) {
+    console.warn('Connected as a Postgres superuser: row-level security is bypassed. Use an ordinary database user in production.');
+  }
+  const app = createApp(store);
+  app.locals.xero.startSweep();
+  const port = process.env.PORT || 3000;
+  app.listen(port, () => console.log(`Workshop running on http://localhost:${port}`));
+}
 
-createApp(db).listen(port, () => console.log(`Workshop running on http://localhost:${port}`));
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

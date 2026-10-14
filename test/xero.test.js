@@ -2,15 +2,15 @@
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const express = require('express');
-const { open } = require('../lib/db');
-const { createApp } = require('../app');
 const util = require('../lib/util');
+const { startApp } = require('./helpers');
 
 let fake;
-let server;
+let t;
 let base;
 let db;
 let app;
+let owner;
 let cookie = '';
 
 // A tiny stand-in for Xero's identity and accounting APIs.
@@ -97,24 +97,22 @@ async function get(path) {
 before(async () => {
   const fakeUrl = await startFake();
   Object.assign(process.env, {
-    SETUP_CODE: 'x',
     XERO_CLIENT_ID: 'client',
     XERO_CLIENT_SECRET: 'secret',
     XERO_LOGIN_URL: fakeUrl,
     XERO_IDENTITY_URL: fakeUrl,
     XERO_API_URL: fakeUrl,
   });
-  db = open(':memory:');
-  app = createApp(db, { autoSync: false });
-  server = app.listen(0);
-  await new Promise((r) => server.once('listening', r));
-  base = `http://localhost:${server.address().port}`;
-  const res = await post('/setup', { code: 'x', name: 'Brad', email: 'brad@example.com', password: 'spanner-123' });
-  cookie = res.headers.get('set-cookie').split(';')[0];
+  t = await startApp({ autoSync: false });
+  app = t.app;
+  base = t.base;
+  owner = await t.signup('Demo Motors', 'brad@example.com');
+  cookie = owner.cookie;
+  db = owner.db;
 });
 
-after(() => {
-  server.close();
+after(async () => {
+  await t.stop();
   fake.close();
 });
 
@@ -133,7 +131,7 @@ test('connect to Xero with OAuth and pick up the organisation', async () => {
 
   cb = await fetch(`${base}/xero/callback?code=abc&state=${state}`, { headers: { cookie: `${cookie}; ${stateCookie}` }, redirect: 'manual' });
   assert.match(decodeURIComponent(cb.headers.get('location')), /Connected to Demo Motors Pty Ltd/);
-  assert.equal(app.locals.xero.state().connected, true);
+  assert.equal(await app.locals.xero.isConnected(db), true);
 
   const page = await get('/integrations');
   assert.match(page.text, /Connected to <strong>Demo Motors Pty Ltd/);
@@ -142,13 +140,13 @@ test('connect to Xero with OAuth and pick up the organisation', async () => {
 
 test('invoice, contact and payment go to Xero; edits and voids follow', async () => {
   const xero = app.locals.xero;
-  const cid = db.prepare(`INSERT INTO customers (name, email, phone, created_at) VALUES ('Sam "Sparky" Taylor', 'sam@example.com', '0412 345 678', ?)`).run(util.now()).lastInsertRowid;
+  const cid = (await db.get(`INSERT INTO customers (name, email, phone, created_at) VALUES ('Sam "Sparky" Taylor', 'sam@example.com', '0412 345 678', $1) RETURNING id`, [util.now()])).id;
   let res = await post('/documents', { type: 'invoice', customer_id: cid });
   const docId = Number(res.headers.get('location').split('/').pop());
 
   // Empty invoice isn't sent.
   await post(`/documents/${docId}`, { issue_date: '2026-10-14', due_date: '2026-10-21' });
-  await xero.runPending();
+  await xero.runPending(db);
   assert.equal(Object.keys(xeroState.invoices).length, 0);
 
   await post(`/documents/${docId}`, {
@@ -158,7 +156,7 @@ test('invoice, contact and payment go to Xero; edits and voids follow', async ()
     'lines[1][kind]': 'part', 'lines[1][description]': 'Oil filter', 'lines[1][qty]': '1', 'lines[1][price]': '18.15', 'lines[1][gst]': '1',
     'lines[2][kind]': 'other', 'lines[2][description]': 'Rego check', 'lines[2][qty]': '1', 'lines[2][price]': '10', 'lines[2][gst]': '0',
   });
-  let r = await xero.runPending();
+  let r = await xero.runPending(db);
   assert.equal(r.synced, 1);
   assert.equal(xeroState.contacts.length, 1);
   assert.equal(xeroState.contacts[0].Name, 'Sam "Sparky" Taylor');
@@ -177,13 +175,13 @@ test('invoice, contact and payment go to Xero; edits and voids follow', async ()
 
   // Nothing changed: nothing re-sent.
   const before = xeroState.calls.length;
-  xero.queueInvoice(docId);
-  await xero.runPending();
+  await xero.queueInvoice(db, docId);
+  await xero.runPending(db);
   assert.equal(xeroState.calls.filter((c, i) => i >= before && c.startsWith('POST /api.xro/2.0/Invoices')).length, 0);
 
   // Payment without a bank account code is held back with a clear message.
   await post(`/documents/${docId}/payments`, { amount: '100', method: 'EFTPOS', date: '2026-10-14' });
-  await xero.runPending();
+  await xero.runPending(db);
   assert.equal(livePayments(inv.InvoiceID).length, 0);
   assert.match((await get(`/documents/${docId}`)).text, /Payments not sent/);
 
@@ -197,32 +195,32 @@ test('invoice, contact and payment go to Xero; edits and voids follow', async ()
     issue_date: '2026-10-14', due_date: '2026-10-21',
     'lines[0][kind]': 'labour', 'lines[0][description]': 'Labour', 'lines[0][qty]': '2', 'lines[0][price]': '120', 'lines[0][gst]': '1',
   });
-  r = await xero.runPending();
+  r = await xero.runPending(db);
   assert.equal(r.failed, 0);
   assert.equal(Object.keys(xeroState.invoices).length, 1);
   assert.equal(xinv().LineItems.length, 1);
   assert.equal(livePayments(inv.InvoiceID).length, 1);
 
   // Removing the payment here removes it in Xero.
-  const pay = db.prepare('SELECT id FROM payments WHERE document_id = ?').get(docId);
+  const pay = await db.get('SELECT id FROM payments WHERE document_id = $1', [docId]);
   await post(`/documents/${docId}/payments/${pay.id}/delete`, {});
-  await xero.runPending();
+  await xero.runPending(db);
   assert.equal(livePayments(inv.InvoiceID).length, 0);
 
   // Customer edit updates the Xero contact.
   await post(`/customers/${cid}`, { name: 'Sam "Sparky" Taylor', phone: '0499 999 999', email: 'sam@example.com' });
-  await xero.runPending();
+  await xero.runPending(db);
   assert.equal(xeroState.contacts[0].Phones[0].PhoneNumber, '0499 999 999');
 
   // Void.
   await post(`/documents/${docId}/void`, {});
-  await xero.runPending();
+  await xero.runPending(db);
   assert.equal(xinv().Status, 'VOIDED');
 });
 
 test('a Xero error is shown on the invoice and retried on request', async () => {
   const xero = app.locals.xero;
-  const c = db.prepare(`SELECT id FROM customers LIMIT 1`).get();
+  const c = await db.get(`SELECT id FROM customers LIMIT 1`);
   const res = await post('/documents', { type: 'invoice', customer_id: c.id });
   const docId = Number(res.headers.get('location').split('/').pop());
   xeroState.failNextInvoice = 'Account code 999 is not valid';
@@ -230,28 +228,28 @@ test('a Xero error is shown on the invoice and retried on request', async () => 
     issue_date: '2026-10-14',
     'lines[0][kind]': 'part', 'lines[0][description]': 'Wiper blades', 'lines[0][qty]': '2', 'lines[0][price]': '15', 'lines[0][gst]': '1',
   });
-  const r = await xero.runPending();
+  const r = await xero.runPending(db);
   assert.equal(r.failed, 1);
   const page = await get(`/documents/${docId}`);
   assert.match(page.text, /Account code 999 is not valid/);
   assert.match((await get('/integrations')).text, /Needs attention/);
 
   await post(`/documents/${docId}/xero`, {});
-  assert.equal(xero.invoiceStatus(docId).status, 'synced');
+  assert.equal((await xero.invoiceStatus(db, docId)).status, 'synced');
 });
 
 test('expired access token is refreshed and the new refresh token kept', async () => {
   const xero = app.locals.xero;
-  db.prepare(`UPDATE integrations SET expires_at = 0 WHERE provider = 'xero'`).run();
-  const oldRefresh = xero.state().row.refresh_token;
+  await db.run(`UPDATE integrations SET expires_at = 0 WHERE provider = 'xero'`);
+  const oldRefresh = (await xero.state(db)).row.refresh_token;
   const before = xeroState.refreshes;
-  await xero.pushContact(db.prepare('SELECT id FROM customers LIMIT 1').get().id);
+  await xero.pushContact(db, (await db.get('SELECT id FROM customers LIMIT 1')).id);
   assert.equal(xeroState.refreshes, before + 1);
-  assert.notEqual(xero.state().row.refresh_token, oldRefresh);
+  assert.notEqual((await xero.state(db)).row.refresh_token, oldRefresh);
 });
 
 test('disconnect forgets the tokens', async () => {
   await post('/xero/disconnect', {});
-  assert.equal(app.locals.xero.state().connected, false);
+  assert.equal(await app.locals.xero.isConnected(db), false);
   assert.match((await get('/integrations')).text, /Connect to Xero/);
 });

@@ -1,4 +1,11 @@
-# One-click deploy on Render (render.com). Starter plan + 1 GB disk is about US$7.25/month.
+# Deploy on Render (render.com) as a Blueprint.
+# Starter web service (US$7/month) + Basic Postgres (about US$6/month), Singapore region.
+databases:
+  - name: workshop-db
+    plan: basic-256mb
+    region: singapore
+    postgresMajorVersion: "16"
+
 services:
   - type: web
     name: workshop
@@ -11,21 +18,17 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: TZ
-        value: Australia/Sydney
-      - key: DB_PATH
-        value: /var/data/workshop.db
-      - key: SETUP_CODE        # you type this once, on first visit, to create the owner login
-        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: workshop-db
+          property: connectionString
+      - key: SESSION_SECRET
+        generateValue: true
       - key: APP_URL           # e.g. https://workshop-xxxx.onrender.com (used for the Xero redirect)
+        sync: false
+      - key: SIGNUP_CODE       # optional: only people with this code can sign up a workshop
         sync: false
       - key: XERO_CLIENT_ID    # from developer.xero.com; leave blank until you connect Xero
         sync: false
       - key: XERO_CLIENT_SECRET
         sync: false
-      - key: SESSION_SECRET
-        generateValue: true
-    disk:
-      name: data
-      mountPath: /var/data
-      sizeGB: 1

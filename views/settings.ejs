@@ -6,6 +6,7 @@
     <a class="btn" href="/integrations">Xero and add-ons</a>
   </div>
 </div>
+<% if (welcome) { %><p class="flash">Welcome! Fill in your business details so they print on your invoices, then add your staff.</p><% } %>
 <% if (saved) { %><p class="flash">Saved.</p><% } %>
 <% if (!settings.abn) { %><p class="banner warn">Add your ABN. A tax invoice must show it.</p><% } %>
 <form method="post" action="/settings" class="card form">
@@ -24,6 +25,11 @@
   <div class="grid-3">
     <label>Labour rate per hour, ex GST <input name="labour_rate" inputmode="decimal" value="<%= u.dollars(settings.labour_rate_cents) %>"></label>
     <label>Days to pay invoices <input name="payment_days" inputmode="numeric" value="<%= settings.payment_days %>"></label>
+    <label>Timezone
+      <select name="timezone">
+        <% for (const [k, l] of Object.entries(TIMEZONES)) { %><option value="<%= k %>" <%= settings.timezone === k ? 'selected' : '' %>><%= l %></option><% } %>
+      </select>
+    </label>
   </div>
 
   <h2>Numbering</h2>
