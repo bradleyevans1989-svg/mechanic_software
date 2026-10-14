@@ -5,7 +5,7 @@ Workshop software for mechanics, built to be sold to many workshops on one share
 ## What it does
 
 - **Customers and vehicles**: rego, VIN, odometer, rego due date and next service, with full service history per car.
-- **Diary**: week view of bookings. Press "Car's here: start job" to turn a booking into a job card.
+- **Diary and calendar**: week view of bookings, and a month calendar showing bookings, jobs spanning the days they're in the workshop, staff leave, public holidays, toolbox talks and notes, colour coded. Press "Car's here: start job" to turn a booking into a job card.
 - **Job cards**: work requested, mechanic's notes, assigned mechanic, priority and promised time, labour and parts. Print a job card for the floor. A list view sorted by what's promised soonest, a board view by status, and a "My jobs" tab.
 - **Inspection checklist**: a workshop-wide checklist (set under Settings) added to any job, marked OK / needs attention / urgent with notes, and printed as a customer-facing inspection report.
 - **Time clock**: staff clock on and off jobs or add time by hand; unbilled time becomes a labour line in quarter hours at the workshop rate. Owners see weekly timesheets.
@@ -17,6 +17,8 @@ Workshop software for mechanics, built to be sold to many workshops on one share
 - **Today screen**: today's bookings, cars in the workshop, unpaid invoices, and services or rego coming due.
 - **Send to customer**: every quote and invoice has a private link the customer can open without logging in; quotes can be accepted online. Email and text buttons open your own apps with the message filled in, or set up Resend (below) to email straight from the app.
 - **Reports**: monthly sales, GST collected and payments received; who owes you by how overdue; BAS quarter figures (G1 and 1A); sales and hours by mechanic; top customers; printable customer statements; and a CSV export for the accountant.
+- **Clocking and roster**: staff start their shift, take breaks and finish from the Today screen or the Clocking page; owners see who's in now and shift hours on the timesheets. A weekly roster with shifts, days off, RDOs and leave, with "my next shift" on the Today screen.
+- **Team**: a to-do chat for the team, step-by-step procedures (how we do things, with a print button), and training modules worth points with a points board.
 - **Staff logins**: each person has their own email and password. Owners see reports and settings and manage staff; staff do everything else.
 - **Xero sync**: customers, invoices and payments are sent to the workshop's own Xero automatically. Edits, removed payments and voids follow.
 - **Many workshops**: self-serve sign-up, per-workshop settings, numbering and timezone.
