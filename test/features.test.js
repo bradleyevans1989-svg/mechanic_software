@@ -367,3 +367,52 @@ test('team: to-do chat, procedures and training points, owner-only editing', asy
   assert.equal((await owner.db.get('SELECT COUNT(*) AS n FROM training_completions')).n, 0);
   assert.equal((await other.get(`/training/${mod.id}`)).status, 404);
 });
+
+test('branding: logo upload, brand details, invoice and job card designs', async () => {
+  const png = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+  let res = await owner.post('/settings/logo', { logo_data: png });
+  assert.equal(res.status, 302);
+  assert.match(res.headers.get('location'), /logo=saved/);
+  res = await owner.get('/logo');
+  assert.equal(res.status, 200);
+  assert.equal(res.res.headers.get('content-type'), 'image/png');
+  assert.equal((await other.get('/logo')).status, 404, 'another workshop has no logo');
+  assert.match((await owner.post('/settings/logo', { logo_data: 'data:text/html;base64,PGI+' })).headers.get('location'), /logo=bad/);
+
+  // The picker shows all twenty and saves the choice.
+  const page = (await owner.get('/settings/templates')).text;
+  assert.equal((page.match(/Use this/g) || []).length, 18, 'ten of each, two already in use');
+  res = await owner.post('/settings/templates', { kind: 'invoice', template: 'band' });
+  assert.equal(res.status, 302);
+  await owner.post('/settings/templates', { kind: 'jobcard', template: 'nonsense' });
+  const s = await owner.db.get('SELECT invoice_template, jobcard_template FROM settings');
+  assert.deepEqual([s.invoice_template, s.jobcard_template], ['band', 'classic']);
+  assert.match((await owner.get('/settings/templates/preview?kind=invoice&t=letterhead')).text, /tpl-letterhead/);
+  assert.match((await owner.get('/settings/templates/preview?kind=jobcard&t=timecard')).text, /tpl-timecard/);
+
+  // Real documents print in the chosen design with the logo and details.
+  await owner.post('/settings', { business_name: 'Deep Motors', abn: '11 222 333 444', brand_colour: '#1b55a6', tagline: 'Honest service', website: 'deep.example', licence: 'MVRL 1234', labour_rate: '120', payment_days: '7', next_invoice_no: '2000', next_quote_no: '1', next_job_no: '1', timezone: 'Australia/Sydney' });
+  await owner.post('/customers', { name: 'Brand New', v_rego: 'BRND01' });
+  const vehicle = await owner.db.get(`SELECT id FROM vehicles WHERE rego = 'BRND01'`);
+  const inv = await owner.post('/documents', { type: 'invoice', vehicle_id: vehicle.id, 'lines[0][kind]': 'labour', 'lines[0][description]': 'Work', 'lines[0][qty]': '1', 'lines[0][price]': '100', 'lines[0][gst]': '1' });
+  const html = (await owner.get(`/documents/${idFrom(inv)}/print`)).text;
+  assert.match(html, /class="tpl tpl-band has-logo"/);
+  assert.match(html, /--brand: #1b55a6/);
+  assert.match(html, /Honest service/);
+  assert.match(html, /MVRL 1234/);
+  assert.match(html, /src="\/logo"/);
+  const job = await owner.post('/jobs', { vehicle_id: vehicle.id, description: 'Brand job' });
+  assert.match((await owner.get(`/jobs/${idFrom(job)}/print`)).text, /tpl-classic has-logo/);
+
+  // The customer's share link gets the logo too, without a login.
+  await owner.get(`/documents/${idFrom(inv)}`);
+  const { token } = await t.store.system.get('SELECT token FROM share_links WHERE document_id = $1 AND workshop_id = $2', [idFrom(inv), owner.workshopId]);
+  const anon = t.client();
+  const shared = await anon.get(`/share/${token}`);
+  assert.match(shared.text, new RegExp(`src="/share/${token}/logo"`));
+  assert.equal((await anon.get(`/share/${token}/logo`)).status, 200);
+  assert.equal((await anon.get(`/share/nope/logo`)).status, 404);
+
+  await owner.post('/settings/logo/remove');
+  assert.equal((await owner.get('/logo')).status, 404);
+});

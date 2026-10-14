@@ -6,12 +6,29 @@
     <a class="btn" href="/staff">Staff logins</a>
     <a class="btn" href="/timesheets">Timesheets</a>
     <a class="btn" href="/price-list">Price list</a>
+    <a class="btn" href="/settings/templates">Invoice and job card designs</a>
     <a class="btn" href="/integrations">Xero and add-ons</a>
   </div>
 </div>
 <% if (welcome) { %><p class="flash">Welcome! Fill in your business details so they print on your invoices, then add your staff.</p><% } %>
 <% if (saved) { %><p class="flash">Saved.</p><% } %>
 <% if (!settings.abn) { %><p class="banner warn">Add your ABN. A tax invoice must show it.</p><% } %>
+<% if (logo === 'saved') { %><p class="flash">Logo saved.</p><% } else if (logo === 'removed') { %><p class="flash">Logo removed.</p><% } else if (logo) { %><p class="error">That image could not be used. Try a PNG or JPG under 1.5 MB.</p><% } %>
+<form method="post" action="/settings/logo" class="card form logo-form" id="logo">
+  <h2>Your logo <span class="muted">(printed on invoices, quotes and job cards)</span></h2>
+  <div class="logo-row">
+    <div class="logo-box"><% if (settings.has_logo) { %><img src="/logo?v=<%= Date.now() %>" alt="Your logo"><% } else { %><span class="muted">No logo yet</span><% } %></div>
+    <div>
+      <label>Upload a PNG or JPG <input type="file" accept="image/png,image/jpeg,image/webp" data-logo-file></label>
+      <input type="hidden" name="logo_data" data-logo-data>
+      <div class="actions">
+        <button class="btn primary" data-logo-submit disabled>Save logo</button>
+        <% if (settings.has_logo) { %><button class="btn danger" formaction="/settings/logo/remove" formnovalidate>Remove logo</button><% } %>
+      </div>
+      <p class="hint">It is shrunk in your browser to fit, so photos of a sign or a big file are fine.</p>
+    </div>
+  </div>
+</form>
 <form method="post" action="/settings" class="card form">
   <h2>Business details <span class="muted">(printed on invoices)</span></h2>
   <div class="grid-2">
@@ -23,6 +40,15 @@
   <label>Address <textarea name="address" rows="2"><%= settings.address %></textarea></label>
   <label>Bank details for payment <textarea name="bank_details" rows="3" placeholder="BSB 000-000  Account 12345678  Name: ..."><%= settings.bank_details %></textarea></label>
   <label>Footer text on invoices and quotes <textarea name="invoice_terms" rows="2"><%= settings.invoice_terms %></textarea></label>
+
+  <h2 id="branding">Logo and look</h2>
+  <div class="grid-3">
+    <label>Brand colour <span class="muted">(used by some designs)</span> <input type="color" name="brand_colour" value="<%= settings.brand_colour || '#111111' %>" class="colour"></label>
+    <label>Tagline <input name="tagline" value="<%= settings.tagline || '' %>" placeholder="e.g. Honest service since 1998"></label>
+    <label>Website <input name="website" value="<%= settings.website || '' %>" placeholder="www.yourworkshop.com.au"></label>
+  </div>
+  <label>Licence or accreditation <input name="licence" value="<%= settings.licence || '' %>" placeholder="e.g. Motor Vehicle Repairer Licence 123456, AAFRB"></label>
+  <p class="hint">Invoices and job cards use the designs chosen under <a href="/settings/templates">Invoice and job card designs</a>.</p>
 
   <h2>Defaults</h2>
   <div class="grid-3">

@@ -13,6 +13,7 @@ Workshop software for mechanics, built to be sold to many workshops on one share
 - **Price list**: saved parts and services with codes and prices, dropped onto any job, quote or invoice from a search box in the line editor.
 - **Reminders**: service intervals per vehicle (months and km) set the next service due when a service is invoiced. A Reminders page lists service and rego due or overdue with call, text and email links and a log of who was contacted.
 - **Quotes**: convert to a job or straight to an invoice.
+- **Your look**: upload your logo, set a brand colour, tagline, website and licence number, then pick one of ten invoice designs and ten job card designs under Settings. Previews show your own details.
 - **Tax invoices with GST**: ABN, GST breakdown, payments, balance owing, overdue tracking. Print or save as PDF.
 - **Today screen**: today's bookings, cars in the workshop, unpaid invoices, and services or rego coming due.
 - **Send to customer**: every quote and invoice has a private link the customer can open without logging in; quotes can be accepted online. Email and text buttons open your own apps with the message filled in, or set up Resend (below) to email straight from the app.

@@ -1,0 +1,26 @@
+<%- include('partials/header', { title: 'Invoice and job card designs' }) %>
+<div class="page-head">
+  <h1>Invoice and job card designs</h1>
+  <div class="actions"><a class="btn" href="/settings">Back to settings</a></div>
+</div>
+<p class="hint">Pick the look your customers see on quotes and invoices, and the job card your mechanics work from. Every design uses your logo, business details and brand colour from Settings. Click a preview to open it full size.</p>
+<% for (const [kind, table, current, title] of [['invoice', INVOICE_TEMPLATES, settings.invoice_template, 'Invoices and quotes'], ['jobcard', JOBCARD_TEMPLATES, settings.jobcard_template, 'Job cards']]) { %>
+  <h2 id="<%= kind %>" class="mt"><%= title %> <% if (saved === kind) { %><span class="flash">Saved</span><% } %></h2>
+  <div class="tpl-grid">
+    <% for (const [key, t] of Object.entries(table)) { const active = (current || 'classic') === key; %>
+      <div class="tpl-card <%= active ? 'active' : '' %>">
+        <a class="tpl-preview" href="/settings/templates/preview?kind=<%= kind %>&t=<%= key %>" target="_blank" title="Open full size">
+          <iframe src="/settings/templates/preview?kind=<%= kind %>&t=<%= key %>" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
+        </a>
+        <div class="tpl-body">
+          <strong><%= t.name %></strong>
+          <p class="muted small"><%= t.blurb %></p>
+          <% if (active) { %><span class="pill pill-paid">In use</span><% } else { %>
+            <form method="post" action="/settings/templates"><input type="hidden" name="kind" value="<%= kind %>"><input type="hidden" name="template" value="<%= key %>"><button class="btn small primary">Use this</button></form>
+          <% } %>
+        </div>
+      </div>
+    <% } %>
+  </div>
+<% } %>
+<%- include('partials/footer') %>

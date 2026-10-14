@@ -111,7 +111,7 @@ module.exports = function (app) {
   });
 
   app.get('/settings', requireOwner, (req, res) =>
-    res.render('settings', { saved: req.query.saved === '1', welcome: req.query.welcome === '1', TIMEZONES, DEFAULT_CHECKLIST })
+    res.render('settings', { saved: req.query.saved === '1', welcome: req.query.welcome === '1', logo: req.query.logo || '', TIMEZONES, DEFAULT_CHECKLIST })
   );
 
   app.post('/settings', requireOwner, async (req, res) => {
@@ -120,7 +120,7 @@ module.exports = function (app) {
     await req.db.run(
       `UPDATE settings SET business_name = $1, abn = $2, address = $3, phone = $4, email = $5, bank_details = $6,
          invoice_terms = $7, labour_rate_cents = $8, payment_days = $9, next_invoice_no = $10, next_quote_no = $11,
-         next_job_no = $12, timezone = $13, checklist = $14`,
+         next_job_no = $12, timezone = $13, checklist = $14, brand_colour = $15, tagline = $16, website = $17, licence = $18`,
       [
         g('business_name') || 'My Workshop',
         g('abn'),
@@ -136,6 +136,10 @@ module.exports = function (app) {
         n('next_job_no', 1),
         TIMEZONES[req.body.timezone] ? req.body.timezone : 'Australia/Sydney',
         String(req.body.checklist ?? '').trim().slice(0, 10000),
+        /^#[0-9a-f]{6}$/i.test(String(req.body.brand_colour || '')) ? String(req.body.brand_colour).toLowerCase() : '#111111',
+        g('tagline').slice(0, 120),
+        g('website').slice(0, 120),
+        g('licence').slice(0, 120),
       ]
     );
     res.redirect('/settings?saved=1');

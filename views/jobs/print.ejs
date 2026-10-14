@@ -1,46 +1,90 @@
+<% const isPreview = typeof preview !== 'undefined' && preview;
+   const tpl = typeof template !== 'undefined' && template ? template : (settings.jobcard_template || 'classic');
+   const logoUrl = settings.has_logo ? '/logo' : '';
+   const contact = [settings.phone, settings.email, settings.website].filter(Boolean).join(' · ');
+   const blankRows = tpl === 'compact' ? 6 : tpl === 'notes' ? 4 : 8; %>
 <!doctype html>
 <html lang="en-AU">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Job card J<%= job.number %></title>
   <link rel="stylesheet" href="/static/print.css">
 </head>
-<body>
-  <div class="noprint"><button onclick="window.print()">Print</button> <a href="/jobs/<%= job.id %>">Back to job</a></div>
-  <header class="doc-head">
-    <div><h1><%= settings.business_name %></h1><div class="pre"><%= settings.address %></div><div><%= settings.phone %></div></div>
-    <div class="doc-title"><h2>JOB CARD</h2><div>J<%= job.number %></div><div><%= u.fmtDate(job.created_at) %></div></div>
-  </header>
-  <section class="parties">
-    <div><h3>Customer</h3><strong><%= customer.name %></strong><div><%= customer.phone %></div><div><%= customer.email %></div></div>
-    <% if (vehicle) { %>
-      <div><h3>Vehicle</h3><strong><%= u.vehicleLabel(vehicle) %></strong><div>VIN <%= vehicle.vin || '—' %></div><div>Odometer <%= job.odometer != null ? job.odometer.toLocaleString('en-AU') + ' km' : '—' %></div></div>
+<body class="tpl jobcard tpl-<%= tpl %> <%= logoUrl ? 'has-logo' : 'no-logo' %>" style="--brand: <%= settings.brand_colour || '#111111' %>">
+  <% if (!isPreview) { %><div class="noprint"><button onclick="window.print()">Print</button> <a href="/jobs/<%= job.id %>">Back to job</a></div><% } %>
+  <div class="sheet">
+    <header class="doc-head">
+      <div class="biz">
+        <% if (logoUrl) { %><img class="logo" src="<%= logoUrl %>" alt=""><% } %>
+        <div class="biz-text">
+          <h1><%= settings.business_name %></h1>
+          <div class="pre addr"><%= settings.address %></div>
+          <% if (contact) { %><div class="contact"><%= contact %></div><% } %>
+        </div>
+      </div>
+      <div class="doc-title">
+        <h2>JOB CARD</h2>
+        <div class="jobno">J<%= job.number %></div>
+        <table class="meta">
+          <tr><th>Opened</th><td><%= u.fmtDate(job.created_at) %></td></tr>
+          <% if (job.due_date) { %><tr><th>Promised</th><td><%= u.fmtDate(job.due_date) %> <%= job.due_time || '' %></td></tr><% } %>
+          <tr><th>Mechanic</th><td><%= job.mechanic_name || '—' %></td></tr>
+          <% if (job.priority === 'urgent') { %><tr><th>Priority</th><td class="urgent">URGENT</td></tr><% } %>
+        </table>
+      </div>
+    </header>
+    <section class="parties">
+      <div class="party"><h3>Customer</h3><strong><%= customer.name %></strong><div><%= customer.phone %></div><div><%= customer.email %></div><div class="pre"><%= customer.address || '' %></div></div>
+      <% if (vehicle) { %>
+        <div class="party"><h3>Vehicle</h3><strong><%= u.vehicleLabel(vehicle) %></strong><div>VIN <%= vehicle.vin || '—' %></div><div>Odometer <%= job.odometer != null ? job.odometer.toLocaleString('en-AU') + ' km' : '__________ km' %></div></div>
+      <% } %>
+    </section>
+    <section class="sec sec-work">
+      <h3>Work requested</h3>
+      <div class="box pre"><%= job.description || ' ' %></div>
+    </section>
+    <section class="sec sec-lines">
+      <h3>Labour and parts</h3>
+      <table class="items">
+        <thead><tr><th class="tick-col">Done</th><th>Description</th><th class="num">Qty</th><th class="note-col">Note</th></tr></thead>
+        <tbody>
+          <% for (const l of lines) { %><tr><td class="tick-col">☐</td><td><%= l.description %></td><td class="num"><%= l.qty %></td><td class="note-col"></td></tr><% } %>
+          <% for (let i = lines.length; i < blankRows; i++) { %><tr class="blank"><td class="tick-col">☐</td><td>&nbsp;</td><td></td><td class="note-col"></td></tr><% } %>
+        </tbody>
+      </table>
+    </section>
+    <% if (checks.length) { %>
+      <section class="sec sec-checks">
+        <h3>Inspection</h3>
+        <table class="items checks-print">
+          <tbody>
+            <% for (const c of checks) { %>
+              <% if (c.heading) { %><tr class="heading"><th colspan="3"><%= c.item %></th></tr><% } else { %>
+                <tr><td><%= c.item %></td><td class="num res <%= c.result || '' %>"><%= c.result ? CHECK_RESULTS[c.result] : '☐ OK   ☐ Attention   ☐ Urgent' %></td><td class="note-col"><%= c.note || '' %></td></tr>
+              <% } %>
+            <% } %>
+          </tbody>
+        </table>
+      </section>
     <% } %>
-  </section>
-  <h3>Work requested</h3>
-  <div class="box pre"><%= job.description || ' ' %></div>
-  <h3>Labour and parts</h3>
-  <table class="items">
-    <thead><tr><th>Description</th><th class="num">Qty</th></tr></thead>
-    <tbody>
-      <% for (const l of lines) { %><tr><td><%= l.description %></td><td class="num"><%= l.qty %></td></tr><% } %>
-      <% for (let i = lines.length; i < 10; i++) { %><tr class="blank"><td>&nbsp;</td><td></td></tr><% } %>
-    </tbody>
-  </table>
-  <% if (checks.length) { %>
-    <h3>Inspection</h3>
-    <table class="items checks-print">
-      <tbody>
-        <% for (const c of checks) { %>
-          <% if (c.heading) { %><tr class="heading"><th colspan="2"><%= c.item %></th></tr><% } else { %>
-            <tr><td><%= c.item %></td><td class="num"><%= c.result ? CHECK_RESULTS[c.result] : '☐ OK  ☐ Attn  ☐ Urgent' %></td></tr>
-          <% } %>
-        <% } %>
-      </tbody>
-    </table>
-  <% } %>
-  <h3>Mechanic's notes</h3>
-  <div class="box pre tall"><%= job.tech_notes || ' ' %></div>
-  <div class="signoff"><div>Mechanic: <%= job.mechanic_name || '____________________' %></div><div>Time: ________ hrs</div></div>
+    <section class="sec sec-notes">
+      <h3>Mechanic's notes</h3>
+      <div class="box pre tall lined"><%= job.tech_notes || ' ' %></div>
+    </section>
+    <section class="sec sec-time">
+      <h3>Time on the job</h3>
+      <table class="items timegrid">
+        <thead><tr><th>Mechanic</th><th>Date</th><th>On</th><th>Off</th><th>On</th><th>Off</th><th class="num">Hours</th></tr></thead>
+        <tbody><% for (let i = 0; i < 4; i++) { %><tr class="blank"><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td></tr><% } %></tbody>
+      </table>
+    </section>
+    <footer class="signoff">
+      <div>Mechanic: <span class="line"><%= job.mechanic_name || '' %></span></div>
+      <div>Hours: <span class="line"></span></div>
+      <div>Checked by: <span class="line"></span></div>
+      <div>Date: <span class="line"></span></div>
+    </footer>
+  </div>
 </body>
 </html>

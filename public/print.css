@@ -1,39 +1,247 @@
-@page { size: A4; margin: 14mm; }
+/* Printable invoices, quotes and job cards. One markup, many designs: body.tpl-<name>. */
+@page { size: A4; margin: 12mm; }
 * { box-sizing: border-box; }
-body { font: 11pt/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: #111; max-width: 800px; margin: 0 auto; padding: 1rem; }
-h1 { font-size: 18pt; margin: 0 0 .2rem; }
+:root { --brand: #111111; --ink: #111; --mute: #666; --rule: #ddd; --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+body { font: 10.5pt/1.4 var(--font); color: var(--ink); margin: 0; padding: 1rem; background: #fff; }
+.sheet { max-width: 800px; margin: 0 auto; }
+h1 { font-size: 17pt; margin: 0 0 .15rem; line-height: 1.15; }
 h2 { font-size: 16pt; margin: 0 0 .4rem; letter-spacing: .05em; }
-h3 { font-size: 9pt; text-transform: uppercase; color: #555; margin: 1rem 0 .3rem; letter-spacing: .04em; }
+h3 { font-size: 8.5pt; text-transform: uppercase; color: var(--mute); margin: 1rem 0 .3rem; letter-spacing: .05em; }
 .pre { white-space: pre-line; }
-.noprint { background: #fff4d6; padding: .5rem; margin-bottom: 1rem; border-radius: 6px; }
+.noprint { background: #fff4d6; padding: .5rem; margin: 0 auto 1rem; border-radius: 6px; max-width: 800px; }
 .noprint button { font: inherit; font-weight: 600; padding: .4rem .8rem; cursor: pointer; }
-.doc-head { display: flex; justify-content: space-between; gap: 2rem; border-bottom: 2px solid #111; padding-bottom: .75rem; }
-.doc-title { text-align: right; }
+.doc-head { display: flex; justify-content: space-between; gap: 2rem; border-bottom: 2px solid var(--ink); padding-bottom: .75rem; align-items: flex-start; }
+.biz { display: flex; gap: 1rem; align-items: flex-start; min-width: 0; }
+.logo { max-height: 64px; max-width: 220px; object-fit: contain; flex: none; }
+.tagline { color: var(--mute); font-style: italic; margin-bottom: .15rem; }
+.contact, .ids { color: #333; }
+.doc-title { text-align: right; flex: none; }
 .meta { margin-left: auto; border-collapse: collapse; }
-.meta th { text-align: left; font-weight: normal; color: #555; padding-right: 1rem; }
-.meta td { text-align: right; font-weight: 600; }
+.meta th { text-align: left; font-weight: normal; color: var(--mute); padding: 0 1rem .1rem 0; }
+.meta td { text-align: right; font-weight: 600; padding: 0 0 .1rem; }
+.meta .meta-total th, .meta .meta-total td { font-weight: 700; padding-top: .3rem; }
+.jobno { font-size: 20pt; font-weight: 800; letter-spacing: -.02em; }
 .parties { display: flex; gap: 3rem; margin: .5rem 0 1rem; }
+.party h3 { margin-top: .6rem; }
 .box { border: 1px solid #bbb; padding: .5rem .75rem; min-height: 3rem; margin-bottom: .5rem; }
-.box.tall { min-height: 9rem; }
-.items { width: 100%; border-collapse: collapse; margin-top: .5rem; }
-.items th { text-align: left; border-bottom: 1.5px solid #111; padding: .35rem .3rem; font-size: 9pt; text-transform: uppercase; color: #333; }
-.items td { border-bottom: 1px solid #ddd; padding: .35rem .3rem; }
-.items tr.blank td { height: 1.8rem; }
-.num { text-align: right !important; white-space: nowrap; }
-.sum { margin: .75rem 0 0 auto; border-collapse: collapse; min-width: 280px; }
+.box.tall { min-height: 8rem; }
+.items { width: 100%; border-collapse: collapse; margin-top: .4rem; }
+.items th { text-align: left; border-bottom: 1.5px solid var(--ink); padding: .35rem .3rem; font-size: 8.5pt; text-transform: uppercase; color: #333; }
+.items td { border-bottom: 1px solid var(--rule); padding: .35rem .3rem; vertical-align: top; }
+.items tr.blank td { height: 1.7rem; }
+.num { text-align: right !important; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tick-col { width: 2.2rem; text-align: center !important; font-size: 12pt; }
+.note-col { width: 26%; }
+.sum-wrap { display: flex; justify-content: flex-end; }
+.sum { margin: .75rem 0 0; border-collapse: collapse; min-width: 280px; }
 .sum th { text-align: left; font-weight: normal; padding: .2rem 1rem .2rem 0; }
-.sum td { text-align: right; padding: .2rem 0; }
-.sum .grand th, .sum .grand td { font-weight: 700; font-size: 12pt; border-top: 1.5px solid #111; }
+.sum td { text-align: right; padding: .2rem 0; font-variant-numeric: tabular-nums; }
+.sum .grand th, .sum .grand td { font-weight: 700; font-size: 12pt; border-top: 1.5px solid var(--ink); }
 .doc-foot { margin-top: 2rem; display: flex; justify-content: space-between; gap: 2rem; }
-.terms { color: #444; font-size: 9.5pt; }
-.signoff { display: flex; justify-content: space-between; margin-top: 2rem; }
-@media print { .noprint { display: none; } body { padding: 0; } }
+.terms { color: #444; font-size: 9pt; }
+.signoff { display: flex; justify-content: space-between; gap: 1rem; margin-top: 1.5rem; flex-wrap: wrap; }
+.signoff .line { display: inline-block; min-width: 9rem; border-bottom: 1px solid var(--ink); padding: 0 .3rem; }
+.sec-time { display: none; }
+.timegrid td { height: 1.6rem; }
+td.urgent { color: #b3261e; font-weight: 700; }
+@media print { .noprint { display: none; } body { padding: 0; } .sheet { max-width: none; } }
 
 /* Inspection report */
-.checks-print tr.heading th { text-align: left; background: #eee; font-size: .8rem; text-transform: uppercase; padding: .3rem .4rem; }
+.checks-print tr.heading th { text-align: left; background: #eee; font-size: 8.5pt; text-transform: uppercase; padding: .3rem .4rem; }
 .checks-print td.ok { color: #2e7d32; }
 .checks-print td.attention, td.attention { color: #8a5a00; font-weight: 700; }
 .checks-print td.urgent, td.urgent { color: #b3261e; font-weight: 700; }
 .checks-print td.na { color: #888; }
 .muted { color: #666; }
 .small { font-size: .85em; }
+
+/* ---------- Invoice and quote designs ---------- */
+
+/* Colour band: brand band across the top, business name reversed out. */
+.tpl-band .doc-head { background: var(--brand); color: #fff; border: 0; padding: 1rem 1.25rem; border-radius: 6px; }
+.tpl-band .doc-head h1, .tpl-band .doc-head h2 { color: #fff; }
+.tpl-band .doc-head .tagline, .tpl-band .doc-head .contact, .tpl-band .doc-head .ids, .tpl-band .meta th { color: rgba(255,255,255,.8); }
+.tpl-band .logo { background: #fff; padding: .3rem; border-radius: 4px; }
+.tpl-band .items th { border-bottom-color: var(--brand); color: var(--brand); }
+.tpl-band .sum .grand th, .tpl-band .sum .grand td { border-top-color: var(--brand); }
+.tpl-band .sum .grand.due td, .tpl-band .meta-total td { color: var(--brand); }
+.tpl-band h3 { color: var(--brand); }
+
+/* Minimal: hairlines, light labels, roomy. */
+.tpl-minimal body, .tpl-minimal { --rule: #eee; }
+.tpl-minimal .doc-head { border-bottom: 1px solid #ddd; padding-bottom: 1.25rem; }
+.tpl-minimal h1 { font-weight: 500; font-size: 15pt; }
+.tpl-minimal h2 { font-weight: 400; letter-spacing: .25em; font-size: 11pt; color: var(--mute); }
+.tpl-minimal .meta td { font-weight: 500; }
+.tpl-minimal .parties { margin: 1.25rem 0 1.5rem; }
+.tpl-minimal .items th { border-bottom: 1px solid #ccc; font-weight: 500; color: #888; }
+.tpl-minimal .items td { padding: .5rem .3rem; }
+.tpl-minimal .sum .grand th, .tpl-minimal .sum .grand td { border-top: 1px solid var(--ink); font-size: 11pt; }
+.tpl-minimal .box { border: 0; background: #f6f6f6; }
+.tpl-minimal .doc-foot { margin-top: 3rem; color: #777; }
+
+/* Modern: brand stripe down the left, a total box the eye lands on. */
+.tpl-modern .sheet { border-left: 6px solid var(--brand); padding-left: 1.25rem; }
+.tpl-modern .doc-head { border: 0; align-items: center; }
+.tpl-modern h2 { color: var(--brand); font-weight: 800; letter-spacing: -.01em; font-size: 20pt; }
+.tpl-modern .meta .meta-total { display: none; }
+.tpl-modern .items th { border-bottom: 2px solid var(--brand); }
+.tpl-modern .items td { border-bottom-color: #eee; }
+.tpl-modern .sum { background: var(--brand); color: #fff; padding: .6rem 1rem; border-radius: 6px; min-width: 300px; }
+.tpl-modern .sum th { color: rgba(255,255,255,.85); }
+.tpl-modern .sum .grand th, .tpl-modern .sum .grand td { border-top-color: rgba(255,255,255,.5); }
+.tpl-modern .party h3 { color: var(--brand); }
+.tpl-modern .box { border: 0; border-left: 3px solid var(--brand); background: #f7f7f7; }
+
+/* Boxed: every section in its own frame. */
+.tpl-boxed .doc-head { border: 1.5px solid var(--ink); padding: .75rem 1rem; }
+.tpl-boxed .parties { gap: 1rem; }
+.tpl-boxed .party { flex: 1; border: 1.5px solid var(--ink); padding: .5rem .75rem; }
+.tpl-boxed .party h3 { margin-top: 0; }
+.tpl-boxed .items { border: 1.5px solid var(--ink); }
+.tpl-boxed .items th { background: #f0f0f0; border-bottom: 1.5px solid var(--ink); }
+.tpl-boxed .items td, .tpl-boxed .items th { border-right: 1px solid var(--rule); }
+.tpl-boxed .items td:last-child, .tpl-boxed .items th:last-child { border-right: 0; }
+.tpl-boxed .sum { border: 1.5px solid var(--ink); padding: .4rem .75rem; }
+.tpl-boxed .box { border: 1.5px solid var(--ink); }
+.tpl-boxed .doc-foot > div { border: 1px solid #bbb; padding: .5rem .75rem; flex: 1; }
+
+/* Compact: fits a long invoice on one page. */
+.tpl-compact { font-size: 9pt; }
+.tpl-compact h1 { font-size: 13pt; }
+.tpl-compact h2 { font-size: 12pt; }
+.tpl-compact .logo { max-height: 44px; }
+.tpl-compact .doc-head { padding-bottom: .4rem; }
+.tpl-compact .parties { margin: .3rem 0 .5rem; }
+.tpl-compact .party h3 { margin-top: .3rem; }
+.tpl-compact .items td, .tpl-compact .items th { padding: .15rem .3rem; }
+.tpl-compact .sum th, .tpl-compact .sum td { padding: .1rem 1rem .1rem 0; }
+.tpl-compact .sum .grand th, .tpl-compact .sum .grand td { font-size: 10.5pt; }
+.tpl-compact .doc-foot { margin-top: 1rem; }
+.tpl-compact .box { min-height: 0; padding: .3rem .5rem; }
+
+/* Letterhead: centred stationery, serif. */
+.tpl-letterhead { font-family: Georgia, "Times New Roman", serif; }
+.tpl-letterhead .doc-head { flex-direction: column; align-items: center; text-align: center; border-bottom: 3px double var(--ink); gap: .75rem; }
+.tpl-letterhead .biz { flex-direction: column; align-items: center; text-align: center; }
+.tpl-letterhead .logo { max-height: 80px; }
+.tpl-letterhead h1 { font-size: 20pt; letter-spacing: .04em; }
+.tpl-letterhead .doc-title { text-align: center; }
+.tpl-letterhead h2 { font-size: 13pt; letter-spacing: .3em; font-weight: 400; margin-top: .5rem; }
+.tpl-letterhead .meta { margin: 0 auto; }
+.tpl-letterhead .meta th { padding-right: .5rem; }
+.tpl-letterhead .meta td { text-align: left; }
+.tpl-letterhead .items th { font-family: var(--font); }
+.tpl-letterhead .items th { border-bottom: 1px solid var(--ink); }
+.tpl-letterhead .sum .grand th, .tpl-letterhead .sum .grand td { border-top: 3px double var(--ink); }
+.tpl-letterhead .doc-foot { justify-content: center; text-align: center; flex-direction: column; align-items: center; border-top: 1px solid #ccc; padding-top: .75rem; }
+
+/* Ledger: ruled rows and a stamp. */
+.tpl-ledger .items { border-top: 2px solid var(--ink); border-bottom: 2px solid var(--ink); }
+.tpl-ledger .items td { border-bottom: 1px solid #bbb; font-variant-numeric: tabular-nums; }
+.tpl-ledger .items td.num, .tpl-ledger .sum td, .tpl-ledger .meta td { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: .95em; }
+.tpl-ledger .items th { background: #f2f2f2; border-bottom: 1px solid var(--ink); }
+.tpl-ledger h2 { display: inline-block; border: 2.5px solid var(--brand); color: var(--brand); padding: .15rem .6rem; transform: rotate(-2deg); letter-spacing: .15em; font-weight: 800; margin-bottom: .6rem; }
+.tpl-ledger .doc-head { border-bottom: 1px solid var(--ink); }
+.tpl-ledger .sum .grand th, .tpl-ledger .sum .grand td { border-top: 2px solid var(--ink); border-bottom: 1px solid var(--ink); }
+.tpl-ledger .box { border: 1px dashed #999; }
+
+/* Contrast: dark title block on the right. */
+.tpl-contrast .doc-head { border: 0; align-items: stretch; gap: 1.5rem; }
+.tpl-contrast .biz { flex: 1; padding-top: .5rem; }
+.tpl-contrast .doc-title { background: var(--brand); color: #fff; padding: 1rem 1.25rem; border-radius: 4px; min-width: 240px; }
+.tpl-contrast .doc-title h2 { color: #fff; font-weight: 800; }
+.tpl-contrast .meta th { color: rgba(255,255,255,.75); }
+.tpl-contrast .meta-total th, .tpl-contrast .meta-total td { border-top: 1px solid rgba(255,255,255,.4); font-size: 12pt; }
+.tpl-contrast .parties { border-top: 2px solid var(--brand); padding-top: .25rem; margin-top: 1rem; }
+.tpl-contrast .items th { border-bottom-color: var(--brand); }
+.tpl-contrast .sum .grand th, .tpl-contrast .sum .grand td { border-top-color: var(--brand); color: var(--brand); font-size: 13pt; }
+.tpl-contrast h3 { color: var(--brand); }
+
+/* Workshop: heavy bars, condensed capitals. */
+.tpl-workshop { font-family: "Arial Narrow", "Roboto Condensed", "Helvetica Neue", Arial, sans-serif; }
+.tpl-workshop .doc-head { border-bottom: 6px solid var(--ink); }
+.tpl-workshop h1 { text-transform: uppercase; letter-spacing: .06em; font-weight: 900; font-size: 19pt; }
+.tpl-workshop h2 { font-weight: 900; font-size: 22pt; letter-spacing: .02em; }
+.tpl-workshop h3 { color: var(--ink); background: var(--ink); color: #fff; display: inline-block; padding: .1rem .5rem; font-weight: 800; }
+.tpl-workshop .items th { background: var(--ink); color: #fff; border: 0; font-weight: 800; }
+.tpl-workshop .items td { border-bottom: 1px solid #999; }
+.tpl-workshop .sum .grand th, .tpl-workshop .sum .grand td { border-top: 4px solid var(--ink); font-size: 13pt; text-transform: uppercase; }
+.tpl-workshop .box { border: 2px solid var(--ink); }
+.tpl-workshop .meta-total td { color: var(--brand); }
+.tpl-workshop .doc-foot { border-top: 2px solid var(--ink); padding-top: .75rem; }
+
+/* ---------- Job card designs ---------- */
+.jobcard .sheet { display: flex; flex-direction: column; }
+.jobcard .doc-head { order: 0; } .jobcard .parties { order: 1; } .jobcard .sec-work { order: 2; } .jobcard .sec-lines { order: 3; }
+.jobcard .sec-checks { order: 4; } .jobcard .sec-notes { order: 5; } .jobcard .sec-time { order: 6; } .jobcard .signoff { order: 7; }
+.jobcard .note-col { display: none; }
+.jobcard .checks-print .note-col { display: table-cell; }
+.jobcard .checks-print .res { white-space: nowrap; width: 1%; }
+
+/* Floor copy: big and readable from the bay. */
+.tpl-floor { font-size: 12.5pt; }
+.tpl-floor .jobno { font-size: 34pt; }
+.tpl-floor h2 { font-size: 13pt; }
+.tpl-floor .doc-head { border-bottom: 4px solid var(--ink); }
+.tpl-floor .party strong { font-size: 14pt; }
+.tpl-floor .box { font-size: 13pt; min-height: 4rem; }
+.tpl-floor .items td { padding: .5rem .3rem; }
+.tpl-floor .items tr.blank td { height: 2.2rem; }
+.tpl-floor h3 { font-size: 10pt; color: var(--ink); }
+.tpl-floor .tick-col { font-size: 15pt; }
+
+/* Split: details down the left, work on the right. */
+.tpl-split .sheet { display: grid; grid-template-columns: 240px 1fr; gap: 0 1.5rem; }
+.tpl-split .doc-head { grid-column: 1 / -1; }
+.tpl-split .parties { flex-direction: column; gap: .5rem; grid-column: 1; grid-row: 2 / span 5; align-self: start; border-right: 1px solid #ccc; padding-right: 1rem; }
+.tpl-split .sec-work, .tpl-split .sec-lines, .tpl-split .sec-checks, .tpl-split .sec-notes, .tpl-split .sec-time { grid-column: 2; }
+.tpl-split .signoff { grid-column: 1 / -1; }
+.tpl-split .box.tall { min-height: 6rem; }
+
+/* Checklist: tick boxes and a note column everywhere. */
+.tpl-checklist .note-col { display: table-cell; }
+.tpl-checklist .items th.note-col, .tpl-checklist .items td.note-col { border-left: 1px solid var(--rule); }
+.tpl-checklist .items tr.blank td { height: 1.9rem; }
+.tpl-checklist .checks-print .res { font-size: 11pt; }
+.tpl-checklist .items th { background: #f3f3f3; }
+.tpl-checklist .box { border-style: dashed; }
+
+/* Compact job card. */
+.tpl-compact.jobcard .items tr.blank td { height: 1.3rem; }
+.tpl-compact.jobcard .box.tall { min-height: 5rem; }
+.tpl-compact.jobcard .jobno { font-size: 15pt; }
+.tpl-compact.jobcard h3 { margin: .5rem 0 .2rem; }
+
+/* Boxed job card with a sign-off grid. */
+.tpl-boxed.jobcard .signoff { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border: 1.5px solid var(--ink); margin-top: 1rem; }
+.tpl-boxed.jobcard .signoff > div { padding: .5rem .6rem 1.4rem; border-right: 1.5px solid var(--ink); font-size: 8.5pt; text-transform: uppercase; color: var(--mute); }
+.tpl-boxed.jobcard .signoff > div:last-child { border-right: 0; }
+.tpl-boxed.jobcard .signoff .line { display: block; border: 0; min-width: 0; margin-top: .4rem; color: var(--ink); font-size: 11pt; text-transform: none; }
+
+/* Time card: clock-on and clock-off grid. */
+.tpl-timecard .sec-time { display: block; }
+.tpl-timecard .timegrid th { background: var(--brand); color: #fff; border: 0; }
+.tpl-timecard .timegrid td { border: 1px solid #bbb; }
+.tpl-timecard .box.tall { min-height: 5.5rem; }
+.tpl-timecard .signoff div:nth-child(2) { display: none; }
+
+/* Notes first: a big ruled notes area for diagnosis. */
+.tpl-notes .sec-notes { order: 2; }
+.tpl-notes .sec-work { order: 3; }
+.tpl-notes .box.lined { min-height: 13rem; background: repeating-linear-gradient(#fff 0 1.55rem, #d8d8d8 1.55rem calc(1.55rem + 1px)); line-height: 1.55rem; padding-top: 0; padding-bottom: 0; }
+.tpl-notes .sec-notes h3 { color: var(--brand); }
+
+/* Colour band job card. */
+.tpl-band.jobcard .jobno { color: #fff; }
+.tpl-band.jobcard .meta td { color: #fff; }
+.tpl-band.jobcard td.urgent { color: #ffd0d0; }
+.tpl-band.jobcard .items th { color: var(--ink); border-bottom-color: var(--brand); }
+.tpl-band.jobcard .checks-print tr.heading th { background: var(--brand); color: #fff; }
+
+/* Inspection first. */
+.tpl-inspection .sec-checks { order: 2; }
+.tpl-inspection .sec-work { order: 3; }
+.tpl-inspection .checks-print tr.heading th { background: var(--ink); color: #fff; }
+.tpl-inspection .checks-print .res { font-size: 11pt; }
+.tpl-inspection .box.tall { min-height: 5rem; }

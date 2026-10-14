@@ -422,3 +422,19 @@ label.check input { width: auto; min-height: 0; margin: 0; }
 .bar span { display: block; height: 100%; background: var(--lime-deep); border-radius: 999px; }
 form.inline { display: inline; }
 @media print { .steps-card { padding: 0; } .step input { display: none; } .page-head .actions, .hint, .tabs { display: none; } }
+
+/* Template picker */
+.tpl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+.tpl-card { background: var(--card); border-radius: var(--r-lg); overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 0 0 2px transparent; }
+.tpl-card.active { box-shadow: 0 0 0 3px var(--lime); }
+.tpl-preview { display: block; position: relative; height: 300px; overflow: hidden; background: #ddd; }
+.tpl-preview iframe { width: 840px; height: 1190px; border: 0; transform: scale(.272); transform-origin: 0 0; pointer-events: none; background: #fff; position: absolute; left: 50%; margin-left: -114px; top: 8px; }
+.tpl-body { padding: .75rem .9rem .9rem; display: flex; flex-direction: column; gap: .3rem; flex: 1; }
+.tpl-body p { margin: 0; flex: 1; }
+.tpl-body form { margin: 0; }
+.tpl-body .pill { align-self: flex-start; }
+.logo-row { display: flex; gap: 1.5rem; align-items: flex-start; flex-wrap: wrap; }
+.logo-box { width: 220px; height: 110px; border-radius: var(--r-md); background: var(--tile-2); display: grid; place-items: center; padding: .5rem; flex: none; }
+.logo-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
+input.colour { padding: .15rem; height: 2.6rem; width: 5rem; }
+h2 .flash { font-size: .8rem; padding: .2rem .7rem; margin-left: .5rem; vertical-align: middle; }

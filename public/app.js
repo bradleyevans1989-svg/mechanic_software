@@ -190,3 +190,27 @@ document.querySelectorAll('[data-lines]').forEach((box) => {
   kind.addEventListener('change', sync);
   sync();
 })();
+
+// Logo upload: shrink the picture in the browser and send it as a data URL.
+(() => {
+  const file = document.querySelector('[data-logo-file]');
+  if (!file) return;
+  const hidden = document.querySelector('[data-logo-data]');
+  const submit = document.querySelector('[data-logo-submit]');
+  file.addEventListener('change', () => {
+    const f = file.files && file.files[0];
+    if (!f) return;
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, 900 / img.width, 360 / img.height);
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * scale);
+      c.height = Math.round(img.height * scale);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      hidden.value = c.toDataURL('image/png');
+      submit.disabled = false;
+      URL.revokeObjectURL(img.src);
+    };
+    img.src = URL.createObjectURL(f);
+  });
+})();

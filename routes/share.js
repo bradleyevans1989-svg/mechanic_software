@@ -63,6 +63,12 @@ module.exports = {
       });
     });
 
+    app.get('/share/:token/logo', async (req, res) => {
+      const found = await load(req);
+      if (!found) return res.status(404).end();
+      await require('./templates').serveSharedLogo(found.db, res);
+    });
+
     // The customer accepts a quote from their link.
     app.post('/share/:token/accept', async (req, res) => {
       const found = await load(req);
