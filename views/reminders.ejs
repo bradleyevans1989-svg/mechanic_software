@@ -1,0 +1,50 @@
+<%- include('partials/header', { title: 'Reminders' }) %>
+<div class="page-head">
+  <div>
+    <h1>Service and rego reminders</h1>
+    <p class="muted">Vehicles due in the next <%= ahead %> days, plus anything overdue. Ring, text or email the owner, then mark it done.</p>
+  </div>
+</div>
+<% if (done) { %><p class="flash">Logged.</p><% } %>
+<nav class="tabs">
+  <% for (const k of [['all', 'All'], ['service', 'Service'], ['rego', 'Rego']]) { %>
+    <a href="/reminders?kind=<%= k[0] %>&days=<%= ahead %>" class="<%= kind === k[0] ? 'active' : '' %>"><%= k[1] %></a>
+  <% } %>
+  <span class="muted" style="margin-left:auto">Look ahead:</span>
+  <% for (const d of [14, 30, 60, 90]) { %>
+    <a href="/reminders?kind=<%= kind %>&days=<%= d %>" class="<%= ahead === d ? 'active' : '' %>"><%= d %> days</a>
+  <% } %>
+</nav>
+<% if (!items.length) { %><p class="card muted">Nothing due. Vehicles get here from their next service date, service intervals, or rego due date.</p><% } %>
+<% for (const it of items) { const v = it.vehicle; %>
+  <section class="card reminder <%= it.done ? 'done' : '' %> <%= it.overdue ? 'overdue' : '' %>">
+    <div class="reminder-head">
+      <div>
+        <strong><a href="/vehicles/<%= v.id %>"><%= u.vehicleLabel(v) %></a></strong>
+        <%- include('partials/pill', { state: it.overdue ? 'overdue' : 'unpaid', label: (it.kind === 'rego' ? 'Rego ' : 'Service ') + (it.overdue ? 'overdue ' : 'due ') + u.fmtDate(it.date) }) %>
+        <% if (it.kind === 'service' && v.next_service_km) { %><span class="muted small">or at <%= v.next_service_km.toLocaleString('en-AU') %> km</span><% } %>
+        <div class="muted">
+          <a href="/customers/<%= v.customer_id %>"><%= v.customer_name %></a>
+          <% if (v.customer_phone) { %> · <a href="tel:<%= v.customer_phone %>"><%= v.customer_phone %></a> · <a href="sms:<%= v.customer_phone %>?&body=<%= encodeURIComponent(message(it)) %>">Text</a><% } %>
+          <% if (v.customer_email) { %> · <a href="mailto:<%= v.customer_email %>?subject=<%= encodeURIComponent((it.kind === 'rego' ? 'Rego' : 'Service') + ' due: ' + u.vehicleLabel(v)) %>&body=<%= encodeURIComponent(message(it)) %>">Email</a><% } %>
+        </div>
+        <% if (it.reminded) { %><div class="small <%= it.done ? 'ok' : 'muted' %>">Last reminded <%= u.fmtDateTime(it.reminded, settings.timezone) %></div><% } %>
+      </div>
+      <div class="row-actions">
+        <a class="btn small" href="/bookings/new?vehicle_id=<%= v.id %>">Book in</a>
+        <form method="post" action="/reminders/<%= v.id %>" class="inline-form">
+          <input type="hidden" name="kind" value="<%= it.kind %>">
+          <input type="hidden" name="days" value="<%= ahead %>">
+          <input type="hidden" name="filter" value="<%= kind %>">
+          <select name="method" aria-label="How">
+            <% for (const [k, l] of Object.entries(METHODS)) { %><option value="<%= k %>"><%= l %></option><% } %>
+          </select>
+          <input name="note" placeholder="Note (optional)" aria-label="Note">
+          <button class="btn small primary">Mark done</button>
+        </form>
+      </div>
+    </div>
+    <details class="small"><summary>Message to send</summary><p class="note"><%= message(it) %></p></details>
+  </section>
+<% } %>
+<%- include('partials/footer') %>

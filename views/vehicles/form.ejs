@@ -13,7 +13,10 @@
     <label>Rego due <input name="rego_due" type="date" value="<%= vehicle.rego_due || '' %>"></label>
     <label>Next service date <input name="next_service_date" type="date" value="<%= vehicle.next_service_date || '' %>"></label>
     <label>Next service (km) <input name="next_service_km" inputmode="numeric" value="<%= vehicle.next_service_km ?? '' %>"></label>
+    <label>Service every (months) <input name="service_interval_months" inputmode="numeric" value="<%= vehicle.service_interval_months || '' %>" placeholder="6"></label>
+    <label>Service every (km) <input name="service_interval_km" inputmode="numeric" value="<%= vehicle.service_interval_km || '' %>" placeholder="10000"></label>
   </div>
+  <p class="hint">With intervals set, invoicing a job marked "counts as a service" works out the next service due automatically.</p>
   <label>Notes <textarea name="notes" rows="2"><%= vehicle.notes || '' %></textarea></label>
   <div class="form-actions">
     <button class="btn primary">Save</button>

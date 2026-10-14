@@ -216,3 +216,11 @@ tr.urgent td:first-child { border-left: 3px solid var(--danger); }
 .board .tile.urgent { border-left: 3px solid var(--danger); }
 .board .desc { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .board .meta { display: flex; gap: .5rem; flex-wrap: wrap; font-size: .8rem; color: var(--muted); margin-top: .25rem; }
+
+/* Reminders */
+.reminder-head { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: flex-start; }
+.reminder.done { opacity: .6; }
+.reminder.overdue { border-left: 3px solid var(--danger); }
+.reminder .inline-form select, .reminder .inline-form input { min-height: 2rem; padding: .3rem .5rem; font-size: .9rem; width: auto; }
+.ok { color: var(--ok); }
+.tabs .muted { align-self: center; }

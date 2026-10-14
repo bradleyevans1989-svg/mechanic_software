@@ -175,3 +175,38 @@ test('reports: aged debts, BAS quarters, by mechanic; customer statement', async
   assert.match(st.text, /Total owing<\/th><td>\$208\.00/);
   assert.equal((await other.get(`/customers/${customer.id}/statement`)).status, 404);
 });
+
+test('reminders: due and overdue service and rego, with a contact log', async () => {
+  const ws = await t.signup('Remind Co', 'remind@example.com');
+  await ws.post('/customers', { name: 'Due Soon', phone: '0411 222 333', email: 'due@example.com', v_rego: 'DUE001', v_make: 'Mazda', v_model: '3' });
+  const v = await ws.db.get(`SELECT * FROM vehicles WHERE rego = 'DUE001'`);
+  const today = (await ws.get('/')).text.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+  const iso = `${today[3]}-${today[2]}-${today[1]}`;
+  const { addDays } = require('../lib/util');
+  // Edit via the form: intervals and dates.
+  let res = await ws.post(`/vehicles/${v.id}`, {
+    rego: 'DUE001', make: 'Mazda', model: '3', next_service_date: addDays(iso, 10), rego_due: addDays(iso, -5),
+    service_interval_months: '6', service_interval_km: '10000',
+  });
+  assert.equal(res.status, 302);
+  const saved = await ws.db.get('SELECT * FROM vehicles WHERE id = $1', [v.id]);
+  assert.equal(saved.service_interval_months, 6);
+
+  let page = await ws.get('/reminders');
+  assert.match(page.text, /Rego overdue/);
+  assert.match(page.text, /Service due/);
+  assert.match(page.text, /Hi Due, your DUE001 · Mazda 3 is due for rego/);
+  page = await ws.get('/reminders?kind=rego&days=14');
+  assert.match(page.text, /Rego overdue/);
+  assert.doesNotMatch(page.text, /Service due/);
+
+  res = await ws.post(`/reminders/${v.id}`, { kind: 'rego', method: 'sms', note: 'Sent text', days: '30', filter: 'all' });
+  assert.equal(res.status, 302);
+  const log = await ws.db.all('SELECT * FROM reminder_log');
+  assert.equal(log.length, 1);
+  assert.equal(log[0].method, 'sms');
+  page = await ws.get('/reminders');
+  assert.match(page.text, /class="card reminder done overdue"/);
+  assert.match((await ws.get(`/vehicles/${v.id}`)).text, /Rego reminder by sms[^<]*Sent text/);
+  assert.equal((await other.post(`/reminders/${v.id}`, { kind: 'rego' })).status, 404);
+});

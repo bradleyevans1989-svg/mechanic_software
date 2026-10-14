@@ -19,7 +19,15 @@
     <div><dt>Odometer</dt><dd><%= vehicle.odometer != null ? vehicle.odometer.toLocaleString('en-AU') + ' km' : '—' %></dd></div>
     <div><dt>Rego due</dt><dd><%= u.fmtDate(vehicle.rego_due) || '—' %></dd></div>
     <div><dt>Next service</dt><dd><%= u.fmtDate(vehicle.next_service_date) || '—' %><%= vehicle.next_service_km ? ' or ' + vehicle.next_service_km.toLocaleString('en-AU') + ' km' : '' %></dd></div>
+    <div><dt>Last service</dt><dd><%= u.fmtDate(vehicle.last_service_date) || '—' %></dd></div>
+    <div><dt>Service interval</dt><dd><%= vehicle.service_interval_months ? 'every ' + vehicle.service_interval_months + ' months' : '' %><%= vehicle.service_interval_months && vehicle.service_interval_km ? ' or ' : '' %><%= vehicle.service_interval_km ? vehicle.service_interval_km.toLocaleString('en-AU') + ' km' : '' %><%= !vehicle.service_interval_months && !vehicle.service_interval_km ? '—' : '' %></dd></div>
   </dl>
+  <% if (reminders.length) { %>
+    <h3>Reminders sent</h3>
+    <ul class="compact">
+      <% for (const r of reminders) { %><li><%= u.fmtDateTime(r.at, settings.timezone) %> · <%= r.kind === 'rego' ? 'Rego' : 'Service' %> reminder by <%= r.method || 'phone' %><%= r.user_name ? ' (' + r.user_name + ')' : '' %><%= r.note ? ' — ' + r.note : '' %></li><% } %>
+    </ul>
+  <% } %>
   <% if (vehicle.notes) { %><p class="note"><%= vehicle.notes %></p><% } %>
 </section>
 

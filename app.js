@@ -81,6 +81,7 @@ function createApp(store, { autoSync = true } = {}) {
   require('./routes/documents')(app, ctx);
   require('./routes/integrations')(app, ctx);
   require('./routes/pricelist')(app, ctx);
+  require('./routes/reminders')(app, ctx);
 
   app.use((req, res) => res.status(404).render('message', { title: 'Not found', message: 'That page does not exist.' }));
 

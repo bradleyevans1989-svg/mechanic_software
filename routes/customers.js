@@ -28,6 +28,8 @@ function vehicleFrom(body, prefix = '') {
     rego_due: date('rego_due'),
     next_service_date: date('next_service_date'),
     next_service_km: parseIntOrNull(body[prefix + 'next_service_km']),
+    service_interval_months: Math.min(Math.max(parseIntOrNull(body[prefix + 'service_interval_months']) ?? 0, 0), 120),
+    service_interval_km: Math.min(Math.max(parseIntOrNull(body[prefix + 'service_interval_km']) ?? 0, 0), 500000),
     notes: g('notes', 5000),
   };
 }
@@ -36,7 +38,7 @@ function hasVehicle(v) {
   return Boolean(v.rego || v.make || v.model || v.vin);
 }
 
-const VEHICLE_COLS = ['rego', 'make', 'model', 'year', 'vin', 'colour', 'odometer', 'rego_due', 'next_service_date', 'next_service_km', 'notes'];
+const VEHICLE_COLS = ['rego', 'make', 'model', 'year', 'vin', 'colour', 'odometer', 'rego_due', 'next_service_date', 'next_service_km', 'service_interval_months', 'service_interval_km', 'notes'];
 
 function insertVehicle(db, customerId, v, tz) {
   return db.get(
@@ -183,7 +185,11 @@ module.exports = function (app, { xero }) {
       ? await req.db.all('SELECT * FROM line_items WHERE document_id = ANY($1) ORDER BY sort, id', [invoiced.map((d) => d.id)])
       : [];
     const history = invoiced.map((d) => ({ doc: d, lines: lines.filter((l) => l.document_id === d.id) }));
-    res.render('vehicles/show', { vehicle, customer, jobs, docs, history });
+    const reminders = await req.db.all(
+      `SELECT r.*, u.name AS user_name FROM reminder_log r LEFT JOIN users u ON u.id = r.user_id WHERE r.vehicle_id = $1 ORDER BY r.at DESC LIMIT 20`,
+      [vehicle.id]
+    );
+    res.render('vehicles/show', { vehicle, customer, jobs, docs, history, reminders });
   });
 
   app.get('/vehicles/:id/edit', async (req, res, next) => {
