@@ -15,6 +15,7 @@ Workshop software for mechanics, built to be sold to many workshops on one share
 - **Quotes**: convert to a job or straight to an invoice.
 - **Tax invoices with GST**: ABN, GST breakdown, payments, balance owing, overdue tracking. Print or save as PDF.
 - **Today screen**: today's bookings, cars in the workshop, unpaid invoices, and services or rego coming due.
+- **Send to customer**: every quote and invoice has a private link the customer can open without logging in; quotes can be accepted online. Email and text buttons open your own apps with the message filled in, or set up Resend (below) to email straight from the app.
 - **Reports**: monthly sales, GST collected and payments received; who owes you by how overdue; BAS quarter figures (G1 and 1A); sales and hours by mechanic; top customers; printable customer statements; and a CSV export for the accountant.
 - **Staff logins**: each person has their own email and password. Owners see reports and settings and manage staff; staff do everything else.
 - **Xero sync**: customers, invoices and payments are sent to the workshop's own Xero automatically. Edits, removed payments and voids follow.
@@ -64,6 +65,7 @@ That comfortably runs dozens of workshops. As you grow, move the database to a b
 | `XERO_CLIENT_ID`, `XERO_CLIENT_SECRET` | From your Xero app. Needed for any workshop to connect Xero. | none |
 | `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, `STRIPE_WEBHOOK_SECRET` | Turn on subscription billing (see below). Without them every workshop is free. | none |
 | `PLAN_PRICE_LABEL` | Shown on the Subscribe button, e.g. `$49/month`. | none |
+| `RESEND_API_KEY`, `EMAIL_FROM` | Send quotes and invoices by email through [Resend](https://resend.com). `EMAIL_FROM` is the sender, e.g. `Workshop <invoices@yourdomain.com.au>`, on a domain verified in Resend. Replies go to each workshop's own email. | email buttons open the user's own mail app |
 | `PGSSL` | Set to `require` if your database needs SSL from outside its network. | off |
 | `PORT` | Port to listen on. | `3000` |
 

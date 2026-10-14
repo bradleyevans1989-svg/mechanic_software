@@ -12,9 +12,7 @@
   </div>
   <div class="actions">
     <a class="btn" href="/documents/<%= doc.id %>/print" target="_blank">Print / PDF</a>
-    <% if (doc.customer_email) { %>
-      <a class="btn" href="mailto:<%= doc.customer_email %>?subject=<%= encodeURIComponent(label + ' ' + u.docNumber(doc) + ' from ' + settings.business_name) %>&body=<%= encodeURIComponent('Hi ' + doc.customer_name + ',\n\nPlease find attached ' + label.toLowerCase() + ' ' + u.docNumber(doc) + ' for ' + u.money(doc.total) + '.\n\nThanks,\n' + settings.business_name) %>">Email</a>
-    <% } %>
+    <a class="btn" href="#send">Send to customer</a>
     <% if (isQuote) { %>
       <form method="post" action="/documents/<%= doc.id %>/job"><button class="btn">Accept: create job</button></form>
       <form method="post" action="/documents/<%= doc.id %>/invoice"><button class="btn primary">Convert to invoice</button></form>
@@ -22,6 +20,9 @@
   </div>
 </div>
 <% if (saved) { %><p class="flash">Saved.</p><% } %>
+<% if (sent) { %><p class="flash">Marked as sent<%= doc.sent_to ? ' to ' + doc.sent_to : '' %>.</p><% } %>
+<% if (error) { %><p class="error"><%= error %></p><% } %>
+<% if (doc.customer_accepted_at) { %><p class="flash">Accepted online by the customer on <%= u.fmtDateTime(doc.customer_accepted_at, settings.timezone) %>.</p><% } %>
 <% if (xeroStatus) { %>
   <div class="xero-status">
     Xero: <% if (xeroStatus.status === 'synced') { %><strong>sent</strong><% } else if (xeroStatus.status === 'error') { %><strong class="error">failed</strong><% } else if (xeroStatus.status === 'skipped') { %>waiting for items<% } else { %><%= xeroStatus.status === 'pending' ? 'sending…' : 'not sent' %><% } %>
@@ -51,6 +52,36 @@
   <%- include('../partials/lines', { lines, totals: doc }) %>
   <div class="form-actions sticky"><button class="btn primary">Save</button></div>
 </form>
+
+<% const body = 'Hi ' + doc.customer_name.split(' ')[0] + ', here is your ' + label.toLowerCase() + ' ' + u.docNumber(doc) + ' for ' + u.money(doc.total) + ' from ' + settings.business_name + (isQuote ? '. You can view and accept it here: ' : '. You can view it here: ') + shareUrl; %>
+<section class="card" id="send">
+  <h2>Send to customer</h2>
+  <% if (doc.sent_at) { %><p class="muted">Last sent by <%= doc.sent_via === 'sms' ? 'text' : doc.sent_via === 'link' ? 'link' : 'email' %><%= doc.sent_to ? ' to ' + doc.sent_to : '' %> on <%= u.fmtDateTime(doc.sent_at, settings.timezone) %>.</p><% } %>
+  <p>The customer can open this link to see the <%= label.toLowerCase() %><%= isQuote ? ' and accept it' : '' %>, no login needed:</p>
+  <p><input value="<%= shareUrl %>" readonly onclick="this.select()" aria-label="Link for the customer"></p>
+  <div class="actions">
+    <% if (canEmail) { %>
+      <form method="post" action="/documents/<%= doc.id %>/send" class="inline-form">
+        <input type="hidden" name="via" value="email">
+        <label>Email to <input name="to" type="email" value="<%= doc.customer_email %>" required style="width:16rem"></label>
+        <button class="btn primary">Email it</button>
+      </form>
+    <% } else if (doc.customer_email) { %>
+      <form method="post" action="/documents/<%= doc.id %>/send" class="inline-form">
+        <input type="hidden" name="via" value="mailto"><input type="hidden" name="to" value="<%= doc.customer_email %>">
+        <a class="btn" href="mailto:<%= doc.customer_email %>?subject=<%= encodeURIComponent(label + ' ' + u.docNumber(doc) + ' from ' + settings.business_name) %>&body=<%= encodeURIComponent(body) %>" data-then-submit>Email</a>
+      </form>
+    <% } %>
+    <% if (doc.customer_phone) { %>
+      <form method="post" action="/documents/<%= doc.id %>/send" class="inline-form">
+        <input type="hidden" name="via" value="sms"><input type="hidden" name="to" value="<%= doc.customer_phone %>">
+        <a class="btn" href="sms:<%= doc.customer_phone %>?&body=<%= encodeURIComponent(body) %>" data-then-submit>Text</a>
+      </form>
+    <% } %>
+    <form method="post" action="/documents/<%= doc.id %>/send"><input type="hidden" name="via" value="link"><button class="btn small">Mark as sent</button></form>
+  </div>
+  <% if (!canEmail) { %><p class="hint">Email and Text open your own email or messages app with the link filled in. Sending straight from here needs an email service set up on the server (see the README).</p><% } %>
+</section>
 
 <% if (!isQuote) { %>
   <section class="card">

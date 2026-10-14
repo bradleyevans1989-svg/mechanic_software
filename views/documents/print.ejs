@@ -7,7 +7,20 @@
   <link rel="stylesheet" href="/static/print.css">
 </head>
 <body>
-  <div class="noprint"><button onclick="window.print()">Print or save as PDF</button> <a href="/documents/<%= doc.id %>">Back</a></div>
+  <% const isShared = typeof shared !== 'undefined' && shared; %>
+  <% if (isShared) { %>
+    <div class="noprint">
+      <button onclick="window.print()">Print or save as PDF</button>
+      <% if (isQuote && (doc.status === 'draft' || doc.status === 'sent')) { %>
+        <form method="post" action="/share/<%= token %>/accept" style="display:inline" onsubmit="return confirm('Accept this quote and have <%= settings.business_name %> go ahead with the work?')"><button>Accept this quote</button></form>
+      <% } else if (isQuote && doc.status === 'accepted') { %>
+        <strong>✓ Quote accepted<%= typeof accepted !== 'undefined' && accepted ? '. Thanks! The workshop will be in touch.' : '.' %></strong>
+      <% } %>
+      <% if (settings.phone) { %><span>Questions? Call <%= settings.business_name %> on <%= settings.phone %>.</span><% } %>
+    </div>
+  <% } else { %>
+    <div class="noprint"><button onclick="window.print()">Print or save as PDF</button> <a href="/documents/<%= doc.id %>">Back</a></div>
+  <% } %>
   <header class="doc-head">
     <div>
       <h1><%= settings.business_name %></h1>

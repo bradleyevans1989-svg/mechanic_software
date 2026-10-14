@@ -5,6 +5,12 @@ document.addEventListener('click', (e) => {
   if (btn && !window.confirm(btn.dataset.confirmBtn)) e.preventDefault();
 });
 
+// "Email" and "Text" open the user's own app; the form behind them records that it was sent.
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('[data-then-submit]');
+  if (a) setTimeout(() => a.closest('form').submit(), 500);
+});
+
 document.addEventListener('submit', (e) => {
   const msg = e.target.dataset && e.target.dataset.confirm;
   if (msg && !window.confirm(msg)) e.preventDefault();

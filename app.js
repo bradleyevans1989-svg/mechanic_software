@@ -5,6 +5,7 @@ const auth = require('./lib/auth');
 const { createXero } = require('./lib/xero');
 const { createBilling } = require('./lib/stripe');
 const billingRoutes = require('./routes/billing');
+const shareRoutes = require('./routes/share');
 
 const JOB_STATUSES = {
   open: 'Booked in',
@@ -69,6 +70,7 @@ function createApp(store, { autoSync = true } = {}) {
   const ctx = { store, xero, billing, JOB_STATUSES, BOOKING_STATUSES, QUOTE_STATUSES };
 
   billingRoutes.webhook(app, ctx);
+  shareRoutes.public(app, ctx);
   auth.setup(app, store);
   billingRoutes.gate(app, ctx);
   billingRoutes.pages(app, ctx);
@@ -83,6 +85,7 @@ function createApp(store, { autoSync = true } = {}) {
   require('./routes/pricelist')(app, ctx);
   require('./routes/reminders')(app, ctx);
   require('./routes/timesheets')(app, ctx);
+  shareRoutes.pages(app, ctx);
 
   app.use((req, res) => res.status(404).render('message', { title: 'Not found', message: 'That page does not exist.' }));
 

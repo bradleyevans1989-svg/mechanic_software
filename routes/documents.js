@@ -2,10 +2,12 @@ const { now, addDays, parseLines, parseIntOrNull, parseDollars, docNumber } = re
 const { nextNumber, getLines, saveLines } = require('../lib/db');
 const { getDoc, listDocs } = require('../lib/docs');
 const { getCustomer, getVehicle, vehicleOptions, customerOptions, resolveParty, logEvent } = require('../lib/records');
+const { shareToken, appUrl } = require('./share');
+const mail = require('../lib/mail');
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-module.exports = function (app, { xero, QUOTE_STATUSES }) {
+module.exports = function (app, { store, xero, QUOTE_STATUSES }) {
   async function createDoc(db, req, type, fields, lines) {
     const today = req.res.locals.today;
     const settings = await db.get('SELECT payment_days FROM settings');
@@ -76,7 +78,14 @@ module.exports = function (app, { xero, QUOTE_STATUSES }) {
       doc.job_id ? req.db.all('SELECT id, type, number FROM documents WHERE job_id = $1 AND id != $2', [doc.job_id, doc.id]) : [],
     ]);
     const xeroStatus = doc.type === 'invoice' && (await xero.isConnected(req.db)) ? (await xero.invoiceStatus(req.db, doc.id)) || { status: 'not sent' } : null;
-    res.render('documents/show', { doc, lines, payments, converted, xeroStatus, saved: req.query.saved === '1' });
+    const shareUrl = `${appUrl(req)}/share/${await shareToken(store, req.user.workshop_id, doc.id)}`;
+    res.render('documents/show', {
+      doc, lines, payments, converted, xeroStatus, shareUrl,
+      canEmail: mail.configured(),
+      saved: req.query.saved === '1',
+      sent: req.query.sent === '1',
+      error: String(req.query.error || '').slice(0, 300),
+    });
   });
 
   app.post('/documents/:id', async (req, res, next) => {
@@ -202,6 +211,7 @@ module.exports = function (app, { xero, QUOTE_STATUSES }) {
     const doc = await getDoc(req.db, req.params.id, res.locals.today);
     if (!doc || doc.type !== 'quote') return next();
     await req.db.run('DELETE FROM documents WHERE id = $1', [doc.id]);
+    await store.system.run('DELETE FROM share_links WHERE workshop_id = $1 AND document_id = $2', [req.user.workshop_id, doc.id]);
     res.redirect('/quotes');
   });
 };
