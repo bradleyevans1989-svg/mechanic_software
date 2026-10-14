@@ -1,0 +1,31 @@
+<%- include('../partials/header', { title: entry.id ? 'Edit calendar entry' : 'Add to calendar' }) %>
+<h1><%= entry.id ? 'Edit calendar entry' : 'Add to calendar' %></h1>
+<% if (error) { %><p class="error"><%= error %></p><% } %>
+<form method="post" action="<%= entry.id ? '/calendar/' + entry.id : '/calendar' %>" class="card form">
+  <div class="grid-3">
+    <label>What is it
+      <select name="kind" id="entry-kind">
+        <% for (const [k, label] of Object.entries(ENTRY_KINDS)) { %><option value="<%= k %>" <%= entry.kind === k ? 'selected' : '' %>><%= label %></option><% } %>
+      </select>
+    </label>
+    <label data-kind="leave">Who is off
+      <select name="user_id">
+        <% for (const s of staff) { %><option value="<%= s.id %>" <%= Number(entry.user_id) === s.id ? 'selected' : '' %>><%= s.name %></option><% } %>
+      </select>
+    </label>
+    <label>Title <span class="muted">(optional for leave)</span> <input name="title" value="<%= entry.title || '' %>" placeholder="e.g. Labour Day, Annual leave, Fire safety talk"></label>
+  </div>
+  <div class="grid-3">
+    <label>From <input type="date" name="start_date" value="<%= entry.start_date %>" required></label>
+    <label>To <input type="date" name="end_date" value="<%= entry.end_date %>" required></label>
+  </div>
+  <label>Notes <textarea name="note" rows="3"><%= entry.note || '' %></textarea></label>
+  <div class="form-actions">
+    <button class="btn primary">Save</button>
+    <a class="btn" href="/calendar?month=<%= String(entry.start_date).slice(0, 7) %>">Cancel</a>
+  </div>
+</form>
+<% if (entry.id) { %>
+  <form method="post" action="/calendar/<%= entry.id %>/delete" data-confirm="Remove this from the calendar?"><button class="btn danger">Remove</button></form>
+<% } %>
+<%- include('../partials/footer') %>

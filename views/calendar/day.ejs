@@ -1,0 +1,55 @@
+<%- include('../partials/header', { title: label }) %>
+<div class="page-head">
+  <h1><%= label %></h1>
+  <div class="actions">
+    <a class="btn" href="/calendar/day/<%= prev %>">← Prev</a>
+    <a class="btn" href="/calendar?month=<%= date.slice(0, 7) %>">Month</a>
+    <a class="btn" href="/bookings?week=<%= date %>">Week</a>
+    <a class="btn" href="/calendar/day/<%= next %>">Next →</a>
+    <a class="btn primary" href="/calendar/new?date=<%= date %>">Add leave or note</a>
+    <a class="btn lime" href="/bookings/new?date=<%= date %>">New booking</a>
+  </div>
+</div>
+<div class="grid-2">
+  <section class="card">
+    <h2>Bookings</h2>
+    <% if (!bookings.length) { %><p class="muted">Nothing booked.</p><% } %>
+    <ul class="list">
+      <% for (const b of bookings) { %>
+        <li>
+          <div><strong><%= b.time || 'Any time' %></strong> · <%= [b.rego, b.make, b.model].filter(Boolean).join(' ') %>
+            <div class="muted"><%= b.customer_name %> — <%= b.description %></div></div>
+          <div class="row-actions">
+            <% if (b.job_id) { %><a class="btn small" href="/jobs/<%= b.job_id %>">Job card</a><% } else { %><a class="btn small" href="/bookings/<%= b.id %>/edit">Edit</a><% } %>
+          </div>
+        </li>
+      <% } %>
+    </ul>
+    <h2 class="mt">Jobs in the workshop</h2>
+    <% if (!jobs.length) { %><p class="muted">No jobs span this day.</p><% } %>
+    <ul class="list">
+      <% for (const j of jobs) { %>
+        <li>
+          <a href="/jobs/<%= j.id %>"><strong>J<%= j.number %></strong> · <%= [j.rego, j.make, j.model].filter(Boolean).join(' ') %></a>
+          <%- include('../partials/pill', { state: j.status, label: JOB_STATUSES[j.status] }) %>
+          <div class="muted full"><%= j.customer_name %> — <%= j.description %><%= j.mechanic_name ? ' · ' + j.mechanic_name : '' %></div>
+        </li>
+      <% } %>
+    </ul>
+  </section>
+  <section class="card">
+    <h2>Leave, holidays and notes</h2>
+    <% if (!entries.length) { %><p class="muted">Nothing on this day.</p><% } %>
+    <ul class="list">
+      <% for (const e of entries) { %>
+        <li>
+          <div><span class="pill ev-<%= e.kind %>"><%= ENTRY_KINDS[e.kind] %></span>
+            <strong><%= e.kind === 'leave' ? (e.user_name || 'Staff') + ' off' : '' %> <%= e.title %></strong>
+            <div class="muted"><%= u.fmtDate(e.start_date) %><%= e.end_date !== e.start_date ? ' to ' + u.fmtDate(e.end_date) : '' %><%= e.note ? ' — ' + e.note : '' %></div></div>
+          <a class="btn small" href="/calendar/<%= e.id %>/edit">Edit</a>
+        </li>
+      <% } %>
+    </ul>
+  </section>
+</div>
+<%- include('../partials/footer') %>

@@ -229,3 +229,51 @@ test('timesheets: hours per staff member per day, owner only', async () => {
   assert.match(page.text, /Clutch out/);
   assert.equal((await ws.get('/timesheets?week=2020-01-06')).text.includes('Clutch out'), false);
 });
+
+test('calendar: month view with leave, holidays and multi-day jobs; other workshops see nothing', async () => {
+  const { laneWeek } = require('../routes/calendar');
+  // Lane layout keeps overlapping bars apart and overflows into "+N more".
+  const evs = [
+    { start: '2026-10-12', end: '2026-10-15', label: 'a', order: 0 },
+    { start: '2026-10-13', end: '2026-10-13', label: 'b', order: 1 },
+    { start: '2026-10-16', end: '2026-10-16', label: 'c', order: 2 },
+  ];
+  const w = laneWeek(evs, '2026-10-12', '2026-10-18', 4);
+  assert.equal(w.lanes, 2);
+  assert.deepEqual(w.events.map((e) => [e.label, e.lane, e.col, e.span]), [['a', 0, 1, 4], ['b', 1, 2, 1], ['c', 0, 5, 1]]);
+  const tight = laneWeek(evs, '2026-10-12', '2026-10-18', 1);
+  assert.equal(tight.events.length, 2);
+  assert.equal(tight.more[2], 1);
+
+  let res = await owner.post('/calendar', { kind: 'holiday', title: 'Labour Day', start_date: '2026-10-05', end_date: '2026-10-05' });
+  assert.equal(res.status, 302);
+  res = await owner.post('/calendar', { kind: 'holiday', title: '', start_date: '2026-10-05' });
+  assert.equal(res.status, 400);
+  const me = await owner.db.get('SELECT id FROM users WHERE email = $1', ['deep@example.com']);
+  res = await owner.post('/calendar', { kind: 'leave', user_id: me.id, start_date: '2026-10-23', end_date: '2026-10-19' });
+  assert.equal(res.status, 302);
+  const leave = await owner.db.get(`SELECT * FROM calendar_entries WHERE kind = 'leave'`);
+  assert.equal(leave.end_date, '2026-10-23', 'an end before the start is pulled up to the start');
+  assert.equal(leave.start_date, '2026-10-23');
+
+  await owner.post('/customers', { name: 'Cal Endar', v_rego: 'CAL001', v_make: 'Isuzu', v_model: 'D-Max' });
+  const vehicle = await owner.db.get(`SELECT id FROM vehicles WHERE rego = 'CAL001'`);
+  const j = await owner.post('/jobs', { vehicle_id: vehicle.id, description: 'Gearbox' });
+  await owner.db.run(`UPDATE jobs SET created_at = '2026-10-12 08:00:00', due_date = '2026-10-16' WHERE id = $1`, [idFrom(j)]);
+
+  const page = await owner.get('/calendar?month=2026-10');
+  assert.match(page.text, /Labour Day/);
+  assert.match(page.text, /off/);
+  assert.match(page.text, /CAL001 Isuzu D-Max/);
+  assert.match(page.text, /grid-column: 1 \/ span 5/, 'the job bar spans Mon to Fri');
+  assert.match((await owner.get('/calendar/day/2026-10-14')).text, /CAL001/);
+
+  res = await owner.post(`/calendar/${leave.id}`, { kind: 'leave', user_id: me.id, start_date: '2026-10-19', end_date: '2026-10-23', title: 'Fishing' });
+  assert.equal(res.status, 302);
+  assert.match((await owner.get('/calendar?month=2026-10')).text, /off: Fishing/);
+
+  assert.doesNotMatch((await other.get('/calendar?month=2026-10')).text, /Labour Day/);
+  assert.equal((await other.get(`/calendar/${leave.id}/edit`)).status, 404);
+  await owner.post(`/calendar/${leave.id}/delete`);
+  assert.equal((await owner.get(`/calendar/${leave.id}/edit`)).status, 404);
+});

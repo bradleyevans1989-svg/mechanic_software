@@ -1,0 +1,39 @@
+<%- include('../partials/header', { title: 'Calendar' }) %>
+<div class="page-head">
+  <h1>Calendar <span class="muted"><%= monthName %></span></h1>
+  <div class="actions">
+    <a class="btn" href="/calendar?month=<%= prev %>">← Prev</a>
+    <a class="btn" href="/calendar">This month</a>
+    <a class="btn" href="/calendar?month=<%= next %>">Next →</a>
+    <a class="btn primary" href="/calendar/new?date=<%= month === today.slice(0, 7) ? today : month + '-01' %>">Add leave or note</a>
+    <a class="btn lime" href="/bookings/new">New booking</a>
+  </div>
+</div>
+<nav class="tabs">
+  <a href="/bookings">Week</a>
+  <a href="/calendar" class="active">Month</a>
+  <span class="muted small cal-legend">
+    <i class="ev-booking"></i>Booking <i class="ev-job"></i>Job in workshop <i class="ev-job-done"></i>Job done
+    <i class="ev-leave"></i>Leave <i class="ev-holiday"></i>Public holiday <i class="ev-toolbox"></i>Toolbox talk <i class="ev-note"></i>Note
+  </span>
+</nav>
+<div class="cal card">
+  <div class="cal-head">
+    <% for (const d of ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']) { %><div><%= d %></div><% } %>
+  </div>
+  <% for (const w of weeks) { %>
+    <div class="cal-week" style="--lanes: <%= w.lanes %>">
+      <% w.days.forEach((d, i) => { %>
+        <div class="cal-day <%= d.inMonth ? '' : 'out' %> <%= d.isToday ? 'today' : '' %>" style="grid-column: <%= i + 1 %>">
+          <a class="cal-num" href="/calendar/day/<%= d.date %>" aria-label="<%= u.fmtDate(d.date) %>"><%= d.num %></a>
+          <a class="cal-add" href="/calendar/new?date=<%= d.date %>" title="Add leave or note" aria-label="Add on <%= u.fmtDate(d.date) %>">+</a>
+          <% if (w.more[i + 1]) { %><a class="cal-more" href="/calendar/day/<%= d.date %>">+<%= w.more[i + 1] %> more</a><% } %>
+        </div>
+      <% }) %>
+      <% for (const e of w.events) { %>
+        <a class="ev ev-<%= e.kind.replace(' ', '-') %> <%= e.continued ? 'cont-l' : '' %> <%= e.continues ? 'cont-r' : '' %>" href="<%= e.href %>" style="grid-column: <%= e.col %> / span <%= e.span %>; grid-row: <%= e.lane + 2 %>" title="<%= e.label %>"><%= e.label %></a>
+      <% } %>
+    </div>
+  <% } %>
+</div>
+<%- include('../partials/footer') %>

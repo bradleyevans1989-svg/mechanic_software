@@ -181,3 +181,12 @@ document.querySelectorAll('[data-lines]').forEach((box) => {
     }
   });
 });
+
+// Calendar entry form: the "who is off" field only matters for leave.
+(() => {
+  const kind = document.getElementById('entry-kind');
+  if (!kind) return;
+  const sync = () => document.querySelectorAll('[data-kind]').forEach((el) => { el.style.display = el.dataset.kind === kind.value ? '' : 'none'; });
+  kind.addEventListener('change', sync);
+  sync();
+})();

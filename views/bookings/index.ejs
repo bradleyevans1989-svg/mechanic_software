@@ -8,6 +8,10 @@
     <a class="btn primary" href="/bookings/new">New booking</a>
   </div>
 </div>
+<nav class="tabs">
+  <a href="/bookings" class="active">Week</a>
+  <a href="/calendar?month=<%= start.slice(0, 7) %>">Month</a>
+</nav>
 <div class="week">
   <% const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']; %>
   <% days.forEach((d, i) => { const isToday = d.date === today; %>
