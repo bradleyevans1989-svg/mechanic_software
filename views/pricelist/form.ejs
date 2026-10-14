@@ -1,0 +1,32 @@
+<%- include('../partials/header', { title: 'Edit price list item' }) %>
+<div class="page-head"><h1>Edit item</h1></div>
+<% if (error) { %><p class="error"><%= error %></p><% } %>
+<form method="post" action="/price-list/<%= item.id %>" class="card form">
+  <div class="grid-2">
+    <label>Type
+      <select name="kind">
+        <% for (const k of u.LINE_KINDS) { %><option value="<%= k %>" <%= item.kind === k ? 'selected' : '' %>><%= k[0].toUpperCase() + k.slice(1) %></option><% } %>
+      </select>
+    </label>
+    <label>Code <input name="code" class="upper" value="<%= item.code %>"></label>
+  </div>
+  <label>Description <input name="description" value="<%= item.description %>" required></label>
+  <div class="grid-3">
+    <label>Sell price ex GST <input name="price" inputmode="decimal" value="<%= item.unit_cents ? u.dollars(item.unit_cents) : '' %>" placeholder="Labour: blank uses your hourly rate"></label>
+    <label>Cost price <input name="cost" inputmode="decimal" value="<%= item.cost_cents ? u.dollars(item.cost_cents) : '' %>"></label>
+    <label>GST
+      <select name="gst"><option value="1">Yes</option><option value="0" <%= item.gst ? '' : 'selected' %>>No</option></select>
+    </label>
+  </div>
+  <label>Shown in the picker
+    <select name="active"><option value="1">Yes</option><option value="0" <%= item.active === false ? 'selected' : '' %>>No, hide it</option></select>
+  </label>
+  <div class="form-actions">
+    <button class="btn primary">Save</button>
+    <a class="btn" href="/price-list">Cancel</a>
+  </div>
+</form>
+<form method="post" action="/price-list/<%= item.id %>/delete" data-confirm="Delete this item from the price list?">
+  <button class="btn danger small">Delete item</button>
+</form>
+<%- include('../partials/footer') %>

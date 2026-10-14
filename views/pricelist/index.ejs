@@ -1,0 +1,57 @@
+<%- include('../partials/header', { title: 'Price list' }) %>
+<div class="page-head">
+  <div>
+    <h1>Price list</h1>
+    <p class="muted">Saved parts and services you can drop onto a job, quote or invoice. Prices are ex GST.</p>
+  </div>
+  <div class="actions">
+    <form method="post" action="/price-list/starter" data-confirm="Add a starter list of common services and parts? You can edit or delete them after."><button class="btn">Add common items</button></form>
+  </div>
+</div>
+<% if (saved) { %><p class="flash">Saved.</p><% } %>
+<% if (error) { %><p class="error"><%= error %></p><% } %>
+
+<form method="post" action="/price-list" class="card form">
+  <h2>Add an item</h2>
+  <div class="grid-4">
+    <label>Type
+      <select name="kind">
+        <% for (const k of u.LINE_KINDS) { %><option value="<%= k %>" <%= draft.kind === k ? 'selected' : '' %>><%= k[0].toUpperCase() + k.slice(1) %></option><% } %>
+      </select>
+    </label>
+    <label>Code <span class="muted">(optional)</span> <input name="code" class="upper" value="<%= draft.code || '' %>" placeholder="OILF"></label>
+    <label>Description <input name="description" value="<%= draft.description || '' %>" required placeholder="Oil filter"></label>
+    <label>Sell price ex GST <input name="price" inputmode="decimal" value="<%= draft.unit_cents ? u.dollars(draft.unit_cents) : '' %>" placeholder="Labour: blank uses your hourly rate"></label>
+    <label>Cost price <span class="muted">(optional)</span> <input name="cost" inputmode="decimal" value="<%= draft.cost_cents ? u.dollars(draft.cost_cents) : '' %>"></label>
+    <label>GST
+      <select name="gst"><option value="1">Yes</option><option value="0" <%= draft.gst === false ? 'selected' : '' %>>No</option></select>
+    </label>
+  </div>
+  <div class="form-actions"><button class="btn primary">Add to price list</button></div>
+</form>
+
+<form class="filter" action="/price-list">
+  <input type="search" name="q" value="<%= q %>" placeholder="Search the price list">
+  <button class="btn">Search</button>
+</form>
+<% if (!items.length) { %>
+  <p class="card muted">Nothing in the price list yet<%= q ? ' matching that search' : '' %>. Add items above, or click "Add common items" for a starter set.</p>
+<% } else { %>
+<table class="table card">
+  <thead><tr><th>Type</th><th>Code</th><th>Description</th><th class="num">Price ex GST</th><th class="num">Cost</th><th>GST</th><th></th></tr></thead>
+  <tbody>
+    <% for (const i of items) { %>
+      <tr class="<%= i.active ? '' : 'muted' %>">
+        <td><%= i.kind[0].toUpperCase() + i.kind.slice(1) %></td>
+        <td><%= i.code %></td>
+        <td><%= i.description %><%= i.active ? '' : ' (hidden)' %></td>
+        <td class="num"><%= i.unit_cents ? u.money(i.unit_cents) : (i.kind === 'labour' ? 'Hourly rate' : '—') %></td>
+        <td class="num"><%= i.cost_cents ? u.money(i.cost_cents) : '' %></td>
+        <td><%= i.gst ? 'Yes' : 'No' %></td>
+        <td><a href="/price-list/<%= i.id %>/edit">Edit</a></td>
+      </tr>
+    <% } %>
+  </tbody>
+</table>
+<% } %>
+<%- include('../partials/footer') %>

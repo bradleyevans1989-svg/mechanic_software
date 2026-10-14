@@ -83,3 +83,90 @@ window.addEventListener('beforeunload', (e) => {
     e.returnValue = '';
   }
 });
+
+// Price list picker: type to search, click or press Enter to add the item as a line.
+document.querySelectorAll('[data-lines]').forEach((box) => {
+  const picker = box.querySelector('[data-picker]');
+  if (!picker) return;
+  const input = picker.querySelector('[data-picker-input]');
+  const list = picker.querySelector('[data-picker-results]');
+  const tbody = box.querySelector('tbody');
+  const template = box.querySelector('[data-line-template]');
+  let items = [];
+  let hot = 0;
+  let timer;
+
+  function render() {
+    list.innerHTML = '';
+    items.forEach((it, i) => {
+      const li = document.createElement('li');
+      li.className = i === hot ? 'hot' : '';
+      li.innerHTML = `<span>${escapeHtml((it.code ? it.code + ' · ' : '') + it.description)}</span><span class="muted">${money(it.unit_cents)}${it.kind === 'labour' ? '/hr' : ''}</span>`;
+      li.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        add(it);
+      });
+      list.appendChild(li);
+    });
+    list.hidden = items.length === 0;
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  }
+
+  function add(it) {
+    const next = tbody.querySelectorAll('tr').length + Math.floor(Math.random() * 1000) + 1000;
+    tbody.insertAdjacentHTML('beforeend', template.innerHTML.replace(/__i__/g, String(next)));
+    const row = tbody.lastElementChild;
+    row.querySelector('[data-kind]').value = it.kind;
+    row.querySelector('[data-desc]').value = it.description;
+    row.querySelector('[data-price]').value = (it.unit_cents / 100).toFixed(2);
+    row.querySelector('[data-gst]').value = it.gst ? '1' : '0';
+    recalc(box);
+    markDirty(box);
+    input.value = '';
+    items = [];
+    render();
+    row.querySelector('[data-qty]').focus();
+    row.querySelector('[data-qty]').select();
+  }
+
+  async function search() {
+    const q = input.value.trim();
+    try {
+      const res = await fetch('/price-list.json?q=' + encodeURIComponent(q), { headers: { accept: 'application/json' } });
+      items = res.ok ? await res.json() : [];
+    } catch {
+      items = [];
+    }
+    hot = 0;
+    render();
+  }
+
+  input.addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = setTimeout(search, 150);
+  });
+  input.addEventListener('focus', () => {
+    if (!items.length) search();
+    else render();
+  });
+  input.addEventListener('blur', () => setTimeout(() => (list.hidden = true), 150));
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown') {
+      hot = Math.min(hot + 1, items.length - 1);
+      render();
+      e.preventDefault();
+    } else if (e.key === 'ArrowUp') {
+      hot = Math.max(hot - 1, 0);
+      render();
+      e.preventDefault();
+    } else if (e.key === 'Enter') {
+      e.preventDefault(); // never submit the whole form from the picker
+      if (items[hot]) add(items[hot]);
+    } else if (e.key === 'Escape') {
+      list.hidden = true;
+    }
+  });
+});

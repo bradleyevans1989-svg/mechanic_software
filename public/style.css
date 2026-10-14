@@ -168,3 +168,11 @@ ul.compact { margin: .25rem 0 0; padding-left: 1.2rem; }
 .xero-status { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem; font-size: .9rem; }
 .xero-status form { margin: 0; }
 code { background: #ecebe5; padding: .1rem .35rem; border-radius: 4px; word-break: break-all; }
+
+/* Price list picker in the line editor */
+.picker { position: relative; flex: 1; min-width: 14rem; max-width: 24rem; }
+.picker input { min-height: 2rem; padding: .3rem .6rem; font-size: .9rem; }
+.picker-results { position: absolute; z-index: 5; left: 0; right: 0; top: 100%; margin: .15rem 0 0; padding: .25rem 0; list-style: none; background: #fff; border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 6px 20px rgba(0,0,0,.12); max-height: 18rem; overflow-y: auto; }
+.picker-results li { padding: .4rem .6rem; cursor: pointer; display: flex; justify-content: space-between; gap: .5rem; }
+.picker-results li:hover, .picker-results li.hot { background: #f0efea; }
+.picker-results li .muted { white-space: nowrap; }

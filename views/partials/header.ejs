@@ -11,7 +11,7 @@
 <header class="topbar">
   <a class="brand" href="/"><%= settings.business_name %></a>
   <nav class="nav">
-    <% const links = [['/', 'Today'], ['/bookings', 'Diary'], ['/jobs', 'Jobs'], ['/quotes', 'Quotes'], ['/invoices', 'Invoices'], ['/customers', 'Customers']];
+    <% const links = [['/', 'Today'], ['/bookings', 'Diary'], ['/jobs', 'Jobs'], ['/quotes', 'Quotes'], ['/invoices', 'Invoices'], ['/customers', 'Customers'], ['/price-list', 'Price list']];
        if (user && user.role === 'owner') links.push(['/reports', 'Reports'], ['/settings', 'Settings']); %>
     <% for (const [href, label] of links) { const active = href === '/' ? path === '/' : path.startsWith(href); %>
       <a href="<%= href %>" class="<%= active ? 'active' : '' %>"><%= label %></a>

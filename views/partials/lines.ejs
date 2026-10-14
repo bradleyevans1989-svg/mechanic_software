@@ -17,6 +17,11 @@
     <button type="button" class="btn small" data-add-line="labour">+ Labour</button>
     <button type="button" class="btn small" data-add-line="part">+ Part</button>
     <button type="button" class="btn small" data-add-line="other">+ Other</button>
+    <span class="picker" data-picker>
+      <input type="search" placeholder="Add from price list…" aria-label="Search the price list" data-picker-input autocomplete="off">
+      <ul class="picker-results" data-picker-results hidden></ul>
+    </span>
+    <a class="small" href="/price-list">Manage price list</a>
   </div>
   <table class="totals">
     <tr><th>Subtotal ex GST</th><td data-total="subtotal"><%= u.money(totals.subtotal) %></td></tr>
