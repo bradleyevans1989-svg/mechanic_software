@@ -2,18 +2,22 @@
 <div class="page-head">
   <h1>Today <span class="muted"><%= u.fmtDate(today) %></span></h1>
   <div class="actions">
-    <a class="btn" href="/bookings/new">New booking</a>
+    <a class="btn lime" href="/bookings/new">New booking</a>
     <a class="btn" href="/jobs/new">New job</a>
     <a class="btn" href="/documents/new?type=quote">New quote</a>
     <a class="btn primary" href="/customers/new">New customer</a>
   </div>
 </div>
 
+<% const diff = stats.lastMonthTotal ? Math.round((stats.monthTotal - stats.lastMonthTotal) / stats.lastMonthTotal * 100) : null; %>
 <div class="stats">
-  <div class="stat"><span>Invoiced this month</span><strong><%= u.money(stats.monthTotal) %></strong><small><%= stats.monthCount %> invoices</small></div>
-  <div class="stat"><span>Owing to you</span><strong><%= u.money(stats.owing) %></strong><small><%= unpaid.length %> unpaid</small></div>
-  <div class="stat <%= stats.overdue ? 'warn' : '' %>"><span>Overdue</span><strong><%= stats.overdue %></strong><small>invoices past due</small></div>
-  <div class="stat"><span>In the workshop</span><strong><%= jobs.length %></strong><small>open jobs</small></div>
+  <div class="stat dark"><span>Invoiced this month</span><strong><%= u.money(stats.monthTotal) %></strong>
+    <small><%= stats.monthCount %> invoice<%= stats.monthCount === 1 ? '' : 's' %>
+      <% if (diff !== null) { %><b class="badge <%= diff < 0 ? 'down' : diff === 0 ? 'flat' : '' %>"><%= diff > 0 ? '+' : '' %><%= diff %>% vs last month</b>
+      <% } else if (stats.monthTotal) { %><b class="badge flat">first month</b><% } %></small></div>
+  <div class="stat"><span>Owing to you</span><strong><%= u.money(stats.owing) %></strong><small><%= unpaid.length %> unpaid<% if (stats.overdue) { %><b class="badge down"><%= stats.overdue %> overdue</b><% } else if (unpaid.length) { %><b class="badge">none overdue</b><% } %></small></div>
+  <div class="stat"><span>Booked today</span><strong><%= bookings.length %></strong><small><%= stats.bookedToday %> hrs of work<% if (bookings.length) { %><b class="badge"><%= bookings.filter(b => b.job_id).length %> started</b><% } %></small></div>
+  <div class="stat"><span>In the workshop</span><strong><%= jobs.length %></strong><small>open jobs<% const urgent = jobs.filter(j => j.priority === 'urgent').length; if (urgent) { %><b class="badge down"><%= urgent %> urgent</b><% } %></small></div>
 </div>
 
 <div class="dash">

@@ -1,4 +1,4 @@
-const { addDays, parseDollars, parseIntOrNull, docNumber, vehicleLabel } = require('../lib/util');
+const { addDays, addMonths, parseDollars, parseIntOrNull, docNumber, vehicleLabel } = require('../lib/util');
 const { listDocs } = require('../lib/docs');
 const { requireOwner } = require('../lib/auth');
 const { DEFAULT_CHECKLIST } = require('../lib/records');
@@ -27,7 +27,9 @@ module.exports = function (app) {
   app.get('/', async (req, res) => {
     const t = res.locals.today;
     const db = req.db;
-    const [bookings, jobs, unpaidAll, month, due] = await Promise.all([
+    const monthStart = t.slice(0, 8) + '01';
+    const lastMonthStart = addMonths(monthStart, -1);
+    const [bookings, jobs, unpaidAll, month, lastMonth, due] = await Promise.all([
       db.all(
         `SELECT b.*, c.name AS customer_name, c.phone AS customer_phone, v.rego, v.make, v.model
          FROM bookings b JOIN customers c ON c.id = b.customer_id LEFT JOIN vehicles v ON v.id = b.vehicle_id
@@ -41,7 +43,8 @@ module.exports = function (app) {
          WHERE j.status NOT IN ('invoiced', 'cancelled') ORDER BY j.priority = 'urgent' DESC, j.due_date NULLS LAST, j.due_time, j.created_at`
       ),
       listDocs(db, t, `d.type = 'invoice' AND d.status != 'void'`, [], 'ORDER BY d.due_date'),
-      listDocs(db, t, `d.type = 'invoice' AND d.status != 'void' AND d.issue_date >= $1`, [t.slice(0, 8) + '01']),
+      listDocs(db, t, `d.type = 'invoice' AND d.status != 'void' AND d.issue_date >= $1`, [monthStart]),
+      listDocs(db, t, `d.type = 'invoice' AND d.status != 'void' AND d.issue_date >= $1 AND d.issue_date < $2`, [lastMonthStart, monthStart]),
       db.all(
         `SELECT v.*, c.name AS customer_name, c.phone AS customer_phone FROM vehicles v
          JOIN customers c ON c.id = v.customer_id
@@ -60,6 +63,8 @@ module.exports = function (app) {
       stats: {
         monthTotal: month.reduce((s, d) => s + d.total, 0),
         monthCount: month.length,
+        lastMonthTotal: lastMonth.reduce((s, d) => s + d.total, 0),
+        bookedToday: bookings.reduce((s, b) => s + Number(b.duration_hours || 0), 0),
         owing: unpaid.reduce((s, d) => s + d.balance, 0),
         overdue: unpaid.filter((d) => d.state === 'overdue').length,
       },

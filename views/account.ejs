@@ -1,5 +1,8 @@
 <%- include('partials/header', { title: 'My account' }) %>
-<h1>My account</h1>
+<div class="page-head">
+  <h1>My account <span class="muted"><%= user.email %></span></h1>
+  <form method="post" action="/logout" class="actions"><button class="btn">Log out</button></form>
+</div>
 <% if (saved) { %><p class="flash">Saved.</p><% } %>
 <% if (error) { %><p class="error"><%= error %></p><% } %>
 <form method="post" action="/account" class="card form">
