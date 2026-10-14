@@ -6,11 +6,16 @@ Workshop software for mechanics, built to be sold to many workshops on one share
 
 - **Customers and vehicles**: rego, VIN, odometer, rego due date and next service, with full service history per car.
 - **Diary**: week view of bookings. Press "Car's here: start job" to turn a booking into a job card.
-- **Job cards**: work requested, mechanic's notes, assigned mechanic, labour and parts. Print a job card for the floor.
+- **Job cards**: work requested, mechanic's notes, assigned mechanic, priority and promised time, labour and parts. Print a job card for the floor. A list view sorted by what's promised soonest, a board view by status, and a "My jobs" tab.
+- **Inspection checklist**: a workshop-wide checklist (set under Settings) added to any job, marked OK / needs attention / urgent with notes, and printed as a customer-facing inspection report.
+- **Time clock**: staff clock on and off jobs or add time by hand; unbilled time becomes a labour line in quarter hours at the workshop rate. Owners see weekly timesheets.
+- **Activity log**: every status change, assignment, clock on/off, invoice and note on a job, with who and when.
+- **Price list**: saved parts and services with codes and prices, dropped onto any job, quote or invoice from a search box in the line editor.
+- **Reminders**: service intervals per vehicle (months and km) set the next service due when a service is invoiced. A Reminders page lists service and rego due or overdue with call, text and email links and a log of who was contacted.
 - **Quotes**: convert to a job or straight to an invoice.
 - **Tax invoices with GST**: ABN, GST breakdown, payments, balance owing, overdue tracking. Print or save as PDF.
 - **Today screen**: today's bookings, cars in the workshop, unpaid invoices, and services or rego coming due.
-- **Reports**: monthly sales, GST collected and payments received, and a CSV export for the accountant or BAS.
+- **Reports**: monthly sales, GST collected and payments received; who owes you by how overdue; BAS quarter figures (G1 and 1A); sales and hours by mechanic; top customers; printable customer statements; and a CSV export for the accountant.
 - **Staff logins**: each person has their own email and password. Owners see reports and settings and manage staff; staff do everything else.
 - **Xero sync**: customers, invoices and payments are sent to the workshop's own Xero automatically. Edits, removed payments and voids follow.
 - **Many workshops**: self-serve sign-up, per-workshop settings, numbering and timezone.

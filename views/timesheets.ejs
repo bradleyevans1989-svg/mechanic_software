@@ -1,0 +1,48 @@
+<%- include('partials/header', { title: 'Timesheets' }) %>
+<div class="page-head">
+  <h1>Timesheets <span class="muted">week of <%= u.fmtDate(start) %></span></h1>
+  <div class="actions">
+    <a class="btn" href="/timesheets?week=<%= prev %>">← Prev</a>
+    <a class="btn" href="/timesheets">This week</a>
+    <a class="btn" href="/timesheets?week=<%= next %>">Next →</a>
+  </div>
+</div>
+<% if (onClock.length) { %>
+  <p class="banner warn">On the clock now: <% onClock.forEach((e, i) => { %><%= i ? ', ' : '' %><a href="/jobs/<%= e.job_id %>"><%= rows.find(r => r.id === e.user_id)?.name || 'Someone' %> on J<%= e.job_number %></a><% }) %></p>
+<% } %>
+<table class="table card">
+  <thead>
+    <tr><th>Staff</th><% const names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']; days.forEach((d, i) => { %><th class="num <%= d === today ? 'today' : '' %>"><%= names[i] %><br><span class="muted small"><%= u.fmtDate(d).slice(0, 5) %></span></th><% }) %><th class="num">Week</th></tr>
+  </thead>
+  <tbody>
+    <% for (const r of rows) { %>
+      <tr>
+        <td><%= r.name %><%= r.active ? '' : ' (inactive)' %></td>
+        <% r.byDay.forEach((m) => { %><td class="num"><%= m ? (m / 60).toFixed(2) : '' %></td><% }) %>
+        <td class="num"><strong><%= (r.total / 60).toFixed(2) %></strong></td>
+      </tr>
+    <% } %>
+    <% if (!rows.length) { %><tr><td colspan="9" class="muted">No staff yet.</td></tr><% } %>
+  </tbody>
+  <tfoot>
+    <tr><th>Total hours</th><% dayTotals.forEach((m) => { %><th class="num"><%= m ? (m / 60).toFixed(2) : '' %></th><% }) %><th class="num"><%= (dayTotals.reduce((s, m) => s + m, 0) / 60).toFixed(2) %></th></tr>
+  </tfoot>
+</table>
+<p class="hint">Hours come from the clock on each job card (and time added by hand there). Entries still running count up to now.</p>
+
+<% for (const r of rows.filter(r => r.entries.length)) { %>
+  <details class="card">
+    <summary><strong><%= r.name %></strong> · <%= r.entries.length %> entries · <%= (r.total / 60).toFixed(2) %> hrs</summary>
+    <table class="table compact">
+      <% for (const e of r.entries) { %>
+        <tr>
+          <td><%= u.fmtDateTime(e.started_at, settings.timezone) %><%= e.ended_at ? ' – ' + u.fmtTime(e.ended_at, settings.timezone) : ' – now' %></td>
+          <td><a href="/jobs/<%= e.job_id %>">J<%= e.job_number %></a> <%= e.rego || '' %> <span class="muted"><%= e.customer_name %></span></td>
+          <td class="num"><%= u.fmtMinutes(e.minutes) %></td>
+          <td class="muted"><%= e.note %><%= e.billed ? ' · billed' : '' %></td>
+        </tr>
+      <% } %>
+    </table>
+  </details>
+<% } %>
+<%- include('partials/footer') %>

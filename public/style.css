@@ -224,3 +224,6 @@ tr.urgent td:first-child { border-left: 3px solid var(--danger); }
 .reminder .inline-form select, .reminder .inline-form input { min-height: 2rem; padding: .3rem .5rem; font-size: .9rem; width: auto; }
 .ok { color: var(--ok); }
 .tabs .muted { align-self: center; }
+
+th.today { background: var(--warn-bg); }
+details.card summary { cursor: pointer; }

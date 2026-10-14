@@ -210,3 +210,22 @@ test('reminders: due and overdue service and rego, with a contact log', async ()
   assert.match((await ws.get(`/vehicles/${v.id}`)).text, /Rego reminder by sms[^<]*Sent text/);
   assert.equal((await other.post(`/reminders/${v.id}`, { kind: 'rego' })).status, 404);
 });
+
+test('timesheets: hours per staff member per day, owner only', async () => {
+  const ws = await t.signup('Time Co', 'time@example.com');
+  await ws.post('/staff', { name: 'Tina', email: 'tina@time.example', role: 'staff', password: 'wheel-brace' });
+  const tina = t.client();
+  tina.cookie = (await tina.post('/login', { email: 'tina@time.example', password: 'wheel-brace' })).headers.get('set-cookie').split(';')[0];
+  await ws.post('/customers', { name: 'Clock Co', v_rego: 'TIME01' });
+  const v = await ws.db.get(`SELECT id FROM vehicles WHERE rego = 'TIME01'`);
+  const jobId = idFrom(await ws.post('/jobs', { vehicle_id: v.id, description: 'Clutch' }));
+  await tina.post(`/jobs/${jobId}/time`, { hours: '2.5', note: 'Clutch out' });
+  await tina.post(`/jobs/${jobId}/clock-on`);
+  assert.equal((await tina.get('/timesheets')).status, 403);
+  const page = await ws.get('/timesheets');
+  assert.equal(page.status, 200);
+  assert.match(page.text, /On the clock now: <a href="\/jobs\/\d+">Tina on J1001/);
+  assert.match(page.text, /Tina<\/td>[\s\S]*?<strong>2\.50<\/strong>/);
+  assert.match(page.text, /Clutch out/);
+  assert.equal((await ws.get('/timesheets?week=2020-01-06')).text.includes('Clutch out'), false);
+});
