@@ -1,0 +1,27 @@
+<%- include('../partials/header', { title: 'Procedures' }) %>
+<div class="page-head">
+  <h1>Procedures <span class="muted">how we do things, step by step</span></h1>
+  <% if (user.role === 'owner') { %>
+    <div class="actions">
+      <form method="post" action="/procedures/starter"><button class="btn">Add starter procedures</button></form>
+      <a class="btn primary" href="/procedures/new">New procedure</a>
+    </div>
+  <% } %>
+</div>
+<%- include('../partials/team-tabs') %>
+<% if (!groups.length) { %>
+  <div class="card"><p class="muted">No procedures yet. <%= user.role === 'owner' ? 'Write one, or add the starter set to edit.' : 'Ask your owner to add some.' %></p></div>
+<% } %>
+<div class="grid-3">
+  <% for (const g of groups) { %>
+    <section class="card">
+      <h2><%= g.category || 'General' %></h2>
+      <ul class="list compact">
+        <% for (const p of g.items) { %>
+          <li><a href="/procedures/<%= p.id %>"><strong><%= p.title %></strong></a><span class="muted small">updated <%= u.fmtDateTime(p.updated_at, settings.timezone) %></span></li>
+        <% } %>
+      </ul>
+    </section>
+  <% } %>
+</div>
+<%- include('../partials/footer') %>

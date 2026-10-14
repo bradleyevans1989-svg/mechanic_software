@@ -87,6 +87,7 @@ function createApp(store, { autoSync = true } = {}) {
   require('./routes/timesheets')(app, ctx);
   require('./routes/calendar')(app, ctx);
   require('./routes/clocking')(app, ctx);
+  require('./routes/team')(app, ctx);
   shareRoutes.pages(app, ctx);
 
   app.use((req, res) => res.status(404).render('message', { title: 'Not found', message: 'That page does not exist.' }));

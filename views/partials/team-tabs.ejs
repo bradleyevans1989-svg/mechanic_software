@@ -1,0 +1,5 @@
+<nav class="tabs">
+  <% for (const [href, label] of [['/team', 'To-do chat'], ['/procedures', 'Procedures'], ['/training', 'Training'], ['/roster', 'Roster'], ['/clocking', 'Clocking']]) { %>
+    <a href="<%= href %>" class="<%= path.startsWith(href) ? 'active' : '' %>"><%= label %></a>
+  <% } %>
+</nav>

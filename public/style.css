@@ -392,3 +392,33 @@ label.check input { width: auto; min-height: 0; margin: 0; }
 @media (max-width: 900px) { .week-strip { grid-template-columns: repeat(4, 1fr); } .me-strip { border-radius: var(--r-lg); } }
 .ink { color: var(--ink); }
 .pill.plain { text-transform: none; }
+
+/* Team chat, procedures, training */
+.chat { list-style: none; margin: 0; padding: 0; }
+.msg { display: flex; gap: .6rem; align-items: flex-start; padding: .5rem 0; }
+.msg .tick { width: 1.6rem; flex: none; margin: .35rem 0 0; }
+.tickbox { width: 1.5rem; height: 1.5rem; border-radius: 999px; border: 2px solid #c9c9c9; background: #fff; cursor: pointer; display: grid; place-items: center; font-size: .85rem; font-weight: 800; color: var(--ink); padding: 0; }
+.tickbox:hover { border-color: var(--ink); background: var(--lime); }
+.tickbox.on { background: var(--lime); border-color: var(--lime); }
+.bubble { background: var(--tile-2); border-radius: var(--r-lg); border-top-left-radius: 4px; padding: .55rem .85rem; flex: 1; min-width: 0; }
+.msg.kind-note .bubble { background: #eef3ff; }
+.msg.done .bubble { opacity: .7; }
+.msg.done .text { text-decoration: line-through; text-decoration-color: #aaa; }
+.bubble .meta { font-size: .8rem; margin-bottom: .15rem; display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+.bubble .text { white-space: pre-wrap; word-break: break-word; }
+.msg form:last-child { margin: 0; }
+.steps-card { padding-top: .75rem; }
+.step-heading { margin: 1.1rem 0 .4rem; font-size: .95rem; color: var(--muted); }
+.steps { list-style: none; margin: 0; padding: 0; }
+.steps li { border-bottom: 1px solid var(--line); }
+.steps li:last-child { border-bottom: 0; }
+.step { display: flex; gap: .8rem; align-items: flex-start; padding: .7rem .25rem; margin: 0; font-weight: 500; font-size: 1rem; cursor: pointer; }
+.step input { width: 1.3rem; height: 1.3rem; min-height: 0; margin: .1rem 0 0; flex: none; }
+.step .n { width: 1.7rem; height: 1.7rem; border-radius: 999px; background: var(--tile); display: grid; place-items: center; font-size: .8rem; font-weight: 700; flex: none; }
+.step:has(input:checked) { color: var(--muted); text-decoration: line-through; }
+.step:has(input:checked) .n { background: var(--lime); color: var(--ink); }
+.bar-cell { width: 35%; }
+.bar { height: .6rem; border-radius: 999px; background: var(--tile); overflow: hidden; }
+.bar span { display: block; height: 100%; background: var(--lime-deep); border-radius: 999px; }
+form.inline { display: inline; }
+@media print { .steps-card { padding: 0; } .step input { display: none; } .page-head .actions, .hint, .tabs { display: none; } }

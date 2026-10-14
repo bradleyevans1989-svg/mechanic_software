@@ -1,0 +1,45 @@
+<%- include('../partials/header', { title: 'Training' }) %>
+<div class="page-head">
+  <h1>Training <span class="muted">modules and points</span></h1>
+  <% if (user.role === 'owner') { %>
+    <div class="actions">
+      <form method="post" action="/training/starter"><button class="btn">Add starter modules</button></form>
+      <a class="btn primary" href="/training/new">New module</a>
+    </div>
+  <% } %>
+</div>
+<%- include('../partials/team-tabs') %>
+<div class="grid-2 wide">
+  <section class="card">
+    <h2>Modules <span class="muted"><%= totalPoints %> points on offer</span></h2>
+    <% if (!modules.length) { %><p class="muted">No modules yet.<%= user.role === 'owner' ? ' Write one, or add the starter set.' : '' %></p><% } %>
+    <ul class="list">
+      <% for (const m of modules) { const done = mine.has(m.id); %>
+        <li>
+          <div>
+            <a href="/training/<%= m.id %>"><strong><%= m.title %></strong></a>
+            <span class="badge <%= done ? '' : 'flat' %>"><%= m.points %> pts</span>
+            <% if (!m.active) { %><span class="pill pill-void">Hidden</span><% } %>
+            <div class="muted"><%= m.description %></div>
+          </div>
+          <% if (done) { %><span class="pill pill-paid">Done</span><% } else { %><a class="btn small" href="/training/<%= m.id %>">Start</a><% } %>
+        </li>
+      <% } %>
+    </ul>
+  </section>
+  <section class="card">
+    <h2>Points board</h2>
+    <table class="table">
+      <thead><tr><th>Staff</th><th class="num">Modules</th><th class="num">Points</th><th></th></tr></thead>
+      <% board.forEach((s, i) => { %>
+        <tr>
+          <td><%= i === 0 && s.points ? '🏆 ' : '' %><%= s.name %><%= s.id === user.id ? ' (you)' : '' %></td>
+          <td class="num"><%= s.done %> / <%= modules.filter(m => m.active).length %></td>
+          <td class="num"><strong><%= s.points %></strong></td>
+          <td class="bar-cell"><div class="bar"><span style="width: <%= totalPoints ? Math.round(s.points / totalPoints * 100) : 0 %>%"></span></div></td>
+        </tr>
+      <% }) %>
+    </table>
+  </section>
+</div>
+<%- include('../partials/footer') %>

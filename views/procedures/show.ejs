@@ -1,0 +1,25 @@
+<%- include('../partials/header', { title: procedure.title }) %>
+<div class="page-head">
+  <div>
+    <h1><%= procedure.title %></h1>
+    <p class="muted"><%= procedure.category || 'General' %> · updated <%= u.fmtDateTime(procedure.updated_at, settings.timezone) %><%= procedure.updated_by_name ? ' by ' + procedure.updated_by_name : '' %></p>
+  </div>
+  <div class="actions">
+    <a class="btn" href="/procedures">All procedures</a>
+    <button class="btn" onclick="window.print()">Print</button>
+    <% if (user.role === 'owner') { %><a class="btn primary" href="/procedures/<%= procedure.id %>/edit">Edit</a><% } %>
+  </div>
+</div>
+<div class="card steps-card">
+  <% if (!blocks.length) { %><p class="muted">No steps written yet.</p><% } %>
+  <% let n = 0; for (const b of blocks) { %>
+    <% if (b.heading) { %><h2 class="step-heading"><%= b.heading %></h2><% } %>
+    <ol class="steps" start="<%= n + 1 %>">
+      <% for (const s of b.steps) { n++; %>
+        <li><label class="step"><input type="checkbox"><span class="n"><%= n %></span><span><%= s %></span></label></li>
+      <% } %>
+    </ol>
+  <% } %>
+</div>
+<p class="hint">Tick steps off as you go; the ticks are just for you and reset when you leave the page.</p>
+<%- include('../partials/footer') %>

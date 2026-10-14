@@ -1,0 +1,51 @@
+<%- include('../partials/header', { title: 'Team' }) %>
+<div class="page-head">
+  <h1>Team <span class="muted">to-do chat</span></h1>
+</div>
+<%- include('../partials/team-tabs') %>
+<div class="grid-2">
+  <section class="card">
+    <h2>To do <span class="muted"><%= open.length %> open</span></h2>
+    <form method="post" action="/team" class="inline-form">
+      <input name="text" class="grow" placeholder="Something for the team to do, e.g. Order brake cleaner" required maxlength="2000" autofocus>
+      <input type="hidden" name="kind" value="todo">
+      <button class="btn primary">Add</button>
+    </form>
+    <% if (!open.length) { %><p class="muted mt">Nothing outstanding. Nice.</p><% } %>
+    <ul class="chat mt">
+      <% for (const p of open) { %>
+        <li class="msg">
+          <form method="post" action="/team/<%= p.id %>/done" class="tick"><button class="tickbox" title="Mark done" aria-label="Mark done"></button></form>
+          <div class="bubble">
+            <div class="meta"><strong><%= p.author || 'Someone' %></strong> <span class="muted"><%= u.fmtDateTime(p.created_at, settings.timezone) %></span></div>
+            <div class="text"><%= p.text %></div>
+          </div>
+          <% if (user.role === 'owner' || p.user_id === user.id) { %><form method="post" action="/team/<%= p.id %>/delete"><button class="icon" title="Delete" data-confirm-btn="Delete this?">×</button></form><% } %>
+        </li>
+      <% } %>
+    </ul>
+  </section>
+  <section class="card">
+    <h2>Notes and done</h2>
+    <form method="post" action="/team" class="inline-form">
+      <input name="text" class="grow" placeholder="A note for everyone, e.g. Hoist 2 is booked for service Friday" required maxlength="2000">
+      <input type="hidden" name="kind" value="note">
+      <button class="btn">Post note</button>
+    </form>
+    <% if (!feed.length) { %><p class="muted mt">No notes yet.</p><% } %>
+    <ul class="chat mt">
+      <% for (const p of feed) { %>
+        <li class="msg <%= p.done_at ? "done" : "" %> kind-<%= p.kind %>">
+          <% if (p.done_at) { %><form method="post" action="/team/<%= p.id %>/reopen" class="tick"><button class="tickbox on" title="Reopen" aria-label="Reopen">✓</button></form><% } else { %><span class="tick"></span><% } %>
+          <div class="bubble">
+            <div class="meta"><strong><%= p.author || 'Someone' %></strong> <span class="muted"><%= u.fmtDateTime(p.created_at, settings.timezone) %></span>
+              <% if (p.done_at) { %><span class="pill pill-paid plain">Done by <%= p.done_by_name || 'someone' %> <%= u.fmtDateTime(p.done_at, settings.timezone) %></span><% } %></div>
+            <div class="text"><%= p.text %></div>
+          </div>
+          <% if (user.role === 'owner' || p.user_id === user.id) { %><form method="post" action="/team/<%= p.id %>/delete"><button class="icon" title="Delete" data-confirm-btn="Delete this?">×</button></form><% } %>
+        </li>
+      <% } %>
+    </ul>
+  </section>
+</div>
+<%- include('../partials/footer') %>

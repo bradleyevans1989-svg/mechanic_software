@@ -1,0 +1,24 @@
+<%- include('../partials/header', { title: module.id ? 'Edit module' : 'New module' }) %>
+<h1><%= module.id ? 'Edit module' : 'New training module' %></h1>
+<% if (error) { %><p class="error"><%= error %></p><% } %>
+<form method="post" action="<%= module.id ? '/training/' + module.id : '/training' %>" class="card form">
+  <div class="grid-3">
+    <label>Title <input name="title" value="<%= module.title %>" required placeholder="e.g. Hoist safety"></label>
+    <label>Points <input name="points" type="number" min="0" max="1000" value="<%= module.points %>"></label>
+    <label>Shown to staff
+      <select name="active"><option value="1" <%= module.active ? 'selected' : '' %>>Yes</option><option value="0" <%= !module.active ? 'selected' : '' %>>Hidden</option></select>
+    </label>
+  </div>
+  <label>What it covers <input name="description" value="<%= module.description %>" placeholder="One line on what they'll learn"></label>
+  <label>Content <span class="muted">(one step per line; start a line with # for a heading)</span>
+    <textarea name="body" rows="16"><%= module.body %></textarea>
+  </label>
+  <div class="form-actions">
+    <button class="btn primary">Save</button>
+    <a class="btn" href="<%= module.id ? '/training/' + module.id : '/training' %>">Cancel</a>
+  </div>
+</form>
+<% if (module.id) { %>
+  <form method="post" action="/training/<%= module.id %>/delete" data-confirm="Delete this module and everyone's completions of it?"><button class="btn danger">Delete module</button></form>
+<% } %>
+<%- include('../partials/footer') %>

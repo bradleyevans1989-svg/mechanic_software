@@ -1,0 +1,43 @@
+<%- include('../partials/header', { title: module.title }) %>
+<div class="page-head">
+  <div>
+    <h1><%= module.title %> <span class="badge"><%= module.points %> pts</span></h1>
+    <p class="muted"><%= module.description %></p>
+  </div>
+  <div class="actions">
+    <a class="btn" href="/training">All modules</a>
+    <% if (user.role === 'owner') { %><a class="btn" href="/training/<%= module.id %>/edit">Edit</a><% } %>
+    <% if (mine) { %><span class="pill pill-paid plain">You completed this <%= u.fmtDateTime(mine.completed_at, settings.timezone) %></span>
+    <% } else { %><form method="post" action="/training/<%= module.id %>/complete"><button class="btn lime" data-confirm-btn="Mark this module as completed by you?">I've done this</button></form><% } %>
+  </div>
+</div>
+<div class="grid-2 wide">
+  <div class="card steps-card">
+    <% if (!blocks.length) { %><p class="muted">No content yet.</p><% } %>
+    <% let n = 0; for (const b of blocks) { %>
+      <% if (b.heading) { %><h2 class="step-heading"><%= b.heading %></h2><% } %>
+      <ol class="steps" start="<%= n + 1 %>">
+        <% for (const s of b.steps) { n++; %><li><label class="step"><input type="checkbox"><span class="n"><%= n %></span><span><%= s %></span></label></li><% } %>
+      </ol>
+    <% } %>
+  </div>
+  <section class="card">
+    <h2>Who has done it</h2>
+    <% if (!completions.length) { %><p class="muted">Nobody yet.</p><% } %>
+    <ul class="list compact">
+      <% for (const c of completions) { %>
+        <li><span><%= c.name %></span><span class="muted small"><%= u.fmtDateTime(c.completed_at, settings.timezone) %>
+          <% if (user.role === 'owner') { %><form method="post" action="/training/<%= module.id %>/uncomplete" class="inline"><input type="hidden" name="user_id" value="<%= c.user_id %>"><button class="link small">undo</button></form><% } %></span></li>
+      <% } %>
+    </ul>
+    <% if (user.role === 'owner') { const left = staff.filter(s => !completions.some(c => c.user_id === s.id)); if (left.length) { %>
+      <form method="post" action="/training/<%= module.id %>/complete" class="inline-form mt">
+        <label>Mark done for
+          <select name="user_id"><% for (const s of left) { %><option value="<%= s.id %>"><%= s.name %></option><% } %></select>
+        </label>
+        <button class="btn small">Mark done</button>
+      </form>
+    <% } } %>
+  </section>
+</div>
+<%- include('../partials/footer') %>

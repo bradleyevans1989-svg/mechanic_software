@@ -318,3 +318,52 @@ test('clocking: start, break, finish; roster with next shift on the dashboard', 
   await other.post('/roster', { user_id: me.id, date: '2099-01-07', kind: 'shift', start_time: '08:00', end_time: '16:00' });
   assert.equal(await owner.db.get(`SELECT id FROM shifts WHERE date = '2099-01-07'`), undefined);
 });
+
+test('team: to-do chat, procedures and training points, owner-only editing', async () => {
+  const { stepBlocks } = require('../lib/records');
+  assert.deepEqual(stepBlocks('# A\n1. one\n- two\n\nthree'), [{ heading: 'A', steps: ['one', 'two', 'three'] }]);
+
+  // To-do chat
+  let res = await owner.post('/team', { text: 'Chase the Ranger parts', kind: 'todo' });
+  assert.equal(res.status, 302);
+  await owner.post('/team', { text: 'Hoist 2 booked Friday', kind: 'note' });
+  let page = (await owner.get('/team')).text;
+  assert.match(page, /Chase the Ranger parts/);
+  assert.match(page, /1 open/);
+  const todo = await owner.db.get(`SELECT id FROM team_posts WHERE kind = 'todo'`);
+  await owner.post(`/team/${todo.id}/done`);
+  page = (await owner.get('/team')).text;
+  assert.match(page, /0 open/);
+  assert.match(page, /Done by/);
+  await owner.post(`/team/${todo.id}/reopen`);
+  assert.match((await owner.get('/team')).text, /1 open/);
+  assert.doesNotMatch((await other.get('/team')).text, /Chase the Ranger parts/);
+
+  // Procedures
+  await owner.post('/procedures/starter');
+  await owner.post('/procedures/starter');
+  assert.equal((await owner.db.get('SELECT COUNT(*) AS n FROM procedures')).n, 3);
+  res = await owner.post('/procedures', { title: 'Tyre fitting', category: 'Workshop', body: '# Before\nCheck the size\n# Fitting\nTorque to spec' });
+  assert.equal(res.status, 302);
+  const procId = idFrom(res);
+  page = (await owner.get(`/procedures/${procId}`)).text;
+  assert.match(page, /Torque to spec/);
+  assert.match(page, /start="2"/, 'numbering continues across headings');
+  assert.equal((await owner.post('/procedures', { title: '' })).status, 400);
+  assert.equal((await other.get(`/procedures/${procId}`)).status, 404);
+
+  // Training
+  await owner.post('/training/starter');
+  const mod = await owner.db.get(`SELECT * FROM training_modules WHERE title = 'Hoist safety'`);
+  assert.equal(mod.points, 20);
+  await owner.post(`/training/${mod.id}/complete`);
+  await owner.post(`/training/${mod.id}/complete`); // twice is still one completion
+  assert.equal((await owner.db.get('SELECT COUNT(*) AS n FROM training_completions')).n, 1);
+  page = (await owner.get('/training')).text;
+  assert.match(page, /<strong>20<\/strong>/);
+  assert.match(page, /🏆/);
+  const me = await owner.db.get('SELECT id FROM users WHERE email = $1', ['deep@example.com']);
+  await owner.post(`/training/${mod.id}/uncomplete`, { user_id: me.id });
+  assert.equal((await owner.db.get('SELECT COUNT(*) AS n FROM training_completions')).n, 0);
+  assert.equal((await other.get(`/training/${mod.id}`)).status, 404);
+});

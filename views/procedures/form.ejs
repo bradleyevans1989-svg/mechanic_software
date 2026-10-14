@@ -1,0 +1,20 @@
+<%- include('../partials/header', { title: procedure.id ? 'Edit procedure' : 'New procedure' }) %>
+<h1><%= procedure.id ? 'Edit procedure' : 'New procedure' %></h1>
+<% if (error) { %><p class="error"><%= error %></p><% } %>
+<form method="post" action="<%= procedure.id ? '/procedures/' + procedure.id : '/procedures' %>" class="card form">
+  <div class="grid-2">
+    <label>Title <input name="title" value="<%= procedure.title %>" required placeholder="e.g. Vehicle check-in"></label>
+    <label>Category <input name="category" value="<%= procedure.category %>" placeholder="e.g. Front desk, Workshop, Safety"></label>
+  </div>
+  <label>Steps <span class="muted">(one per line; start a line with # for a heading)</span>
+    <textarea name="body" rows="16" placeholder="# When the car arrives&#10;Confirm the customer's details&#10;Walk around the car and note any damage"><%= procedure.body %></textarea>
+  </label>
+  <div class="form-actions">
+    <button class="btn primary">Save</button>
+    <a class="btn" href="<%= procedure.id ? '/procedures/' + procedure.id : '/procedures' %>">Cancel</a>
+  </div>
+</form>
+<% if (procedure.id) { %>
+  <form method="post" action="/procedures/<%= procedure.id %>/delete" data-confirm="Delete this procedure?"><button class="btn danger">Delete procedure</button></form>
+<% } %>
+<%- include('../partials/footer') %>
