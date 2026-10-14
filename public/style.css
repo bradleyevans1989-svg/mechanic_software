@@ -162,3 +162,9 @@ ul.compact { margin: .25rem 0 0; padding-left: 1.2rem; }
   .table.card { display: block; overflow-x: auto; }
   .nav { width: 100%; overflow-x: auto; flex-wrap: nowrap; }
 }
+.who { display: flex; gap: .75rem; align-items: center; }
+.who a { color: #d6d8dc; }
+.who form { margin: 0; }
+.xero-status { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem; font-size: .9rem; }
+.xero-status form { margin: 0; }
+code { background: #ecebe5; padding: .1rem .35rem; border-radius: 4px; word-break: break-all; }

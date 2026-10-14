@@ -1,0 +1,17 @@
+<%- include('partials/header', { title: 'My account' }) %>
+<h1>My account</h1>
+<% if (saved) { %><p class="flash">Saved.</p><% } %>
+<% if (error) { %><p class="error"><%= error %></p><% } %>
+<form method="post" action="/account" class="card form">
+  <div class="grid-2">
+    <label>Name <input name="name" value="<%= user.name %>" required></label>
+    <label>Email <input value="<%= user.email %>" disabled></label>
+  </div>
+  <h2>Change password</h2>
+  <div class="grid-2">
+    <label>Current password <input type="password" name="current_password" autocomplete="current-password"></label>
+    <label>New password <input type="password" name="new_password" minlength="8" autocomplete="new-password"></label>
+  </div>
+  <div class="form-actions"><button class="btn primary">Save</button></div>
+</form>
+<%- include('partials/footer') %>

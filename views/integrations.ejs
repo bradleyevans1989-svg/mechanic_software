@@ -1,0 +1,78 @@
+<%- include('partials/header', { title: 'Xero and add-ons' }) %>
+<div class="page-head">
+  <h1>Xero and add-ons</h1>
+  <div class="actions"><a class="btn" href="/settings">Back to settings</a></div>
+</div>
+<% if (notice) { %><p class="flash"><%= notice %></p><% } %>
+<% if (error) { %><p class="error">Xero: <%= error %></p><% } %>
+
+<section class="card">
+  <h2>Xero <% if (connected) { %><%- include('partials/pill', { state: 'paid', label: 'Connected' }) %><% } %></h2>
+  <p class="hint">Customers, invoices and payments are sent to Xero automatically as you work. Nothing comes back from Xero, so keep making changes here.</p>
+
+  <% if (!xeroConfigured) { %>
+    <p class="banner warn">Xero isn't set up on the server yet.</p>
+    <ol>
+      <li>Sign in at <a href="https://developer.xero.com/app/manage" target="_blank" rel="noopener">developer.xero.com</a> and create a <strong>Web app</strong>.</li>
+      <li>Set its redirect URI to <code><%= redirectUri %></code></li>
+      <li>Copy the Client ID and a Client Secret into the server settings as <code>XERO_CLIENT_ID</code> and <code>XERO_CLIENT_SECRET</code>, then restart.</li>
+    </ol>
+  <% } else if (orgs.length) { %>
+    <p>You gave access to more than one organisation. Which one is this workshop?</p>
+    <form method="post" action="/xero/tenant" class="inline-form">
+      <select name="tenant_id"><% for (const o of orgs) { %><option value="<%= o.tenantId %>"><%= o.tenantName %></option><% } %></select>
+      <button class="btn primary">Use this organisation</button>
+    </form>
+  <% } else if (!connected) { %>
+    <a class="btn primary" href="/xero/connect">Connect to Xero</a>
+  <% } else { %>
+    <p>Connected to <strong><%= tenantName %></strong>.
+      Invoices sent: <%= counts.synced || 0 %><% if (counts.pending) { %> · waiting: <%= counts.pending %><% } %><% if (counts.error) { %> · <span class="error">failed: <%= counts.error %></span><% } %></p>
+
+    <form method="post" action="/xero/settings" class="form">
+      <h3>Xero account codes</h3>
+      <div class="grid-4">
+        <label>Labour <input name="labour_account" value="<%= config.labour_account %>"></label>
+        <label>Parts <input name="parts_account" value="<%= config.parts_account %>"></label>
+        <label>Other items <input name="other_account" value="<%= config.other_account %>"></label>
+        <label>Bank account for payments <input name="payment_account" value="<%= config.payment_account %>" placeholder="e.g. 090"></label>
+      </div>
+      <p class="hint">Codes come from your Xero chart of accounts. 200 is usually Sales. Payments are only sent once a bank account code is set; 090 is often the business bank account.</p>
+      <div class="form-actions"><button class="btn primary">Save Xero settings</button></div>
+    </form>
+
+    <% if (problems.length) { %>
+      <h3>Needs attention</h3>
+      <table class="table">
+        <% for (const p of problems) { %>
+          <tr>
+            <td><% if (p.entity === 'invoice' && p.number) { %><a href="/documents/<%= p.local_id %>">INV-<%= p.number %></a><% } else if (p.entity === 'contact') { %><a href="/customers/<%= p.local_id %>">Customer</a><% } else { %><%= p.entity %><% } %></td>
+            <td class="error"><%= p.error %></td>
+          </tr>
+        <% } %>
+      </table>
+    <% } %>
+
+    <div class="actions">
+      <form method="post" action="/xero/sync"><button class="btn">Sync now and retry failures</button></form>
+      <form method="post" action="/xero/disconnect" data-confirm="Disconnect from Xero? Nothing in Xero is deleted."><button class="btn danger">Disconnect</button></form>
+    </div>
+
+    <h3>Send older invoices</h3>
+    <form method="post" action="/xero/send-past" class="inline-form" data-confirm="Send these invoices to Xero? Skip this if they're already in Xero from Mechanic Desk, or you'll get duplicates.">
+      <label>Invoices dated from <input type="date" name="since" value="<%= today %>"></label>
+      <button class="btn">Queue for Xero</button>
+    </form>
+    <p class="hint">Only invoices made after connecting are sent automatically. Use this for invoices made here before you connected.</p>
+  <% } %>
+</section>
+
+<section class="card">
+  <h2>Coming later</h2>
+  <ul class="list">
+    <li><div><strong>MYOB</strong><div class="muted">Same sync as Xero, for when you move to MYOB.</div></div><span class="pill">Planned</span></li>
+    <li><div><strong>SMS reminders</strong><div class="muted">Booking and service reminders by text, about 5 to 8c per message through an SMS provider. Off until you want it.</div></div><span class="pill">Off</span></li>
+    <li><div><strong>Parts</strong><div class="muted">A parts list with your buy and sell prices, and later ordering from suppliers like Burson or Repco.</div></div><span class="pill">Planned</span></li>
+  </ul>
+</section>
+<%- include('partials/footer') %>

@@ -11,7 +11,8 @@
 <header class="topbar">
   <a class="brand" href="/"><%= settings.business_name %></a>
   <nav class="nav">
-    <% const links = [['/', 'Today'], ['/bookings', 'Diary'], ['/jobs', 'Jobs'], ['/quotes', 'Quotes'], ['/invoices', 'Invoices'], ['/customers', 'Customers'], ['/reports', 'Reports'], ['/settings', 'Settings']]; %>
+    <% const links = [['/', 'Today'], ['/bookings', 'Diary'], ['/jobs', 'Jobs'], ['/quotes', 'Quotes'], ['/invoices', 'Invoices'], ['/customers', 'Customers']];
+       if (user && user.role === 'owner') links.push(['/reports', 'Reports'], ['/settings', 'Settings']); %>
     <% for (const [href, label] of links) { const active = href === '/' ? path === '/' : path.startsWith(href); %>
       <a href="<%= href %>" class="<%= active ? 'active' : '' %>"><%= label %></a>
     <% } %>
@@ -19,11 +20,11 @@
   <form class="search" action="/search">
     <input type="search" name="q" value="<%= q %>" placeholder="Rego, name, phone, invoice #" aria-label="Search">
   </form>
-  <% if (authEnabled) { %>
-    <form method="post" action="/logout" class="logout"><button class="link">Log out</button></form>
+  <% if (user) { %>
+    <div class="who">
+      <a href="/account"><%= user.name %></a>
+      <form method="post" action="/logout" class="logout"><button class="link">Log out</button></form>
+    </div>
   <% } %>
 </header>
-<% if (!authEnabled) { %>
-  <div class="banner">No password is set. Set APP_PASSWORD before putting this online.</div>
-<% } %>
 <main class="page">

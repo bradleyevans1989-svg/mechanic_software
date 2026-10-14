@@ -1,5 +1,11 @@
 <%- include('partials/header', { title: 'Settings' }) %>
-<h1>Settings</h1>
+<div class="page-head">
+  <h1>Settings</h1>
+  <div class="actions">
+    <a class="btn" href="/staff">Staff logins</a>
+    <a class="btn" href="/integrations">Xero and add-ons</a>
+  </div>
+</div>
 <% if (saved) { %><p class="flash">Saved.</p><% } %>
 <% if (!settings.abn) { %><p class="banner warn">Add your ABN. A tax invoice must show it.</p><% } %>
 <form method="post" action="/settings" class="card form">

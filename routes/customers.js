@@ -28,7 +28,7 @@ function hasVehicle(v) {
   return Boolean(v.rego || v.make || v.model || v.vin);
 }
 
-module.exports = function (app, { db }) {
+module.exports = function (app, { db, xero }) {
   const insertVehicle = db.prepare(
     `INSERT INTO vehicles (customer_id, rego, make, model, year, vin, colour, odometer, rego_due,
        next_service_date, next_service_km, notes, created_at)
@@ -115,6 +115,7 @@ module.exports = function (app, { db }) {
       `UPDATE customers SET name = @name, phone = @phone, email = @email, address = @address, notes = @notes
        WHERE id = @id`
     ).run({ ...customer, id: existing.id });
+    xero.queueContact(existing.id);
     res.redirect(`/customers/${existing.id}`);
   });
 

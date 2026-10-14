@@ -6,7 +6,7 @@
         <td><%= l.description %></td>
         <td class="num"><%= l.qty %></td>
         <td class="num"><%= u.money(l.unit_cents) %></td>
-        <td class="num"><%= l.gst ? u.money(Math.round(u.lineTotal(l) * u.GST_RATE)) : '—' %></td>
+        <td class="num"><%= l.gst ? u.money(u.lineGst(l)) : '—' %></td>
         <td class="num"><%= u.money(u.lineTotal(l)) %></td>
       </tr>
     <% } %>

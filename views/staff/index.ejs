@@ -1,0 +1,21 @@
+<%- include('../partials/header', { title: 'Staff' }) %>
+<div class="page-head">
+  <h1>Staff</h1>
+  <div class="actions"><a class="btn primary" href="/staff/new">Add staff member</a></div>
+</div>
+<table class="table card">
+  <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th></th></tr></thead>
+  <tbody>
+    <% for (const s of staff) { %>
+      <tr>
+        <td><%= s.name %><%= s.id === user.id ? ' (you)' : '' %></td>
+        <td><%= s.email %></td>
+        <td><%= ROLES[s.role] %></td>
+        <td><%- include('../partials/pill', { state: s.active ? 'paid' : 'void', label: s.active ? 'Active' : 'Inactive' }) %></td>
+        <td><a href="/staff/<%= s.id %>/edit">Edit</a></td>
+      </tr>
+    <% } %>
+  </tbody>
+</table>
+<p class="hint">Owners can see reports and change settings, staff and the Xero connection. Staff can do everything else.</p>
+<%- include('../partials/footer') %>

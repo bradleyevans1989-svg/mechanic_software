@@ -19,10 +19,16 @@
 </div>
 <% if (saved) { %><p class="flash">Saved.</p><% } %>
 <form method="post" action="/jobs/<%= job.id %>" class="card form" data-dirty-check>
-  <div class="grid-3">
+  <div class="grid-4">
     <label>Status
       <select name="status">
         <% for (const [k, label] of Object.entries(JOB_STATUSES)) { %><option value="<%= k %>" <%= job.status === k ? 'selected' : '' %>><%= label %></option><% } %>
+      </select>
+    </label>
+    <label>Mechanic
+      <select name="mechanic_id">
+        <option value="">— Unassigned —</option>
+        <% for (const m of mechanics) { %><option value="<%= m.id %>" <%= job.mechanic_id === m.id ? 'selected' : '' %>><%= m.name %></option><% } %>
       </select>
     </label>
     <label>Odometer (km) <input name="odometer" inputmode="numeric" value="<%= job.odometer ?? '' %>"></label>

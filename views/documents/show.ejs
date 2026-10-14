@@ -22,6 +22,15 @@
   </div>
 </div>
 <% if (saved) { %><p class="flash">Saved.</p><% } %>
+<% if (xeroStatus) { %>
+  <div class="xero-status">
+    Xero: <% if (xeroStatus.status === 'synced') { %><strong>sent</strong><% } else if (xeroStatus.status === 'error') { %><strong class="error">failed</strong><% } else if (xeroStatus.status === 'skipped') { %>waiting for items<% } else { %><%= xeroStatus.status === 'pending' ? 'sending…' : 'not sent' %><% } %>
+    <% if (xeroStatus.error) { %><span class="error"><%= xeroStatus.error %></span><% } %>
+    <% if (xeroStatus.status !== 'synced' || xeroStatus.error) { %>
+      <form method="post" action="/documents/<%= doc.id %>/xero"><button class="btn small">Send to Xero now</button></form>
+    <% } %>
+  </div>
+<% } %>
 <% if (doc.state === 'void') { %><p class="banner warn">This invoice is void and is left out of reports.</p><% } %>
 
 <form method="post" action="/documents/<%= doc.id %>" class="card form" data-dirty-check>

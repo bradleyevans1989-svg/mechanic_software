@@ -10,8 +10,10 @@
   <form method="post" action="/login" class="card login">
     <h1><%= settings.business_name %></h1>
     <% if (error) { %><p class="error"><%= error %></p><% } %>
-    <label>Password <input type="password" name="password" autofocus required></label>
+    <label>Email <input type="email" name="email" value="<%= email %>" autocomplete="username" autofocus required></label>
+    <label>Password <input type="password" name="password" autocomplete="current-password" required></label>
     <button class="btn primary">Log in</button>
+    <p class="hint">Forgot your password? Ask the workshop owner to reset it.</p>
   </form>
 </body>
 </html>

@@ -47,7 +47,7 @@
         <li>
           <a href="/jobs/<%= j.id %>"><strong>J<%= j.number %></strong> · <%= j.rego || '' %> <%= j.make %> <%= j.model %></a>
           <%- include('partials/pill', { state: j.status, label: JOB_STATUSES[j.status] }) %>
-          <div class="muted full"><%= j.customer_name %> — <%= j.description %></div>
+          <div class="muted full"><%= j.customer_name %> — <%= j.description %><%= j.mechanic_name ? ' · ' + j.mechanic_name : '' %></div>
         </li>
       <% } %>
     </ul>

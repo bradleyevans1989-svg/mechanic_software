@@ -11,7 +11,7 @@
   <a href="/jobs?status=all" class="<%= filter === 'all' ? 'active' : '' %>">All</a>
 </nav>
 <table class="table card">
-  <thead><tr><th>Job</th><th>Vehicle</th><th>Customer</th><th>Work</th><th>Opened</th><th>Status</th></tr></thead>
+  <thead><tr><th>Job</th><th>Vehicle</th><th>Customer</th><th>Work</th><th>Mechanic</th><th>Opened</th><th>Status</th></tr></thead>
   <tbody>
     <% for (const j of jobs) { %>
       <tr>
@@ -19,11 +19,12 @@
         <td><%= j.rego || '' %> <%= j.make %> <%= j.model %></td>
         <td><%= j.customer_name %></td>
         <td><%= j.description %></td>
+        <td><%= j.mechanic_name || '' %></td>
         <td><%= u.fmtDate(j.created_at) %></td>
         <td><%- include('../partials/pill', { state: j.status, label: JOB_STATUSES[j.status] }) %></td>
       </tr>
     <% } %>
-    <% if (!jobs.length) { %><tr><td colspan="6" class="muted">No jobs here.</td></tr><% } %>
+    <% if (!jobs.length) { %><tr><td colspan="7" class="muted">No jobs here.</td></tr><% } %>
   </tbody>
 </table>
 <%- include('../partials/footer') %>

@@ -2,12 +2,19 @@ const { now, today, addDays, parseLines, parseIntOrNull, totals } = require('../
 const { nextNumber, getLines, saveLines } = require('../lib/db');
 const { getCustomer, getVehicle, vehicleOptions, customerOptions, resolveParty } = require('../lib/records');
 
-module.exports = function (app, { db, JOB_STATUSES }) {
+module.exports = function (app, { db, xero, JOB_STATUSES }) {
   const JOB_SELECT = `
-    SELECT j.*, c.name AS customer_name, c.phone AS customer_phone, v.rego, v.make, v.model, v.year,
+    SELECT j.*, c.name AS customer_name, c.phone AS customer_phone, v.rego, v.make, v.model, v.year, m.name AS mechanic_name,
       (SELECT id FROM documents WHERE job_id = j.id AND type = 'invoice' AND status != 'void' LIMIT 1) AS invoice_id
     FROM jobs j JOIN customers c ON c.id = j.customer_id
-    LEFT JOIN vehicles v ON v.id = j.vehicle_id`;
+    LEFT JOIN vehicles v ON v.id = j.vehicle_id
+    LEFT JOIN users m ON m.id = j.mechanic_id`;
+
+  const mechanics = () => db.prepare('SELECT id, name FROM users WHERE active = 1 ORDER BY name COLLATE NOCASE').all();
+  const validMechanic = (v) => {
+    const id = parseIntOrNull(v);
+    return id && db.prepare('SELECT id FROM users WHERE id = ?').get(id) ? id : null;
+  };
 
   function getJob(id) {
     return db.prepare(`${JOB_SELECT} WHERE j.id = ?`).get(id);
@@ -59,7 +66,7 @@ module.exports = function (app, { db, JOB_STATUSES }) {
     const job = getJob(req.params.id);
     if (!job) return next();
     const lines = getLines(db, 'job', job.id);
-    res.render('jobs/show', { job, lines, totals: totals(lines), saved: req.query.saved === '1' });
+    res.render('jobs/show', { job, lines, totals: totals(lines), mechanics: mechanics(), saved: req.query.saved === '1' });
   });
 
   app.post('/jobs/:id', (req, res, next) => {
@@ -68,11 +75,12 @@ module.exports = function (app, { db, JOB_STATUSES }) {
     const status = JOB_STATUSES[req.body.status] ? req.body.status : job.status;
     db.transaction(() => {
       db.prepare(
-        `UPDATE jobs SET status = ?, description = ?, tech_notes = ?, odometer = ?,
+        `UPDATE jobs SET status = ?, mechanic_id = ?, description = ?, tech_notes = ?, odometer = ?,
            completed_at = CASE WHEN ? IN ('ready', 'invoiced') THEN COALESCE(completed_at, ?) ELSE NULL END
          WHERE id = ?`
       ).run(
         status,
+        validMechanic(req.body.mechanic_id),
         String(req.body.description || '').trim(),
         String(req.body.tech_notes || '').trim(),
         parseIntOrNull(req.body.odometer),
@@ -126,6 +134,7 @@ module.exports = function (app, { db, JOB_STATUSES }) {
       }
       return id;
     })();
+    xero.queueInvoice(docId);
     res.redirect(`/documents/${docId}`);
   });
 

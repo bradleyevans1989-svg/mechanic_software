@@ -1,5 +1,6 @@
 const { today, addDays, parseDollars, parseIntOrNull, docNumber, vehicleLabel } = require('../lib/util');
 const { listDocs } = require('../lib/docs');
+const { requireOwner } = require('../lib/auth');
 
 function csvCell(v) {
   const s = String(v ?? '');
@@ -18,8 +19,9 @@ module.exports = function (app, { db }) {
       .all(t);
     const jobs = db
       .prepare(
-        `SELECT j.*, c.name AS customer_name, v.rego, v.make, v.model FROM jobs j
+        `SELECT j.*, c.name AS customer_name, v.rego, v.make, v.model, m.name AS mechanic_name FROM jobs j
          JOIN customers c ON c.id = j.customer_id LEFT JOIN vehicles v ON v.id = j.vehicle_id
+         LEFT JOIN users m ON m.id = j.mechanic_id
          WHERE j.status NOT IN ('invoiced', 'cancelled') ORDER BY j.created_at`
       )
       .all();
@@ -84,9 +86,9 @@ module.exports = function (app, { db }) {
     res.render('search', { q, vehicles, customers, docs, jobs });
   });
 
-  app.get('/settings', (req, res) => res.render('settings', { saved: req.query.saved === '1' }));
+  app.get('/settings', requireOwner, (req, res) => res.render('settings', { saved: req.query.saved === '1' }));
 
-  app.post('/settings', (req, res) => {
+  app.post('/settings', requireOwner, (req, res) => {
     const g = (k) => String(req.body[k] ?? '').trim();
     const n = (k, min) => Math.max(parseIntOrNull(req.body[k]) ?? min, min);
     db.prepare(
@@ -111,7 +113,7 @@ module.exports = function (app, { db }) {
     res.redirect('/settings?saved=1');
   });
 
-  app.get('/reports', (req, res) => {
+  app.get('/reports', requireOwner, (req, res) => {
     const year = parseIntOrNull(req.query.year) || Number(today().slice(0, 4));
     const invoices = listDocs(db, `d.type = 'invoice' AND d.status != 'void' AND d.issue_date LIKE ?`, [`${year}-%`]);
     const payments = db
@@ -139,7 +141,7 @@ module.exports = function (app, { db }) {
   });
 
   // Invoice list for the accountant / BAS.
-  app.get('/reports/invoices.csv', (req, res) => {
+  app.get('/reports/invoices.csv', requireOwner, (req, res) => {
     const from = /^\d{4}-\d{2}-\d{2}$/.test(req.query.from || '') ? req.query.from : '0000-01-01';
     const to = /^\d{4}-\d{2}-\d{2}$/.test(req.query.to || '') ? req.query.to : '9999-12-31';
     const docs = listDocs(db, `d.type = 'invoice' AND d.issue_date BETWEEN ? AND ?`, [from, to], 'ORDER BY d.issue_date, d.number');

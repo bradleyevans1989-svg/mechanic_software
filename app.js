@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 const util = require('./lib/util');
 const auth = require('./lib/auth');
+const { createXero } = require('./lib/xero');
 
 const JOB_STATUSES = {
   open: 'Booked in',
@@ -26,7 +27,7 @@ const QUOTE_STATUSES = {
   declined: 'Declined',
 };
 
-function createApp(db) {
+function createApp(db, { autoSync = true } = {}) {
   const app = express();
   app.set('view engine', 'ejs');
   app.set('views', path.join(__dirname, 'views'));
@@ -45,17 +46,24 @@ function createApp(db) {
     res.locals.settings = db.prepare('SELECT * FROM settings WHERE id = 1').get();
     res.locals.path = req.path;
     res.locals.q = '';
+    res.locals.user = null;
     next();
   });
 
-  auth.setup(app);
+  auth.setup(app, db);
 
-  const ctx = { db, JOB_STATUSES, BOOKING_STATUSES, QUOTE_STATUSES };
+  const xero = createXero(db);
+  xero.setAutoSync(autoSync);
+  app.locals.xero = xero;
+
+  const ctx = { db, xero, JOB_STATUSES, BOOKING_STATUSES, QUOTE_STATUSES };
   require('./routes/main')(app, ctx);
+  require('./routes/staff')(app, ctx);
   require('./routes/customers')(app, ctx);
   require('./routes/bookings')(app, ctx);
   require('./routes/jobs')(app, ctx);
   require('./routes/documents')(app, ctx);
+  require('./routes/integrations')(app, ctx);
 
   app.use((req, res) => res.status(404).render('message', { title: 'Not found', message: 'That page does not exist.' }));
 

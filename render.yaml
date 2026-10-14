@@ -15,7 +15,13 @@ services:
         value: Australia/Sydney
       - key: DB_PATH
         value: /var/data/workshop.db
-      - key: APP_PASSWORD
+      - key: SETUP_CODE        # you type this once, on first visit, to create the owner login
+        sync: false
+      - key: APP_URL           # e.g. https://workshop-xxxx.onrender.com (used for the Xero redirect)
+        sync: false
+      - key: XERO_CLIENT_ID    # from developer.xero.com; leave blank until you connect Xero
+        sync: false
+      - key: XERO_CLIENT_SECRET
         sync: false
       - key: SESSION_SECRET
         generateValue: true

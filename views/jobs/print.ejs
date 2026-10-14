@@ -29,6 +29,6 @@
   </table>
   <h3>Mechanic's notes</h3>
   <div class="box pre tall"><%= job.tech_notes || ' ' %></div>
-  <div class="signoff"><div>Mechanic: ____________________</div><div>Time: ________ hrs</div></div>
+  <div class="signoff"><div>Mechanic: <%= job.mechanic_name || '____________________' %></div><div>Time: ________ hrs</div></div>
 </body>
 </html>

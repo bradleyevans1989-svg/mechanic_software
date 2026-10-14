@@ -5,7 +5,7 @@ const { getCustomer, getVehicle, vehicleOptions, customerOptions, resolveParty }
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-module.exports = function (app, { db, QUOTE_STATUSES }) {
+module.exports = function (app, { db, xero, QUOTE_STATUSES }) {
   function createDoc(type, fields, lines) {
     return db.transaction(() => {
       const settings = db.prepare('SELECT payment_days FROM settings WHERE id = 1').get();
@@ -81,7 +81,8 @@ module.exports = function (app, { db, QUOTE_STATUSES }) {
     const converted = db
       .prepare(`SELECT id, type, number FROM documents WHERE job_id IS NOT NULL AND job_id = ? AND id != ?`)
       .all(doc.job_id, doc.id);
-    res.render('documents/show', { doc, lines, payments, converted, saved: req.query.saved === '1', today: today() });
+    const xeroStatus = doc.type === 'invoice' && xero.state().connected ? xero.invoiceStatus(doc.id) || { status: 'not sent' } : null;
+    res.render('documents/show', { doc, lines, payments, converted, xeroStatus, saved: req.query.saved === '1', today: today() });
   });
 
   app.post('/documents/:id', (req, res, next) => {
@@ -103,6 +104,7 @@ module.exports = function (app, { db, QUOTE_STATUSES }) {
       );
       saveLines(db, 'document', doc.id, parseLines(req.body));
     })();
+    xero.queueInvoice(doc.id);
     res.redirect(`/documents/${doc.id}?saved=1`);
   });
 
@@ -130,11 +132,14 @@ module.exports = function (app, { db, QUOTE_STATUSES }) {
         String(req.body.method || '').trim(),
         now()
       );
+      xero.queueInvoice(doc.id);
     }
     res.redirect(`/documents/${doc.id}`);
   });
 
   app.post('/documents/:id/payments/:pid/delete', (req, res) => {
+    const payment = db.prepare('SELECT id FROM payments WHERE id = ? AND document_id = ?').get(req.params.pid, req.params.id);
+    if (payment) xero.queuePaymentDeleted(payment.id, Number(req.params.id));
     db.prepare('DELETE FROM payments WHERE id = ? AND document_id = ?').run(req.params.pid, req.params.id);
     res.redirect(`/documents/${req.params.id}`);
   });
@@ -158,6 +163,7 @@ module.exports = function (app, { db, QUOTE_STATUSES }) {
         getLines(db, 'document', quote.id)
       );
     })();
+    xero.queueInvoice(id);
     res.redirect(`/documents/${id}`);
   });
 
@@ -195,6 +201,7 @@ module.exports = function (app, { db, QUOTE_STATUSES }) {
       db.prepare(`UPDATE documents SET status = 'void' WHERE id = ?`).run(doc.id);
       if (doc.job_id) db.prepare(`UPDATE jobs SET status = 'ready' WHERE id = ? AND status = 'invoiced'`).run(doc.job_id);
     })();
+    xero.queueInvoice(doc.id);
     res.redirect(`/documents/${doc.id}`);
   });
 
@@ -202,6 +209,7 @@ module.exports = function (app, { db, QUOTE_STATUSES }) {
     const doc = getDoc(db, req.params.id);
     if (!doc || doc.type !== 'invoice') return next();
     db.prepare(`UPDATE documents SET status = 'issued' WHERE id = ?`).run(doc.id);
+    xero.queueInvoice(doc.id);
     res.redirect(`/documents/${doc.id}`);
   });
 

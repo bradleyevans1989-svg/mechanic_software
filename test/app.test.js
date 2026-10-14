@@ -7,29 +7,37 @@ const util = require('../lib/util');
 let server;
 let base;
 let db;
+let cookie = '';
 
 before(async () => {
-  delete process.env.APP_PASSWORD;
+  process.env.SETUP_CODE = 'test-setup';
   db = open(':memory:');
   server = createApp(db).listen(0);
   await new Promise((r) => server.once('listening', r));
   base = `http://localhost:${server.address().port}`;
+
+  // Fresh install sends everyone to setup, which creates the owner.
+  const first = await fetch(base + '/', { redirect: 'manual' });
+  assert.equal(first.headers.get('location'), '/setup');
+  const res = await post('/setup', { code: 'test-setup', name: 'Brad', email: 'Owner@Example.com', password: 'spanner-123' });
+  assert.equal(res.status, 302);
+  cookie = res.headers.get('set-cookie').split(';')[0];
 });
 
 after(() => server.close());
 
-function post(path, fields) {
+function post(path, fields, as = cookie) {
   return fetch(base + path, {
     method: 'POST',
     redirect: 'manual',
-    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    headers: { 'content-type': 'application/x-www-form-urlencoded', cookie: as },
     body: new URLSearchParams(fields).toString(),
   });
 }
 
-async function get(path) {
-  const res = await fetch(base + path);
-  return { status: res.status, text: await res.text() };
+async function get(path, as = cookie) {
+  const res = await fetch(base + path, { headers: { cookie: as }, redirect: 'manual' });
+  return { status: res.status, text: await res.text(), location: res.headers.get('location') };
 }
 
 test('GST totals are 10% of the taxable lines', () => {
@@ -132,11 +140,11 @@ test('full workflow: customer, booking, job, invoice, payment', async () => {
   const report = await get(`/reports`);
   assert.match(report.text, /\$22\.55/);
 
-  const csv = await fetch(`${base}/reports/invoices.csv`).then((r) => r.text());
+  const csv = (await get('/reports/invoices.csv')).text;
   assert.match(csv, /INV-1001,.*,Jane Citizen,ABC123 · Toyota Hilux,225\.45,22\.55,248\.00,248\.00,0\.00,paid/);
 
-  const search = await fetch(`${base}/search?q=abc123`, { redirect: 'manual' });
-  assert.equal(search.headers.get('location'), `/vehicles/${vehicle.id}`);
+  const search = await get('/search?q=abc123');
+  assert.equal(search.location, `/vehicles/${vehicle.id}`);
 
   // A customer with invoices can't be deleted.
   res = await post(`/customers/${customerId}/delete`, {});
@@ -164,25 +172,57 @@ test('quote converts to invoice with the same lines', async () => {
 });
 
 test('every main page renders', async () => {
-  for (const p of ['/', '/bookings', '/bookings/new', '/jobs', '/jobs/new', '/jobs?status=all', '/quotes', '/invoices', '/invoices?show=all', '/customers', '/customers/new', '/reports', '/settings', '/documents/new?type=quote']) {
+  for (const p of ['/', '/bookings', '/bookings/new', '/jobs', '/jobs/new', '/jobs?status=all', '/quotes', '/invoices', '/invoices?show=all', '/customers', '/customers/new', '/reports', '/settings', '/staff', '/staff/new', '/account', '/documents/new?type=quote']) {
     const r = await get(p);
     assert.equal(r.status, 200, `${p} returned ${r.status}: ${r.text.slice(0, 300)}`);
   }
 });
 
-test('password protects the app when APP_PASSWORD is set', async () => {
-  process.env.APP_PASSWORD = 'spanner';
-  try {
-    let res = await fetch(base + '/', { redirect: 'manual' });
-    assert.equal(res.headers.get('location'), '/login');
-    res = await post('/login', { password: 'wrong' });
-    assert.equal(res.status, 401);
-    res = await post('/login', { password: 'spanner' });
-    assert.equal(res.status, 302);
-    const cookie = res.headers.get('set-cookie').split(';')[0];
-    res = await fetch(base + '/', { headers: { cookie }, redirect: 'manual' });
-    assert.equal(res.status, 200);
-  } finally {
-    delete process.env.APP_PASSWORD;
-  }
+test('staff logins: owner adds staff, staff cannot see owner pages, deactivation signs out', async () => {
+  let res = await post('/staff', { name: 'Mick', email: 'mick@example.com', role: 'staff', password: 'short' });
+  assert.equal(res.status, 400);
+  res = await post('/staff', { name: 'Mick', email: 'mick@example.com', role: 'staff', password: 'wheel-brace' });
+  assert.equal(res.status, 302);
+
+  res = await post('/login', { email: 'mick@example.com', password: 'wrong-pass' }, '');
+  assert.equal(res.status, 401);
+  res = await post('/login', { email: 'MICK@example.com', password: 'wheel-brace' }, '');
+  assert.equal(res.status, 302);
+  const mick = res.headers.get('set-cookie').split(';')[0];
+
+  assert.equal((await get('/', mick)).status, 200);
+  assert.equal((await get('/settings', mick)).status, 403);
+  assert.equal((await get('/reports', mick)).status, 403);
+  assert.equal((await get('/staff', mick)).status, 403);
+  assert.doesNotMatch((await get('/', mick)).text, /href="\/settings"/);
+
+  // Mick can be put on a job.
+  const job = db.prepare('SELECT id FROM jobs LIMIT 1').get();
+  const mickId = db.prepare(`SELECT id FROM users WHERE email = 'mick@example.com'`).get().id;
+  await post(`/jobs/${job.id}`, { status: 'in_progress', mechanic_id: mickId, description: 'x' }, mick);
+  assert.match((await get('/jobs?status=all')).text, /Mick/);
+
+  // The last owner can't demote themselves.
+  const ownerId = db.prepare(`SELECT id FROM users WHERE role = 'owner'`).get().id;
+  res = await post(`/staff/${ownerId}`, { name: 'Brad', email: 'owner@example.com', role: 'staff', active: '1' });
+  assert.equal(res.status, 400);
+
+  res = await post(`/staff/${mickId}`, { name: 'Mick', email: 'mick@example.com', role: 'staff', active: '0' });
+  assert.equal(res.status, 302);
+  assert.equal((await get('/', mick)).location, '/login');
+  res = await post('/login', { email: 'mick@example.com', password: 'wheel-brace' }, '');
+  assert.equal(res.status, 401);
+
+  // Not logged in at all.
+  assert.equal((await get('/customers', '')).location, '/login');
+});
+
+test('password change keeps you signed in and checks the old password', async () => {
+  let res = await post('/account', { name: 'Brad', current_password: 'nope', new_password: 'new-spanner-1' });
+  assert.equal(res.status, 400);
+  res = await post('/account', { name: 'Brad', current_password: 'spanner-123', new_password: 'new-spanner-1' });
+  assert.equal(res.status, 302);
+  assert.equal((await get('/', cookie)).location, '/login'); // old cookie is dead
+  cookie = res.headers.get('set-cookie').split(';')[0];
+  assert.equal((await get('/')).status, 200);
 });

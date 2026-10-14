@@ -15,17 +15,20 @@ function num(v) {
   return Number.isFinite(n) ? n : 0;
 }
 
-// Same rounding as the server: GST is 10% of the taxable subtotal.
+// Same rounding as the server: half away from zero, GST rounded per line.
+function roundCents(x) {
+  return Math.sign(x) * Math.round(Math.abs(x));
+}
+
 function recalc(box) {
   let subtotal = 0;
-  let taxable = 0;
+  let gst = 0;
   box.querySelectorAll('tr[data-line]').forEach((row) => {
-    const cents = Math.round(num(row.querySelector('[data-qty]').value) * Math.round(num(row.querySelector('[data-price]').value) * 100));
+    const cents = roundCents(num(row.querySelector('[data-qty]').value) * roundCents(num(row.querySelector('[data-price]').value) * 100));
     row.querySelector('[data-amount]').textContent = money(cents);
     subtotal += cents;
-    if (row.querySelector('[data-gst]').value === '1') taxable += cents;
+    if (row.querySelector('[data-gst]').value === '1') gst += roundCents(cents / 10);
   });
-  const gst = Math.round(taxable * 0.1);
   box.querySelector('[data-total="subtotal"]').textContent = money(subtotal);
   box.querySelector('[data-total="gst"]').textContent = money(gst);
   box.querySelector('[data-total="total"]').textContent = money(subtotal + gst);

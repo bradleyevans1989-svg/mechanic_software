@@ -1,0 +1,32 @@
+<%- include('../partials/header', { title: member.id ? 'Edit staff' : 'Add staff' }) %>
+<h1><%= member.id ? 'Edit ' + member.name : 'Add staff member' %></h1>
+<% if (error) { %><p class="error"><%= error %></p><% } %>
+<form method="post" action="<%= member.id ? '/staff/' + member.id : '/staff' %>" class="card form">
+  <div class="grid-2">
+    <label>Name <input name="name" value="<%= member.name || '' %>" required autofocus></label>
+    <label>Email (used to log in) <input type="email" name="email" value="<%= member.email || '' %>" required></label>
+    <label>Role
+      <select name="role">
+        <% for (const [k, l] of Object.entries(ROLES)) { %><option value="<%= k %>" <%= member.role === k ? 'selected' : '' %>><%= l %></option><% } %>
+      </select>
+    </label>
+    <label><%= member.id ? 'New password (leave blank to keep)' : 'Password' %>
+      <input type="password" name="password" minlength="8" autocomplete="new-password" <%= member.id ? '' : 'required' %>>
+    </label>
+  </div>
+  <% if (member.id) { %>
+    <label>Status
+      <select name="active">
+        <option value="1" <%= member.active ? 'selected' : '' %>>Active: can log in</option>
+        <option value="0" <%= member.active ? '' : 'selected' %>>Inactive: can't log in</option>
+      </select>
+    </label>
+  <% } else { %>
+    <input type="hidden" name="active" value="1">
+  <% } %>
+  <div class="form-actions">
+    <button class="btn primary">Save</button>
+    <a class="btn" href="/staff">Cancel</a>
+  </div>
+</form>
+<%- include('../partials/footer') %>
