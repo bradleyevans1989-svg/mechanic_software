@@ -1,0 +1,72 @@
+<% const isQuote = doc.type === 'quote'; const label = isQuote ? 'QUOTE' : 'TAX INVOICE'; %>
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <title><%= isQuote ? 'Quote' : 'Invoice' %> <%= u.docNumber(doc) %> · <%= settings.business_name %></title>
+  <link rel="stylesheet" href="/static/print.css">
+</head>
+<body>
+  <div class="noprint"><button onclick="window.print()">Print or save as PDF</button> <a href="/documents/<%= doc.id %>">Back</a></div>
+  <header class="doc-head">
+    <div>
+      <h1><%= settings.business_name %></h1>
+      <% if (settings.abn) { %><div>ABN <%= settings.abn %></div><% } %>
+      <div class="pre"><%= settings.address %></div>
+      <div><%= settings.phone %><%= settings.phone && settings.email ? ' · ' : '' %><%= settings.email %></div>
+    </div>
+    <div class="doc-title">
+      <h2><%= doc.state === 'void' ? 'VOID ' : '' %><%= label %></h2>
+      <table class="meta">
+        <tr><th>Number</th><td><%= u.docNumber(doc) %></td></tr>
+        <tr><th>Date</th><td><%= u.fmtDate(doc.issue_date) %></td></tr>
+        <% if (doc.due_date) { %><tr><th><%= isQuote ? 'Valid until' : 'Due' %></th><td><%= u.fmtDate(doc.due_date) %></td></tr><% } %>
+      </table>
+    </div>
+  </header>
+  <section class="parties">
+    <div>
+      <h3><%= isQuote ? 'Prepared for' : 'Bill to' %></h3>
+      <strong><%= customer.name %></strong>
+      <div class="pre"><%= customer.address %></div>
+      <div><%= customer.phone %></div><div><%= customer.email %></div>
+    </div>
+    <% if (vehicle) { %>
+      <div>
+        <h3>Vehicle</h3>
+        <strong><%= u.vehicleLabel(vehicle) %></strong>
+        <% if (vehicle.vin) { %><div>VIN <%= vehicle.vin %></div><% } %>
+        <% if (doc.odometer) { %><div>Odometer <%= doc.odometer.toLocaleString('en-AU') %> km</div><% } %>
+      </div>
+    <% } %>
+  </section>
+  <% if (doc.notes) { %><div class="box pre"><%= doc.notes %></div><% } %>
+  <table class="items">
+    <thead><tr><th>Description</th><th class="num">Qty</th><th class="num">Unit ex GST</th><th class="num">GST</th><th class="num">Amount ex GST</th></tr></thead>
+    <tbody>
+      <% for (const l of lines) { %>
+        <tr>
+          <td><%= l.description %></td>
+          <td class="num"><%= l.qty %></td>
+          <td class="num"><%= u.money(l.unit_cents) %></td>
+          <td class="num"><%= l.gst ? '10%' : 'Free' %></td>
+          <td class="num"><%= u.money(u.lineTotal(l)) %></td>
+        </tr>
+      <% } %>
+    </tbody>
+  </table>
+  <table class="sum">
+    <tr><th>Subtotal ex GST</th><td><%= u.money(doc.subtotal) %></td></tr>
+    <tr><th>GST</th><td><%= u.money(doc.gst) %></td></tr>
+    <tr class="grand"><th>Total inc GST</th><td><%= u.money(doc.total) %></td></tr>
+    <% if (!isQuote && doc.paid) { %>
+      <tr><th>Paid</th><td><%= u.money(doc.paid) %></td></tr>
+      <tr class="grand"><th>Balance due</th><td><%= u.money(doc.balance) %></td></tr>
+    <% } %>
+  </table>
+  <footer class="doc-foot">
+    <% if (!isQuote && settings.bank_details && doc.balance > 0) { %><div><h3>How to pay</h3><div class="pre"><%= settings.bank_details %></div></div><% } %>
+    <% if (settings.invoice_terms) { %><div class="pre terms"><%= settings.invoice_terms %></div><% } %>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,29 @@
+<%- include('../partials/header', { title: 'Jobs' }) %>
+<div class="page-head">
+  <h1>Jobs</h1>
+  <div class="actions"><a class="btn primary" href="/jobs/new">New job</a></div>
+</div>
+<nav class="tabs">
+  <a href="/jobs" class="<%= filter === 'active' ? 'active' : '' %>">In the workshop</a>
+  <% for (const [k, label] of Object.entries(JOB_STATUSES)) { %>
+    <a href="/jobs?status=<%= k %>" class="<%= filter === k ? 'active' : '' %>"><%= label %></a>
+  <% } %>
+  <a href="/jobs?status=all" class="<%= filter === 'all' ? 'active' : '' %>">All</a>
+</nav>
+<table class="table card">
+  <thead><tr><th>Job</th><th>Vehicle</th><th>Customer</th><th>Work</th><th>Opened</th><th>Status</th></tr></thead>
+  <tbody>
+    <% for (const j of jobs) { %>
+      <tr>
+        <td><a href="/jobs/<%= j.id %>">J<%= j.number %></a></td>
+        <td><%= j.rego || '' %> <%= j.make %> <%= j.model %></td>
+        <td><%= j.customer_name %></td>
+        <td><%= j.description %></td>
+        <td><%= u.fmtDate(j.created_at) %></td>
+        <td><%- include('../partials/pill', { state: j.status, label: JOB_STATUSES[j.status] }) %></td>
+      </tr>
+    <% } %>
+    <% if (!jobs.length) { %><tr><td colspan="6" class="muted">No jobs here.</td></tr><% } %>
+  </tbody>
+</table>
+<%- include('../partials/footer') %>

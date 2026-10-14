@@ -1,0 +1,15 @@
+<table class="lines-table view">
+  <thead><tr><th class="w-desc">Description</th><th class="num">Qty</th><th class="num">Price</th><th class="num">GST</th><th class="num">Amount</th></tr></thead>
+  <tbody>
+    <% for (const l of lines) { %>
+      <tr>
+        <td><%= l.description %></td>
+        <td class="num"><%= l.qty %></td>
+        <td class="num"><%= u.money(l.unit_cents) %></td>
+        <td class="num"><%= l.gst ? u.money(Math.round(u.lineTotal(l) * u.GST_RATE)) : '—' %></td>
+        <td class="num"><%= u.money(u.lineTotal(l)) %></td>
+      </tr>
+    <% } %>
+    <% if (!lines.length) { %><tr><td colspan="5" class="muted">No items.</td></tr><% } %>
+  </tbody>
+</table>

@@ -1,0 +1,15 @@
+<%- include('../partials/header', { title: 'New job' }) %>
+<h1>New job</h1>
+<% if (error) { %><p class="error"><%= error %></p><% } %>
+<form method="post" action="/jobs" class="card form">
+  <%- include('../partials/party', { record: job }) %>
+  <div class="grid-2">
+    <label>Odometer (km) <input name="odometer" inputmode="numeric" placeholder="Leave blank to use last reading"></label>
+  </div>
+  <label>Work requested <textarea name="description" rows="3"><%= job.description || '' %></textarea></label>
+  <div class="form-actions">
+    <button class="btn primary">Create job card</button>
+    <a class="btn" href="/jobs">Cancel</a>
+  </div>
+</form>
+<%- include('../partials/footer') %>

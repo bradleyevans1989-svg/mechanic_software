@@ -1,0 +1,30 @@
+@page { size: A4; margin: 14mm; }
+* { box-sizing: border-box; }
+body { font: 11pt/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: #111; max-width: 800px; margin: 0 auto; padding: 1rem; }
+h1 { font-size: 18pt; margin: 0 0 .2rem; }
+h2 { font-size: 16pt; margin: 0 0 .4rem; letter-spacing: .05em; }
+h3 { font-size: 9pt; text-transform: uppercase; color: #555; margin: 1rem 0 .3rem; letter-spacing: .04em; }
+.pre { white-space: pre-line; }
+.noprint { background: #fff4d6; padding: .5rem; margin-bottom: 1rem; border-radius: 6px; }
+.noprint button { font: inherit; font-weight: 600; padding: .4rem .8rem; cursor: pointer; }
+.doc-head { display: flex; justify-content: space-between; gap: 2rem; border-bottom: 2px solid #111; padding-bottom: .75rem; }
+.doc-title { text-align: right; }
+.meta { margin-left: auto; border-collapse: collapse; }
+.meta th { text-align: left; font-weight: normal; color: #555; padding-right: 1rem; }
+.meta td { text-align: right; font-weight: 600; }
+.parties { display: flex; gap: 3rem; margin: .5rem 0 1rem; }
+.box { border: 1px solid #bbb; padding: .5rem .75rem; min-height: 3rem; margin-bottom: .5rem; }
+.box.tall { min-height: 9rem; }
+.items { width: 100%; border-collapse: collapse; margin-top: .5rem; }
+.items th { text-align: left; border-bottom: 1.5px solid #111; padding: .35rem .3rem; font-size: 9pt; text-transform: uppercase; color: #333; }
+.items td { border-bottom: 1px solid #ddd; padding: .35rem .3rem; }
+.items tr.blank td { height: 1.8rem; }
+.num { text-align: right !important; white-space: nowrap; }
+.sum { margin: .75rem 0 0 auto; border-collapse: collapse; min-width: 280px; }
+.sum th { text-align: left; font-weight: normal; padding: .2rem 1rem .2rem 0; }
+.sum td { text-align: right; padding: .2rem 0; }
+.sum .grand th, .sum .grand td { font-weight: 700; font-size: 12pt; border-top: 1.5px solid #111; }
+.doc-foot { margin-top: 2rem; display: flex; justify-content: space-between; gap: 2rem; }
+.terms { color: #444; font-size: 9.5pt; }
+.signoff { display: flex; justify-content: space-between; margin-top: 2rem; }
+@media print { .noprint { display: none; } body { padding: 0; } }

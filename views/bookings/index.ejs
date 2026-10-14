@@ -1,0 +1,40 @@
+<%- include('../partials/header', { title: 'Diary' }) %>
+<div class="page-head">
+  <h1>Diary <span class="muted">week of <%= u.fmtDate(start) %></span></h1>
+  <div class="actions">
+    <a class="btn" href="/bookings?week=<%= prev %>">← Prev</a>
+    <a class="btn" href="/bookings">This week</a>
+    <a class="btn" href="/bookings?week=<%= next %>">Next →</a>
+    <a class="btn primary" href="/bookings/new">New booking</a>
+  </div>
+</div>
+<div class="week">
+  <% const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']; %>
+  <% days.forEach((d, i) => { const isToday = d.date === u.today(); %>
+    <section class="day <%= isToday ? 'today' : '' %>">
+      <header>
+        <strong><%= dayNames[i] %></strong> <%= u.fmtDate(d.date).slice(0, 5) %>
+        <a class="add" href="/bookings/new?date=<%= d.date %>" title="Add booking" aria-label="Add booking on <%= u.fmtDate(d.date) %>">+</a>
+      </header>
+      <% const hours = d.bookings.filter(b => b.status !== 'cancelled').reduce((s, b) => s + b.duration_hours, 0); %>
+      <% if (hours) { %><div class="muted small"><%= hours %> hrs booked</div><% } %>
+      <% for (const b of d.bookings) { %>
+        <div class="booking status-<%= b.status %>">
+          <a href="/bookings/<%= b.id %>/edit" class="booking-main">
+            <strong><%= b.time || 'Any time' %></strong> <span class="muted"><%= b.duration_hours %>h</span><br>
+            <%= b.rego || '' %> <%= b.make %> <%= b.model %><br>
+            <span class="muted"><%= b.customer_name %></span>
+            <% if (b.description) { %><br><%= b.description %><% } %>
+          </a>
+          <% if (b.status !== 'booked') { %><div class="small"><%= BOOKING_STATUSES[b.status] %></div><% } %>
+          <% if (b.job_id) { %>
+            <a class="btn small" href="/jobs/<%= b.job_id %>">Job card</a>
+          <% } else if (b.status === 'booked') { %>
+            <form method="post" action="/bookings/<%= b.id %>/start"><button class="btn small">Start job</button></form>
+          <% } %>
+        </div>
+      <% } %>
+    </section>
+  <% }) %>
+</div>
+<%- include('../partials/footer') %>

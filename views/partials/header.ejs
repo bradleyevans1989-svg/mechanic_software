@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= typeof title !== 'undefined' ? title + ' · ' : '' %><%= settings.business_name %></title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/"><%= settings.business_name %></a>
+  <nav class="nav">
+    <% const links = [['/', 'Today'], ['/bookings', 'Diary'], ['/jobs', 'Jobs'], ['/quotes', 'Quotes'], ['/invoices', 'Invoices'], ['/customers', 'Customers'], ['/reports', 'Reports'], ['/settings', 'Settings']]; %>
+    <% for (const [href, label] of links) { const active = href === '/' ? path === '/' : path.startsWith(href); %>
+      <a href="<%= href %>" class="<%= active ? 'active' : '' %>"><%= label %></a>
+    <% } %>
+  </nav>
+  <form class="search" action="/search">
+    <input type="search" name="q" value="<%= q %>" placeholder="Rego, name, phone, invoice #" aria-label="Search">
+  </form>
+  <% if (authEnabled) { %>
+    <form method="post" action="/logout" class="logout"><button class="link">Log out</button></form>
+  <% } %>
+</header>
+<% if (!authEnabled) { %>
+  <div class="banner">No password is set. Set APP_PASSWORD before putting this online.</div>
+<% } %>
+<main class="page">

@@ -1,0 +1,19 @@
+{
+  "name": "workshop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Simple workshop management for a mechanic: customers, vehicles, bookings, job cards, quotes and GST invoices.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node --test test/*.test.js",
+    "seed": "node scripts/seed.js"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "better-sqlite3": "^13.0.3",
+    "ejs": "^7.0.1",
+    "express": "^5.3.0"
+  }
+}

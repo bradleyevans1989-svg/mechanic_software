@@ -1,0 +1,34 @@
+<%- include('../partials/header', { title: booking.id ? 'Edit booking' : 'New booking' }) %>
+<h1><%= booking.id ? 'Edit booking' : 'New booking' %></h1>
+<% if (error) { %><p class="error"><%= error %></p><% } %>
+<form method="post" action="<%= booking.id ? '/bookings/' + booking.id : '/bookings' %>" class="card form">
+  <%- include('../partials/party', { record: booking }) %>
+  <div class="grid-3">
+    <label>Date <input type="date" name="date" value="<%= booking.date %>" required></label>
+    <label>Time <input type="time" name="time" value="<%= booking.time || '' %>" step="900"></label>
+    <label>Hours <input name="duration_hours" inputmode="decimal" value="<%= booking.duration_hours || 1 %>"></label>
+  </div>
+  <label>Work to do <textarea name="description" rows="3" placeholder="e.g. 60,000 km service, check brakes"><%= booking.description || '' %></textarea></label>
+  <% if (booking.id) { %>
+    <label>Status
+      <select name="status">
+        <% for (const [k, label] of Object.entries(BOOKING_STATUSES)) { %><option value="<%= k %>" <%= booking.status === k ? 'selected' : '' %>><%= label %></option><% } %>
+      </select>
+    </label>
+  <% } %>
+  <div class="form-actions">
+    <button class="btn primary">Save</button>
+    <a class="btn" href="/bookings?week=<%= booking.date %>">Cancel</a>
+  </div>
+</form>
+<% if (booking.id) { %>
+  <div class="actions">
+    <% if (booking.job_id) { %>
+      <a class="btn" href="/jobs/<%= booking.job_id %>">Open job card</a>
+    <% } else { %>
+      <form method="post" action="/bookings/<%= booking.id %>/start"><button class="btn primary">Car's here: start job</button></form>
+    <% } %>
+    <form method="post" action="/bookings/<%= booking.id %>/delete" data-confirm="Delete this booking?"><button class="btn danger">Delete booking</button></form>
+  </div>
+<% } %>
+<%- include('../partials/footer') %>

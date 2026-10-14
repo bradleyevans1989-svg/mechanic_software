@@ -1,0 +1,80 @@
+<% const isQuote = doc.type === 'quote'; const label = isQuote ? 'Quote' : 'Tax invoice'; %>
+<%- include('../partials/header', { title: label + ' ' + u.docNumber(doc) }) %>
+<div class="page-head">
+  <div>
+    <h1><%= label %> <%= u.docNumber(doc) %> <%- include('../partials/pill', { state: doc.state, label: isQuote ? QUOTE_STATUSES[doc.status] : doc.state }) %></h1>
+    <p>
+      <a href="/customers/<%= doc.customer_id %>"><%= doc.customer_name %></a>
+      <% if (doc.vehicle_id) { %> · <a href="/vehicles/<%= doc.vehicle_id %>"><%= u.vehicleLabel(doc) %></a><% } %>
+      <% if (doc.job_id) { %> · <a href="/jobs/<%= doc.job_id %>">Job card</a><% } %>
+      <% for (const c of converted) { %> · <a href="/documents/<%= c.id %>"><%= c.type === 'quote' ? 'Quote' : 'Invoice' %> <%= u.docNumber(c) %></a><% } %>
+    </p>
+  </div>
+  <div class="actions">
+    <a class="btn" href="/documents/<%= doc.id %>/print" target="_blank">Print / PDF</a>
+    <% if (doc.customer_email) { %>
+      <a class="btn" href="mailto:<%= doc.customer_email %>?subject=<%= encodeURIComponent(label + ' ' + u.docNumber(doc) + ' from ' + settings.business_name) %>&body=<%= encodeURIComponent('Hi ' + doc.customer_name + ',\n\nPlease find attached ' + label.toLowerCase() + ' ' + u.docNumber(doc) + ' for ' + u.money(doc.total) + '.\n\nThanks,\n' + settings.business_name) %>">Email</a>
+    <% } %>
+    <% if (isQuote) { %>
+      <form method="post" action="/documents/<%= doc.id %>/job"><button class="btn">Accept: create job</button></form>
+      <form method="post" action="/documents/<%= doc.id %>/invoice"><button class="btn primary">Convert to invoice</button></form>
+    <% } %>
+  </div>
+</div>
+<% if (saved) { %><p class="flash">Saved.</p><% } %>
+<% if (doc.state === 'void') { %><p class="banner warn">This invoice is void and is left out of reports.</p><% } %>
+
+<form method="post" action="/documents/<%= doc.id %>" class="card form" data-dirty-check>
+  <div class="grid-4">
+    <label>Date <input type="date" name="issue_date" value="<%= doc.issue_date %>"></label>
+    <label><%= isQuote ? 'Valid until' : 'Due' %> <input type="date" name="due_date" value="<%= doc.due_date || '' %>"></label>
+    <label>Odometer (km) <input name="odometer" inputmode="numeric" value="<%= doc.odometer ?? '' %>"></label>
+    <% if (isQuote) { %>
+      <label>Status
+        <select name="status">
+          <% for (const [k, l] of Object.entries(QUOTE_STATUSES)) { %><option value="<%= k %>" <%= doc.status === k ? 'selected' : '' %>><%= l %></option><% } %>
+        </select>
+      </label>
+    <% } %>
+  </div>
+  <label>Notes <span class="muted">(shown on the <%= isQuote ? 'quote' : 'invoice' %>)</span><textarea name="notes" rows="2"><%= doc.notes %></textarea></label>
+  <h2>Items</h2>
+  <%- include('../partials/lines', { lines, totals: doc }) %>
+  <div class="form-actions sticky"><button class="btn primary">Save</button></div>
+</form>
+
+<% if (!isQuote) { %>
+  <section class="card">
+    <h2>Payments <span class="muted">Balance <%= u.money(doc.balance) %></span></h2>
+    <table class="table">
+      <% for (const p of payments) { %>
+        <tr>
+          <td><%= u.fmtDate(p.date) %></td><td><%= p.method %></td><td class="num"><%= u.money(p.amount_cents) %></td>
+          <td><form method="post" action="/documents/<%= doc.id %>/payments/<%= p.id %>/delete" data-confirm="Remove this payment?"><button class="icon" aria-label="Remove payment">×</button></form></td>
+        </tr>
+      <% } %>
+      <% if (!payments.length) { %><tr><td class="muted">No payments yet.</td></tr><% } %>
+    </table>
+    <% if (doc.state !== 'void') { %>
+      <form method="post" action="/documents/<%= doc.id %>/payments" class="inline-form">
+        <label>Amount <input name="amount" inputmode="decimal" value="<%= doc.balance > 0 ? u.dollars(doc.balance) : '' %>" required></label>
+        <label>Date <input type="date" name="date" value="<%= today %>"></label>
+        <label>Method
+          <select name="method"><option>EFTPOS</option><option>Card</option><option>Cash</option><option>Bank transfer</option><option>Other</option></select>
+        </label>
+        <button class="btn primary">Record payment</button>
+      </form>
+    <% } %>
+  </section>
+<% } %>
+
+<div class="actions">
+  <% if (isQuote) { %>
+    <form method="post" action="/documents/<%= doc.id %>/delete" data-confirm="Delete this quote?"><button class="btn danger small">Delete quote</button></form>
+  <% } else if (doc.state === 'void') { %>
+    <form method="post" action="/documents/<%= doc.id %>/unvoid"><button class="btn small">Restore invoice</button></form>
+  <% } else { %>
+    <form method="post" action="/documents/<%= doc.id %>/void" data-confirm="Void this invoice? It keeps its number but is left out of reports."><button class="btn danger small">Void invoice</button></form>
+  <% } %>
+</div>
+<%- include('../partials/footer') %>

@@ -1,0 +1,32 @@
+<%- include('partials/header', { title: 'Settings' }) %>
+<h1>Settings</h1>
+<% if (saved) { %><p class="flash">Saved.</p><% } %>
+<% if (!settings.abn) { %><p class="banner warn">Add your ABN. A tax invoice must show it.</p><% } %>
+<form method="post" action="/settings" class="card form">
+  <h2>Business details <span class="muted">(printed on invoices)</span></h2>
+  <div class="grid-2">
+    <label>Business name <input name="business_name" value="<%= settings.business_name %>" required></label>
+    <label>ABN <input name="abn" value="<%= settings.abn %>"></label>
+    <label>Phone <input name="phone" value="<%= settings.phone %>"></label>
+    <label>Email <input name="email" type="email" value="<%= settings.email %>"></label>
+  </div>
+  <label>Address <textarea name="address" rows="2"><%= settings.address %></textarea></label>
+  <label>Bank details for payment <textarea name="bank_details" rows="3" placeholder="BSB 000-000  Account 12345678  Name: ..."><%= settings.bank_details %></textarea></label>
+  <label>Footer text on invoices and quotes <textarea name="invoice_terms" rows="2"><%= settings.invoice_terms %></textarea></label>
+
+  <h2>Defaults</h2>
+  <div class="grid-3">
+    <label>Labour rate per hour, ex GST <input name="labour_rate" inputmode="decimal" value="<%= u.dollars(settings.labour_rate_cents) %>"></label>
+    <label>Days to pay invoices <input name="payment_days" inputmode="numeric" value="<%= settings.payment_days %>"></label>
+  </div>
+
+  <h2>Numbering</h2>
+  <p class="hint">Set these to carry on from your Mechanic Desk numbers.</p>
+  <div class="grid-3">
+    <label>Next invoice number <input name="next_invoice_no" inputmode="numeric" value="<%= settings.next_invoice_no %>"></label>
+    <label>Next quote number <input name="next_quote_no" inputmode="numeric" value="<%= settings.next_quote_no %>"></label>
+    <label>Next job number <input name="next_job_no" inputmode="numeric" value="<%= settings.next_job_no %>"></label>
+  </div>
+  <div class="form-actions"><button class="btn primary">Save settings</button></div>
+</form>
+<%- include('partials/footer') %>

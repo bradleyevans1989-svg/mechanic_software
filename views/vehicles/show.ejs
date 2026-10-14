@@ -1,0 +1,55 @@
+<%- include('../partials/header', { title: vehicle.rego || 'Vehicle' }) %>
+<div class="page-head">
+  <div>
+    <h1><%= u.vehicleLabel(vehicle) || 'Vehicle' %></h1>
+    <p>Owner: <a href="/customers/<%= customer.id %>"><%= customer.name %></a><% if (customer.phone) { %> · <a href="tel:<%= customer.phone %>"><%= customer.phone %></a><% } %></p>
+  </div>
+  <div class="actions">
+    <a class="btn" href="/vehicles/<%= vehicle.id %>/edit">Edit</a>
+    <a class="btn" href="/bookings/new?vehicle_id=<%= vehicle.id %>">Book in</a>
+    <a class="btn" href="/documents/new?type=quote&vehicle_id=<%= vehicle.id %>">Quote</a>
+    <a class="btn primary" href="/jobs/new?vehicle_id=<%= vehicle.id %>">New job</a>
+  </div>
+</div>
+
+<section class="card">
+  <dl class="facts">
+    <div><dt>Colour</dt><dd><%= vehicle.colour || '—' %></dd></div>
+    <div><dt>VIN</dt><dd><%= vehicle.vin || '—' %></dd></div>
+    <div><dt>Odometer</dt><dd><%= vehicle.odometer != null ? vehicle.odometer.toLocaleString('en-AU') + ' km' : '—' %></dd></div>
+    <div><dt>Rego due</dt><dd><%= u.fmtDate(vehicle.rego_due) || '—' %></dd></div>
+    <div><dt>Next service</dt><dd><%= u.fmtDate(vehicle.next_service_date) || '—' %><%= vehicle.next_service_km ? ' or ' + vehicle.next_service_km.toLocaleString('en-AU') + ' km' : '' %></dd></div>
+  </dl>
+  <% if (vehicle.notes) { %><p class="note"><%= vehicle.notes %></p><% } %>
+</section>
+
+<section class="card">
+  <h2>Service history</h2>
+  <% if (!history.length) { %><p class="muted">No invoiced work yet.</p><% } %>
+  <% for (const h of history) { %>
+    <div class="history-item">
+      <div class="history-head">
+        <a href="/documents/<%= h.doc.id %>"><strong><%= u.fmtDate(h.doc.issue_date) %></strong> · <%= u.docNumber(h.doc) %></a>
+        <span><%= h.doc.odometer ? h.doc.odometer.toLocaleString('en-AU') + ' km · ' : '' %><%= u.money(h.doc.total) %></span>
+      </div>
+      <% if (h.doc.notes) { %><p class="muted"><%= h.doc.notes %></p><% } %>
+      <ul class="compact">
+        <% for (const l of h.lines) { %><li><%= l.description %><%= l.kind === 'part' && l.qty !== 1 ? ' × ' + l.qty : '' %></li><% } %>
+      </ul>
+    </div>
+  <% } %>
+</section>
+
+<section class="card">
+  <h2>Jobs and quotes</h2>
+  <table class="table">
+    <% for (const j of jobs) { %>
+      <tr><td><a href="/jobs/<%= j.id %>">Job J<%= j.number %></a></td><td><%= u.fmtDate(j.created_at) %></td><td><%= j.description %></td><td><%- include('../partials/pill', { state: j.status, label: JOB_STATUSES[j.status] }) %></td></tr>
+    <% } %>
+    <% for (const d of docs.filter(d => d.type === 'quote')) { %>
+      <tr><td><a href="/documents/<%= d.id %>">Quote <%= u.docNumber(d) %></a></td><td><%= u.fmtDate(d.issue_date) %></td><td><%= u.money(d.total) %></td><td><%- include('../partials/pill', { state: d.state, label: d.state }) %></td></tr>
+    <% } %>
+    <% if (!jobs.length && !docs.some(d => d.type === 'quote')) { %><tr><td class="muted">None yet.</td></tr><% } %>
+  </table>
+</section>
+<%- include('../partials/footer') %>

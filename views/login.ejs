@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Log in · <%= settings.business_name %></title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="login-page">
+  <form method="post" action="/login" class="card login">
+    <h1><%= settings.business_name %></h1>
+    <% if (error) { %><p class="error"><%= error %></p><% } %>
+    <label>Password <input type="password" name="password" autofocus required></label>
+    <button class="btn primary">Log in</button>
+  </form>
+</body>
+</html>

@@ -1,0 +1,24 @@
+<%- include('../partials/header', { title: 'Customers' }) %>
+<div class="page-head">
+  <h1>Customers</h1>
+  <div class="actions"><a class="btn primary" href="/customers/new">New customer</a></div>
+</div>
+<form class="filter" action="/customers">
+  <input type="search" name="q" value="<%= q %>" placeholder="Name, phone, email or rego">
+  <button class="btn">Search</button>
+</form>
+<table class="table card">
+  <thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Vehicles</th></tr></thead>
+  <tbody>
+    <% for (const c of customers) { %>
+      <tr>
+        <td><a href="/customers/<%= c.id %>"><%= c.name %></a></td>
+        <td><%= c.phone %></td>
+        <td><%= c.email %></td>
+        <td><%= c.regos || '' %></td>
+      </tr>
+    <% } %>
+    <% if (!customers.length) { %><tr><td colspan="4" class="muted">No customers yet.</td></tr><% } %>
+  </tbody>
+</table>
+<%- include('../partials/footer') %>

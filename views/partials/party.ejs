@@ -1,0 +1,18 @@
+<%# Vehicle picker (sets the customer) with a customer picker for jobs with no car. %>
+<label>Vehicle
+  <select name="vehicle_id" data-party-vehicle>
+    <option value="">— No vehicle —</option>
+    <% for (const v of vehicles) { %>
+      <option value="<%= v.id %>" <%= Number(record.vehicle_id) === v.id ? 'selected' : '' %>><%= u.vehicleLabel(v) || 'Unnamed vehicle' %> — <%= v.customer_name %></option>
+    <% } %>
+  </select>
+</label>
+<label>…or customer only
+  <select name="customer_id">
+    <option value="">— Pick a customer —</option>
+    <% for (const c of customers) { %>
+      <option value="<%= c.id %>" <%= Number(record.customer_id) === c.id ? 'selected' : '' %>><%= c.name %><%= c.phone ? ' (' + c.phone + ')' : '' %></option>
+    <% } %>
+  </select>
+</label>
+<p class="hint">Not in the list? <a href="/customers/new">Add a new customer and vehicle</a> first.</p>

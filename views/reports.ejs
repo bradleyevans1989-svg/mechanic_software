@@ -1,0 +1,38 @@
+<%- include('partials/header', { title: 'Reports' }) %>
+<div class="page-head">
+  <h1>Reports <span class="muted"><%= year %></span></h1>
+  <div class="actions">
+    <a class="btn" href="/reports?year=<%= year - 1 %>">← <%= year - 1 %></a>
+    <a class="btn" href="/reports?year=<%= year + 1 %>"><%= year + 1 %> →</a>
+  </div>
+</div>
+<table class="table card">
+  <thead><tr><th>Month</th><th class="num">Invoices</th><th class="num">Sales ex GST</th><th class="num">GST collected</th><th class="num">Sales inc GST</th><th class="num">Payments received</th></tr></thead>
+  <tbody>
+    <% const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; %>
+    <% months.forEach((m, i) => { %>
+      <tr>
+        <td><%= names[i] %></td>
+        <td class="num"><%= m.count %></td>
+        <td class="num"><%= u.money(m.subtotal) %></td>
+        <td class="num"><%= u.money(m.gst) %></td>
+        <td class="num"><%= u.money(m.total) %></td>
+        <td class="num"><%= u.money(m.received) %></td>
+      </tr>
+    <% }) %>
+  </tbody>
+  <tfoot>
+    <tr><th>Total</th><th class="num"><%= totals.count %></th><th class="num"><%= u.money(totals.subtotal) %></th><th class="num"><%= u.money(totals.gst) %></th><th class="num"><%= u.money(totals.total) %></th><th class="num"><%= u.money(totals.received) %></th></tr>
+  </tfoot>
+</table>
+<p class="hint">Sales are counted on the invoice date (accrual). Payments received are counted on the payment date (cash). Void invoices are left out.</p>
+
+<section class="card">
+  <h2>Export invoices for your accountant</h2>
+  <form action="/reports/invoices.csv" class="inline-form">
+    <label>From <input type="date" name="from" value="<%= year %>-01-01"></label>
+    <label>To <input type="date" name="to" value="<%= year %>-12-31"></label>
+    <button class="btn primary">Download CSV</button>
+  </form>
+</section>
+<%- include('partials/footer') %>

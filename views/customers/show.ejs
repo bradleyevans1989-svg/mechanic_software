@@ -1,0 +1,77 @@
+<%- include('../partials/header', { title: customer.name }) %>
+<div class="page-head">
+  <div>
+    <h1><%= customer.name %></h1>
+    <p class="muted">
+      <% if (customer.phone) { %><a href="tel:<%= customer.phone %>"><%= customer.phone %></a><% } %>
+      <% if (customer.email) { %> · <a href="mailto:<%= customer.email %>"><%= customer.email %></a><% } %>
+      <% if (customer.address) { %> · <%= customer.address %><% } %>
+    </p>
+    <% if (customer.notes) { %><p class="note"><%= customer.notes %></p><% } %>
+  </div>
+  <div class="actions">
+    <a class="btn" href="/customers/<%= customer.id %>/edit">Edit</a>
+    <a class="btn primary" href="/customers/<%= customer.id %>/vehicles/new">Add vehicle</a>
+  </div>
+</div>
+<% if (owing > 0) { %><p class="banner warn">Owes <%= u.money(owing) %></p><% } %>
+
+<section class="card">
+  <h2>Vehicles</h2>
+  <% if (!vehicles.length) { %><p class="muted">No vehicles. <a href="/customers/<%= customer.id %>/vehicles/new">Add one</a></p><% } %>
+  <ul class="list">
+    <% for (const v of vehicles) { %>
+      <li>
+        <a href="/vehicles/<%= v.id %>"><strong><%= u.vehicleLabel(v) || 'Unnamed vehicle' %></strong></a>
+        <div class="row-actions">
+          <a class="btn small" href="/bookings/new?vehicle_id=<%= v.id %>">Book in</a>
+          <a class="btn small" href="/jobs/new?vehicle_id=<%= v.id %>">New job</a>
+          <a class="btn small" href="/documents/new?type=quote&vehicle_id=<%= v.id %>">Quote</a>
+        </div>
+      </li>
+    <% } %>
+  </ul>
+</section>
+
+<div class="grid-2">
+  <section class="card">
+    <h2>Invoices and quotes</h2>
+    <table class="table">
+      <% for (const d of docs) { %>
+        <tr>
+          <td><a href="/documents/<%= d.id %>"><%= u.docNumber(d) %></a></td>
+          <td><%= u.fmtDate(d.issue_date) %></td>
+          <td><%= d.rego || '' %></td>
+          <td class="num"><%= u.money(d.total) %></td>
+          <td><%- include('../partials/pill', { state: d.state, label: d.state }) %></td>
+        </tr>
+      <% } %>
+      <% if (!docs.length) { %><tr><td class="muted">None yet.</td></tr><% } %>
+    </table>
+    <p><a href="/documents/new?type=invoice&customer_id=<%= customer.id %>">New invoice</a> · <a href="/documents/new?type=quote&customer_id=<%= customer.id %>">New quote</a></p>
+  </section>
+  <section class="card">
+    <h2>Jobs</h2>
+    <table class="table">
+      <% for (const j of jobs) { %>
+        <tr>
+          <td><a href="/jobs/<%= j.id %>">J<%= j.number %></a></td>
+          <td><%= u.fmtDate(j.created_at) %></td>
+          <td><%= j.rego || '' %></td>
+          <td><%= j.description %></td>
+          <td><%- include('../partials/pill', { state: j.status, label: JOB_STATUSES[j.status] }) %></td>
+        </tr>
+      <% } %>
+      <% if (!jobs.length) { %><tr><td class="muted">None yet.</td></tr><% } %>
+    </table>
+    <% if (bookings.length) { %>
+      <h3>Bookings</h3>
+      <ul class="list compact">
+        <% for (const b of bookings) { %>
+          <li><a href="/bookings/<%= b.id %>/edit"><%= u.fmtDate(b.date) %> <%= b.time %></a> <%= b.rego || '' %> <span class="muted"><%= b.description %> · <%= BOOKING_STATUSES[b.status] %></span></li>
+        <% } %>
+      </ul>
+    <% } %>
+  </section>
+</div>
+<%- include('../partials/footer') %>

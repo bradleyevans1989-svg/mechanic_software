@@ -1,0 +1,25 @@
+# One-click deploy on Render (render.com). Starter plan + 1 GB disk is about US$7.25/month.
+services:
+  - type: web
+    name: workshop
+    runtime: node
+    plan: starter
+    region: singapore
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TZ
+        value: Australia/Sydney
+      - key: DB_PATH
+        value: /var/data/workshop.db
+      - key: APP_PASSWORD
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+    disk:
+      name: data
+      mountPath: /var/data
+      sizeGB: 1

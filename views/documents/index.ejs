@@ -1,0 +1,35 @@
+<% const isQuote = type === 'quote'; const base = isQuote ? '/quotes' : '/invoices'; %>
+<%- include('../partials/header', { title: isQuote ? 'Quotes' : 'Invoices' }) %>
+<div class="page-head">
+  <h1><%= isQuote ? 'Quotes' : 'Invoices' %></h1>
+  <div class="actions">
+    <% if (!isQuote) { %><a class="btn" href="/reports">Reports and export</a><% } %>
+    <a class="btn primary" href="/documents/new?type=<%= type %>">New <%= type %></a>
+  </div>
+</div>
+<nav class="tabs">
+  <% if (isQuote) { %>
+    <a href="<%= base %>" class="<%= filter === 'open' ? 'active' : '' %>">Open</a>
+  <% } else { %>
+    <a href="<%= base %>" class="<%= filter === 'unpaid' ? 'active' : '' %>">Unpaid</a>
+  <% } %>
+  <a href="<%= base %>?show=all" class="<%= filter === 'all' ? 'active' : '' %>">All</a>
+</nav>
+<table class="table card">
+  <thead><tr><th>#</th><th>Date</th><th>Customer</th><th>Vehicle</th><th class="num">Total</th><% if (!isQuote) { %><th class="num">Balance</th><% } %><th>Status</th></tr></thead>
+  <tbody>
+    <% for (const d of docs) { %>
+      <tr>
+        <td><a href="/documents/<%= d.id %>"><%= u.docNumber(d) %></a></td>
+        <td><%= u.fmtDate(d.issue_date) %></td>
+        <td><%= d.customer_name %></td>
+        <td><%= d.rego || '' %></td>
+        <td class="num"><%= u.money(d.total) %></td>
+        <% if (!isQuote) { %><td class="num"><%= u.money(d.balance) %></td><% } %>
+        <td><%- include('../partials/pill', { state: d.state, label: d.state }) %></td>
+      </tr>
+    <% } %>
+    <% if (!docs.length) { %><tr><td colspan="7" class="muted">Nothing here.</td></tr><% } %>
+  </tbody>
+</table>
+<%- include('../partials/footer') %>

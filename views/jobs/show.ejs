@@ -1,0 +1,42 @@
+<%- include('../partials/header', { title: 'Job J' + job.number }) %>
+<div class="page-head">
+  <div>
+    <h1>Job J<%= job.number %> <%- include('../partials/pill', { state: job.status, label: JOB_STATUSES[job.status] }) %></h1>
+    <p>
+      <% if (job.vehicle_id) { %><a href="/vehicles/<%= job.vehicle_id %>"><%= u.vehicleLabel(job) %></a> · <% } %>
+      <a href="/customers/<%= job.customer_id %>"><%= job.customer_name %></a>
+      <% if (job.customer_phone) { %> · <a href="tel:<%= job.customer_phone %>"><%= job.customer_phone %></a><% } %>
+    </p>
+  </div>
+  <div class="actions">
+    <a class="btn" href="/jobs/<%= job.id %>/print" target="_blank">Print job card</a>
+    <% if (job.invoice_id) { %>
+      <a class="btn primary" href="/documents/<%= job.invoice_id %>">View invoice</a>
+    <% } else { %>
+      <form method="post" action="/jobs/<%= job.id %>/invoice" data-confirm="Create the invoice from this job? Save any changes first."><button class="btn primary">Create invoice</button></form>
+    <% } %>
+  </div>
+</div>
+<% if (saved) { %><p class="flash">Saved.</p><% } %>
+<form method="post" action="/jobs/<%= job.id %>" class="card form" data-dirty-check>
+  <div class="grid-3">
+    <label>Status
+      <select name="status">
+        <% for (const [k, label] of Object.entries(JOB_STATUSES)) { %><option value="<%= k %>" <%= job.status === k ? 'selected' : '' %>><%= label %></option><% } %>
+      </select>
+    </label>
+    <label>Odometer (km) <input name="odometer" inputmode="numeric" value="<%= job.odometer ?? '' %>"></label>
+    <label>Opened <input value="<%= u.fmtDate(job.created_at) %>" disabled></label>
+  </div>
+  <label>Work requested <textarea name="description" rows="2"><%= job.description %></textarea></label>
+  <label>Mechanic's notes <textarea name="tech_notes" rows="3" placeholder="What was found, what was done, recommendations"><%= job.tech_notes %></textarea></label>
+  <h2>Labour and parts</h2>
+  <%- include('../partials/lines', { lines, totals }) %>
+  <div class="form-actions sticky">
+    <button class="btn primary">Save job</button>
+  </div>
+</form>
+<form method="post" action="/jobs/<%= job.id %>/delete" data-confirm="Delete this job card?">
+  <button class="btn danger small">Delete job</button>
+</form>
+<%- include('../partials/footer') %>

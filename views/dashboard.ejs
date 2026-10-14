@@ -1,0 +1,91 @@
+<%- include('partials/header', { title: 'Today' }) %>
+<div class="page-head">
+  <h1>Today <span class="muted"><%= u.fmtDate(u.today()) %></span></h1>
+  <div class="actions">
+    <a class="btn" href="/bookings/new">New booking</a>
+    <a class="btn" href="/jobs/new">New job</a>
+    <a class="btn" href="/documents/new?type=quote">New quote</a>
+    <a class="btn primary" href="/customers/new">New customer</a>
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat"><span>Invoiced this month</span><strong><%= u.money(stats.monthTotal) %></strong><small><%= stats.monthCount %> invoices</small></div>
+  <div class="stat"><span>Owing to you</span><strong><%= u.money(stats.owing) %></strong><small><%= unpaid.length %> unpaid</small></div>
+  <div class="stat <%= stats.overdue ? 'warn' : '' %>"><span>Overdue</span><strong><%= stats.overdue %></strong><small>invoices past due</small></div>
+  <div class="stat"><span>In the workshop</span><strong><%= jobs.length %></strong><small>open jobs</small></div>
+</div>
+
+<div class="dash">
+  <section class="card">
+    <h2>Today's bookings</h2>
+    <% if (!bookings.length) { %><p class="muted">Nothing booked today. <a href="/bookings/new">Add a booking</a></p><% } %>
+    <ul class="list">
+      <% for (const b of bookings) { %>
+        <li>
+          <div>
+            <strong><%= b.time || 'Any time' %></strong> · <%= b.rego || '' %> <%= b.make %> <%= b.model %>
+            <div class="muted"><%= b.customer_name %><%= b.customer_phone ? ' · ' + b.customer_phone : '' %> — <%= b.description %></div>
+          </div>
+          <div class="row-actions">
+            <% if (b.job_id) { %>
+              <a class="btn small" href="/jobs/<%= b.job_id %>">Job card</a>
+            <% } else { %>
+              <form method="post" action="/bookings/<%= b.id %>/start"><button class="btn small primary">Car's here: start job</button></form>
+            <% } %>
+          </div>
+        </li>
+      <% } %>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2>Jobs in the workshop</h2>
+    <% if (!jobs.length) { %><p class="muted">No open jobs.</p><% } %>
+    <ul class="list">
+      <% for (const j of jobs) { %>
+        <li>
+          <a href="/jobs/<%= j.id %>"><strong>J<%= j.number %></strong> · <%= j.rego || '' %> <%= j.make %> <%= j.model %></a>
+          <%- include('partials/pill', { state: j.status, label: JOB_STATUSES[j.status] }) %>
+          <div class="muted full"><%= j.customer_name %> — <%= j.description %></div>
+        </li>
+      <% } %>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2>Unpaid invoices</h2>
+    <% if (!unpaid.length) { %><p class="muted">Everything's paid.</p><% } %>
+    <table class="table">
+      <% for (const d of unpaid.slice(0, 15)) { %>
+        <tr>
+          <td><a href="/documents/<%= d.id %>"><%= u.docNumber(d) %></a></td>
+          <td><%= d.customer_name %></td>
+          <td>Due <%= u.fmtDate(d.due_date) %></td>
+          <td class="num"><%= u.money(d.balance) %></td>
+          <td><%- include('partials/pill', { state: d.state, label: d.state }) %></td>
+        </tr>
+      <% } %>
+    </table>
+    <% if (unpaid.length > 15) { %><p><a href="/invoices">See all <%= unpaid.length %></a></p><% } %>
+  </section>
+
+  <section class="card">
+    <h2>Service and rego due</h2>
+    <p class="hint">Vehicles with a service or rego date from 30 days ago to 30 days ahead.</p>
+    <% if (!due.length) { %><p class="muted">Nothing due.</p><% } %>
+    <table class="table">
+      <% for (const v of due) { %>
+        <tr>
+          <td><a href="/vehicles/<%= v.id %>"><%= u.vehicleLabel(v) %></a></td>
+          <td><%= v.customer_name %><% if (v.customer_phone) { %> · <a href="tel:<%= v.customer_phone %>"><%= v.customer_phone %></a><% } %></td>
+          <td>
+            <% if (v.next_service_date) { %>Service <%= u.fmtDate(v.next_service_date) %><br><% } %>
+            <% if (v.rego_due) { %>Rego <%= u.fmtDate(v.rego_due) %><% } %>
+          </td>
+        </tr>
+      <% } %>
+    </table>
+  </section>
+</div>
+<%- include('partials/footer') %>

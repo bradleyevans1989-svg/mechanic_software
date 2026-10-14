@@ -1,0 +1,22 @@
+<%- include('partials/header', { title: 'Search' }) %>
+<h1>Results for “<%= q %>”</h1>
+<% if (!vehicles.length && !customers.length && !docs.length && !jobs.length) { %>
+  <p class="muted">Nothing found. <a href="/customers/new">Add a new customer</a></p>
+<% } %>
+<% if (vehicles.length) { %>
+  <section class="card"><h2>Vehicles</h2><ul class="list">
+    <% for (const v of vehicles) { %><li><a href="/vehicles/<%= v.id %>"><%= u.vehicleLabel(v) %></a> <span class="muted"><%= v.customer_name %></span></li><% } %>
+  </ul></section>
+<% } %>
+<% if (customers.length) { %>
+  <section class="card"><h2>Customers</h2><ul class="list">
+    <% for (const c of customers) { %><li><a href="/customers/<%= c.id %>"><%= c.name %></a> <span class="muted"><%= c.phone %> <%= c.email %></span></li><% } %>
+  </ul></section>
+<% } %>
+<% if (docs.length || jobs.length) { %>
+  <section class="card"><h2>Jobs, quotes and invoices</h2><ul class="list">
+    <% for (const j of jobs) { %><li><a href="/jobs/<%= j.id %>">Job J<%= j.number %></a> <span class="muted"><%= j.rego %> <%= j.description %></span></li><% } %>
+    <% for (const d of docs) { %><li><a href="/documents/<%= d.id %>"><%= d.type === 'quote' ? 'Quote' : 'Invoice' %> <%= u.docNumber(d) %></a> <span class="muted"><%= d.customer_name %> · <%= u.money(d.total) %></span></li><% } %>
+  </ul></section>
+<% } %>
+<%- include('partials/footer') %>

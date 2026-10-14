@@ -1,0 +1,28 @@
+<%- include('../partials/header', { title: vehicle.id ? 'Edit vehicle' : 'New vehicle' }) %>
+<h1><%= vehicle.id ? 'Edit vehicle' : 'New vehicle' %> <span class="muted">for <a href="/customers/<%= customer.id %>"><%= customer.name %></a></span></h1>
+<% if (error) { %><p class="error"><%= error %></p><% } %>
+<form method="post" action="<%= vehicle.id ? '/vehicles/' + vehicle.id : '/customers/' + customer.id + '/vehicles' %>" class="card form">
+  <div class="grid-3">
+    <label>Rego <input name="rego" class="upper" value="<%= vehicle.rego || '' %>" autofocus></label>
+    <label>Make <input name="make" value="<%= vehicle.make || '' %>"></label>
+    <label>Model <input name="model" value="<%= vehicle.model || '' %>"></label>
+    <label>Year <input name="year" inputmode="numeric" value="<%= vehicle.year || '' %>"></label>
+    <label>Colour <input name="colour" value="<%= vehicle.colour || '' %>"></label>
+    <label>VIN <input name="vin" class="upper" value="<%= vehicle.vin || '' %>"></label>
+    <label>Odometer (km) <input name="odometer" inputmode="numeric" value="<%= vehicle.odometer ?? '' %>"></label>
+    <label>Rego due <input name="rego_due" type="date" value="<%= vehicle.rego_due || '' %>"></label>
+    <label>Next service date <input name="next_service_date" type="date" value="<%= vehicle.next_service_date || '' %>"></label>
+    <label>Next service (km) <input name="next_service_km" inputmode="numeric" value="<%= vehicle.next_service_km ?? '' %>"></label>
+  </div>
+  <label>Notes <textarea name="notes" rows="2"><%= vehicle.notes || '' %></textarea></label>
+  <div class="form-actions">
+    <button class="btn primary">Save</button>
+    <a class="btn" href="<%= vehicle.id ? '/vehicles/' + vehicle.id : '/customers/' + customer.id %>">Cancel</a>
+  </div>
+</form>
+<% if (vehicle.id) { %>
+  <form method="post" action="/vehicles/<%= vehicle.id %>/delete" data-confirm="Delete this vehicle? Its jobs and invoices stay with the customer.">
+    <button class="btn danger small">Delete vehicle</button>
+  </form>
+<% } %>
+<%- include('../partials/footer') %>

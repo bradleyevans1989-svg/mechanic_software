@@ -1,0 +1,18 @@
+<tr data-line>
+  <td>
+    <select name="lines[<%= i %>][kind]" data-kind>
+      <% for (const k of u.LINE_KINDS) { %><option value="<%= k %>" <%= l.kind === k ? 'selected' : '' %>><%= k[0].toUpperCase() + k.slice(1) %></option><% } %>
+    </select>
+  </td>
+  <td><input name="lines[<%= i %>][description]" value="<%= l.description %>" placeholder="Description" data-desc></td>
+  <td class="num"><input name="lines[<%= i %>][qty]" value="<%= l.qty %>" inputmode="decimal" data-qty></td>
+  <td class="num"><input name="lines[<%= i %>][price]" value="<%= u.dollars(l.unit_cents) %>" inputmode="decimal" data-price></td>
+  <td>
+    <select name="lines[<%= i %>][gst]" data-gst>
+      <option value="1" <%= l.gst ? 'selected' : '' %>>Yes</option>
+      <option value="0" <%= l.gst ? '' : 'selected' %>>No</option>
+    </select>
+  </td>
+  <td class="num" data-amount><%= u.money(u.lineTotal(l)) %></td>
+  <td><button type="button" class="icon" data-remove-line title="Remove line" aria-label="Remove line">×</button></td>
+</tr>
