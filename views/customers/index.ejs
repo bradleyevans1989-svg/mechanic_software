@@ -1,24 +1,52 @@
+<% const qs = new URLSearchParams(); if (filters.q) qs.set('q', filters.q); for (const f of filters.f) qs.append('f', f);
+   if (filters.tag) qs.set('tag', filters.tag); if (filters.sort !== 'name') qs.set('sort', filters.sort);
+   const query = qs.toString() ? '?' + qs.toString() : '';
+   const flag = (k) => filters.f.includes(k);
+   const deleted = flag('deleted'); %>
 <%- include('../partials/header', { title: 'Customers' }) %>
 <div class="page-head">
-  <h1>Customers</h1>
-  <div class="actions"><a class="btn primary" href="/customers/new">New customer</a></div>
+  <h1><%= deleted ? 'Deleted customers' : 'Customers' %> <span class="muted"><%= customers.length %> shown</span></h1>
+  <div class="actions">
+    <a class="btn" href="/customers.csv<%= query %>">Download</a>
+    <a class="btn primary" href="/customers/new">New customer</a>
+  </div>
 </div>
-<form class="filter" action="/customers">
-  <input type="search" name="q" value="<%= q %>" placeholder="Name, phone, email or rego">
-  <button class="btn">Search</button>
+<%- include('../partials/people-tabs', { tab: 'customers' }) %>
+<form class="toolbar card" method="get" action="/customers">
+  <div class="toolbar-row">
+    <input type="search" name="q" value="<%= filters.q %>" placeholder="Search name, phone, email, rego, tag" aria-label="Search" class="toolbar-search">
+    <label class="inline">Tag
+      <select name="tag"><option value="">All tags</option><% for (const t of tags) { %><option value="<%= t %>" <%= filters.tag.toLowerCase() === t.toLowerCase() ? 'selected' : '' %>><%= t %></option><% } %></select>
+    </label>
+    <label class="inline">Sort
+      <select name="sort"><% for (const [k, s] of Object.entries(sorts)) { %><option value="<%= k %>" <%= filters.sort === k ? 'selected' : '' %>><%= s.label %></option><% } %></select>
+    </label>
+    <button class="btn">Apply</button>
+    <% if (query) { %><a class="btn" href="/customers">Clear</a><% } %>
+  </div>
+  <div class="toolbar-row checks-row">
+    <span class="muted small">Show</span>
+    <label class="check small"><input type="checkbox" name="f" value="owing" <%= flag('owing') ? 'checked' : '' %>><span class="pill pill-overdue">Owing money</span></label>
+    <label class="check small"><input type="checkbox" name="f" value="company" <%= flag('company') ? 'checked' : '' %>><span class="pill plain">Companies only</span></label>
+    <label class="check small"><input type="checkbox" name="f" value="individual" <%= flag('individual') ? 'checked' : '' %>><span class="pill plain">Individuals only</span></label>
+    <label class="check small"><input type="checkbox" name="f" value="deleted" <%= deleted ? 'checked' : '' %>><span class="pill pill-void">Deleted customers</span></label>
+  </div>
 </form>
 <table class="table card">
-  <thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Vehicles</th></tr></thead>
+  <thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Vehicles</th><th>Tags</th><th>Last visit</th><th class="num">Owing</th></tr></thead>
   <tbody>
     <% for (const c of customers) { %>
-      <tr>
-        <td><a href="/customers/<%= c.id %>"><%= c.name %></a></td>
+      <tr class="rowlink" data-href="/customers/<%= c.id %>">
+        <td><a href="/customers/<%= c.id %>"><%= c.name %></a><% if (c.kind === 'company') { %> <span class="muted small">company</span><% } %></td>
         <td><%= c.phone %></td>
         <td><%= c.email %></td>
         <td><%= c.regos || '' %></td>
+        <td><% for (const t of c.tag_list) { %><span class="pill plain"><%= t %></span> <% } %></td>
+        <td><%= c.last_visit ? u.fmtDate(c.last_visit) : '' %></td>
+        <td class="num"><% if (c.owing > 0) { %><strong><%= u.money(c.owing) %></strong><% } %></td>
       </tr>
     <% } %>
-    <% if (!customers.length) { %><tr><td colspan="4" class="muted">No customers yet.</td></tr><% } %>
+    <% if (!customers.length) { %><tr><td colspan="7" class="muted"><%= query ? 'No customers match.' : 'No customers yet.' %></td></tr><% } %>
   </tbody>
 </table>
 <%- include('../partials/footer') %>

@@ -465,3 +465,15 @@ tr.rowlink:hover td { background: var(--tile-2); }
 .bulk-bar { display: flex; gap: .6rem; align-items: center; background: var(--ink); color: #fff; border-radius: 999px; padding: .4rem .5rem .4rem 1rem; margin-bottom: .6rem; }
 .bulk-bar select { width: auto; min-height: 2rem; padding: .25rem .6rem; font-size: .85rem; background: #fff; }
 .bulk-bar[hidden] { display: none; }
+
+/* Customers and vehicles lists */
+td.due { color: var(--danger); font-weight: 700; }
+fieldset.choice { border: 0; padding: 0; margin: 0; display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+fieldset.choice legend { font-size: .85rem; font-weight: 600; margin-bottom: .35rem; }
+fieldset.choice label.check { font-weight: 500; }
+label .hint { display: block; font-weight: 400; }
+.transfer { margin-top: .75rem; }
+.transfer summary { display: inline-flex; list-style: none; cursor: pointer; }
+.transfer summary::-webkit-details-marker { display: none; }
+.transfer form { margin-top: .75rem; }
+form.banner.warn { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }

@@ -127,9 +127,14 @@ test('full workflow: customer, booking, job, invoice, payment', async () => {
   const search = await get('/search?q=abc123');
   assert.equal(search.location, `/vehicles/${vehicle.id}`);
 
-  // A customer with invoices can't be deleted.
+  // Deleting a customer archives them: the invoices stay, the customer leaves the list and can be restored.
   res = await post(`/customers/${customerId}/delete`, {});
-  assert.equal(res.status, 400);
+  assert.equal(res.status, 302);
+  assert.doesNotMatch((await get('/customers')).text, /Jane Citizen/);
+  assert.match((await get('/customers?f=deleted')).text, /Jane Citizen/);
+  assert.ok((await db.get('SELECT COUNT(*)::int AS n FROM documents WHERE customer_id = $1', [customerId])).n > 0);
+  res = await post(`/customers/${customerId}/restore`, {});
+  assert.match((await get('/customers')).text, /Jane Citizen/);
 });
 
 test('quote converts to invoice with the same lines', async () => {

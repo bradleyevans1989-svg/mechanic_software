@@ -493,3 +493,88 @@ test('invoices list: search, status and date filters, sort, download and bulk ac
   await other.post('/documents/bulk', { type: 'invoice', action: 'void', ids: String(b) });
   assert.equal((await owner.db.get('SELECT status FROM documents WHERE id = $1', [b])).status, 'issued');
 });
+
+test('customers and vehicles lists: search, filters, sort, CSV; a vehicle moves between customers with history', async () => {
+  await owner.post('/customers', { name: 'Acme Fleet', phone: '0400 123 123', kind: 'company', tags: 'fleet, account', v_rego: 'FLEET1', v_make: 'Isuzu', v_model: 'D-Max' });
+  await owner.post('/customers', { name: 'Sally Solo', phone: '0411 222 333', kind: 'individual', v_rego: 'SOLO01', v_make: 'Mazda', v_model: '3' });
+  const acme = await owner.db.get(`SELECT id FROM customers WHERE name = 'Acme Fleet'`);
+  const sally = await owner.db.get(`SELECT id FROM customers WHERE name = 'Sally Solo'`);
+  const fleet = await owner.db.get(`SELECT * FROM vehicles WHERE rego = 'FLEET1'`);
+  assert.equal(fleet.customer_id, acme.id);
+  assert.equal((await owner.db.get('SELECT COUNT(*)::int AS n FROM vehicle_owners WHERE vehicle_id = $1', [fleet.id])).n, 1, 'first owner recorded');
+
+  // An unpaid invoice for Acme so they show as owing.
+  const inv = idFrom(await owner.post('/documents', { type: 'invoice', vehicle_id: fleet.id }));
+  await owner.post(`/documents/${inv}`, { 'lines[0][kind]': 'labour', 'lines[0][description]': 'Service', 'lines[0][qty]': '1', 'lines[0][price]': '200', 'lines[0][gst]': '1' });
+
+  let page = (await owner.get('/customers')).text;
+  assert.match(page, /Acme Fleet/);
+  assert.match(page, /Sally Solo/);
+  page = (await owner.get('/customers?f=company')).text;
+  assert.match(page, /Acme Fleet/);
+  assert.doesNotMatch(page, /Sally Solo/);
+  page = (await owner.get('/customers?f=individual&q=solo')).text;
+  assert.match(page, /1 shown/);
+  page = (await owner.get('/customers?f=owing')).text;
+  assert.match(page, /Acme Fleet/);
+  assert.doesNotMatch(page, /Sally Solo/);
+  assert.match(page, /\$220\.00/);
+  page = (await owner.get('/customers?tag=fleet')).text;
+  assert.match(page, /1 shown/);
+  assert.match(page, /Acme Fleet/);
+  page = (await owner.get('/customers?q=fleet1')).text;
+  assert.match(page, /Acme Fleet/, 'search by rego');
+  page = (await owner.get('/customers?sort=owing')).text;
+  assert.ok(page.indexOf('Acme Fleet') < page.indexOf('Sally Solo'), 'owing first');
+  const csv = (await owner.get('/customers.csv?f=company')).text;
+  assert.match(csv, /Name,Type,Phone/);
+  assert.match(csv, /Acme Fleet,company,0400 123 123,.*"fleet, account",FLEET1,220\.00/);
+  assert.doesNotMatch(csv, /Sally/);
+
+  page = (await owner.get('/vehicles')).text;
+  assert.match(page, /FLEET1/);
+  assert.match(page, /SOLO01/);
+  page = (await owner.get('/vehicles?q=dmax')).text;
+  assert.match(page, /FLEET1/, 'search ignores hyphens');
+  assert.doesNotMatch(page, /SOLO01/);
+  page = (await owner.get('/vehicles?q=sally')).text;
+  assert.match(page, /SOLO01/, 'search by owner');
+  page = (await owner.get('/vehicles?f=no_visit')).text;
+  assert.match(page, /SOLO01/);
+  assert.doesNotMatch(page, /FLEET1/);
+  await owner.db.run(`UPDATE vehicles SET rego_due = $1 WHERE id = $2`, [new Date().toISOString().slice(0, 10), fleet.id]);
+  page = (await owner.get('/vehicles?f=rego_due')).text;
+  assert.match(page, /FLEET1/);
+  assert.doesNotMatch(page, /SOLO01/);
+  const vcsv = (await owner.get('/vehicles.csv?q=fleet')).text;
+  assert.match(vcsv, /Rego,Make,Model/);
+  assert.match(vcsv, /FLEET1,Isuzu,D-Max,.*Acme Fleet/);
+  assert.doesNotMatch((await other.get('/vehicles')).text, /FLEET1/);
+
+  // Sell the ute to Sally: she owns it now, Acme keeps the invoice and shows as a past owner.
+  let res = await owner.post(`/vehicles/${fleet.id}/transfer`, { customer_id: String(sally.id), note: 'Sold' });
+  assert.equal(res.headers.get('location'), `/vehicles/${fleet.id}?moved=1`);
+  assert.equal((await owner.db.get('SELECT customer_id FROM vehicles WHERE id = $1', [fleet.id])).customer_id, sally.id);
+  const owners = await owner.db.all('SELECT * FROM vehicle_owners WHERE vehicle_id = $1 ORDER BY id', [fleet.id]);
+  assert.equal(owners.length, 2);
+  assert.ok(owners[0].to_at && !owners[1].to_at);
+  assert.equal(owners[1].note, 'Sold');
+  assert.equal((await owner.db.get('SELECT customer_id FROM documents WHERE id = $1', [inv])).customer_id, acme.id, 'old invoice stays with Acme');
+  page = (await owner.get(`/vehicles/${fleet.id}`)).text;
+  assert.match(page, /Sally Solo/);
+  assert.match(page, /Acme Fleet/);
+  page = (await owner.get(`/customers/${acme.id}`)).text;
+  assert.match(page, /Previously owned/);
+  // To a brand new customer by name.
+  res = await owner.post(`/vehicles/${fleet.id}/transfer`, { new_name: 'Newbie Nic', new_phone: '0422 000 000' });
+  const nic = await owner.db.get(`SELECT id FROM customers WHERE name = 'Newbie Nic'`);
+  assert.ok(nic);
+  assert.equal((await owner.db.get('SELECT customer_id FROM vehicles WHERE id = $1', [fleet.id])).customer_id, nic.id);
+  // Nothing to move to: a clear error, no change.
+  res = await owner.post(`/vehicles/${fleet.id}/transfer`, {});
+  assert.equal(res.status, 400);
+  // Another workshop can't move it.
+  res = await other.post(`/vehicles/${fleet.id}/transfer`, { new_name: 'Thief' });
+  assert.equal(res.status, 404);
+  assert.equal((await owner.db.get('SELECT customer_id FROM vehicles WHERE id = $1', [fleet.id])).customer_id, nic.id);
+});

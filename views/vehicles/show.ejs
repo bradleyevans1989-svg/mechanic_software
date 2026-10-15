@@ -32,6 +32,34 @@
 </section>
 
 <section class="card">
+  <h2>Owner</h2>
+  <% if (moved) { %><p class="flash">Moved to <%= customer.name %>.</p><% } %>
+  <ul class="list compact">
+    <% for (const o of owners) { %>
+      <li>
+        <span><a href="/customers/<%= o.customer_id %>"><strong><%= o.customer_name %></strong></a> <span class="muted">from <%= u.fmtDate(o.from_at) %><%= o.to_at ? ' to ' + u.fmtDate(o.to_at) : '' %><%= o.note ? ' · ' + o.note : '' %></span></span>
+        <% if (!o.to_at) { %><span class="pill pill-paid">current</span><% } %>
+      </li>
+    <% } %>
+  </ul>
+  <details class="transfer">
+    <summary class="btn small">Move to another customer</summary>
+    <form method="post" action="/vehicles/<%= vehicle.id %>/transfer" class="form" data-confirm="Move this vehicle? Past jobs and invoices stay with <%= customer.name %>.">
+      <div class="grid-2">
+        <label>Existing customer
+          <select name="customer_id"><option value="">Choose…</option><% for (const c of customers) { if (c.id === customer.id) continue; %><option value="<%= c.id %>"><%= c.name %><%= c.phone ? ' · ' + c.phone : '' %></option><% } %></select>
+        </label>
+        <label>Or a new customer <input name="new_name" placeholder="Name"></label>
+        <label>Their phone <input name="new_phone" type="tel"></label>
+        <label>Note <input name="note" placeholder="Sold privately, fleet reassignment…"></label>
+      </div>
+      <p class="hint">The new owner gets the vehicle from today. Jobs, quotes and invoices already done stay with the customer they were billed to.</p>
+      <button class="btn primary small">Move vehicle</button>
+    </form>
+  </details>
+</section>
+
+<section class="card">
   <h2>Service history</h2>
   <% if (!history.length) { %><p class="muted">No invoiced work yet.</p><% } %>
   <% for (const h of history) { %>

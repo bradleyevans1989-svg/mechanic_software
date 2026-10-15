@@ -1,7 +1,7 @@
 <%- include('../partials/header', { title: customer.name }) %>
 <div class="page-head">
   <div>
-    <h1><%= customer.name %></h1>
+    <h1><%= customer.name %><% if (customer.kind === 'company') { %> <span class="pill plain">company</span><% } %><% for (const t of (customer.tags || '').split(',').map(s => s.trim()).filter(Boolean)) { %> <span class="pill plain"><%= t %></span><% } %></h1>
     <p class="muted">
       <% if (customer.phone) { %><a href="tel:<%= customer.phone %>"><%= customer.phone %></a><% } %>
       <% if (customer.email) { %> · <a href="mailto:<%= customer.email %>"><%= customer.email %></a><% } %>
@@ -14,6 +14,9 @@
     <a class="btn primary" href="/customers/<%= customer.id %>/vehicles/new">Add vehicle</a>
   </div>
 </div>
+<% if (customer.archived_at) { %>
+  <form method="post" action="/customers/<%= customer.id %>/restore" class="banner warn">This customer was deleted on <%= u.fmtDate(customer.archived_at) %>. They stay out of lists and pickers. <button class="btn small">Restore</button></form>
+<% } %>
 <% if (owing > 0) { %><p class="banner warn">Owes <%= u.money(owing) %> · <a href="/customers/<%= customer.id %>/statement" target="_blank">Print statement</a></p><% } %>
 
 <section class="card">
@@ -31,6 +34,14 @@
       </li>
     <% } %>
   </ul>
+  <% if (previous.length) { %>
+    <h3>Previously owned</h3>
+    <ul class="list compact">
+      <% for (const v of previous) { %>
+        <li><a href="/vehicles/<%= v.id %>"><%= u.vehicleLabel(v) %></a> <span class="muted"><%= u.fmtDate(v.from_at) %> to <%= u.fmtDate(v.to_at) %> · now with <a href="/customers/<%= v.customer_id %>"><%= v.owner_name %></a></span></li>
+      <% } %>
+    </ul>
+  <% } %>
 </section>
 
 <div class="grid-2">

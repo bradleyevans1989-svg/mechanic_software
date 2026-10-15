@@ -8,6 +8,14 @@
     <label>Email <input name="email" type="email" value="<%= customer.email || '' %>"></label>
     <label>Address <input name="address" value="<%= customer.address || '' %>"></label>
   </div>
+  <div class="grid-2">
+    <fieldset class="choice">
+      <legend>Type</legend>
+      <label class="check"><input type="radio" name="kind" value="individual" <%= customer.kind !== 'company' ? 'checked' : '' %>> Individual</label>
+      <label class="check"><input type="radio" name="kind" value="company" <%= customer.kind === 'company' ? 'checked' : '' %>> Company</label>
+    </fieldset>
+    <label>Tags <input name="tags" value="<%= customer.tags || '' %>" placeholder="fleet, VIP, account"><span class="hint">Separate with commas. Use them to filter the customer list.</span></label>
+  </div>
   <label>Notes <textarea name="notes" rows="2"><%= customer.notes || '' %></textarea></label>
 
   <% if (withVehicle) { %>
@@ -27,7 +35,7 @@
   </div>
 </form>
 <% if (customer.id) { %>
-  <form method="post" action="/customers/<%= customer.id %>/delete" data-confirm="Delete this customer, their vehicles and history?">
+  <form method="post" action="/customers/<%= customer.id %>/delete" data-confirm="Delete this customer? They move to the deleted list and can be restored later.">
     <button class="btn danger small">Delete customer</button>
   </form>
 <% } %>

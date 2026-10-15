@@ -1,5 +1,6 @@
 <%- include('../partials/header', { title: vehicle.id ? 'Edit vehicle' : 'New vehicle' }) %>
 <h1><%= vehicle.id ? 'Edit vehicle' : 'New vehicle' %> <span class="muted">for <a href="/customers/<%= customer.id %>"><%= customer.name %></a></span></h1>
+<% if (vehicle.id) { %><p class="hint">Changed hands? <a href="/vehicles/<%= vehicle.id %>">Move it to another customer</a> from the vehicle page instead, so the history is kept.</p><% } %>
 <% if (error) { %><p class="error"><%= error %></p><% } %>
 <form method="post" action="<%= vehicle.id ? '/vehicles/' + vehicle.id : '/customers/' + customer.id + '/vehicles' %>" class="card form">
   <div class="grid-3">

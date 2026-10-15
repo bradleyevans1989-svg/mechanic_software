@@ -43,7 +43,7 @@ module.exports = function (app) {
       db.all(
         `SELECT v.*, c.name AS customer_name, c.phone AS customer_phone FROM vehicles v
          JOIN customers c ON c.id = v.customer_id
-         WHERE (v.next_service_date BETWEEN $1 AND $2) OR (v.rego_due BETWEEN $1 AND $2)
+         WHERE c.archived_at IS NULL AND ((v.next_service_date BETWEEN $1 AND $2) OR (v.rego_due BETWEEN $1 AND $2))
          ORDER BY LEAST(COALESCE(v.next_service_date, '9999'), COALESCE(v.rego_due, '9999'))`,
         [addDays(t, -30), addDays(t, 30)]
       ),
@@ -80,12 +80,12 @@ module.exports = function (app) {
     const [vehicles, customers, docs, jobs] = await Promise.all([
       db.all(
         `SELECT v.*, c.name AS customer_name FROM vehicles v JOIN customers c ON c.id = v.customer_id
-         WHERE replace(v.rego, ' ', '') ILIKE $2 OR v.vin ILIKE $1 OR v.make ILIKE $1 OR v.model ILIKE $1
+         WHERE c.archived_at IS NULL AND (replace(v.rego, ' ', '') ILIKE $2 OR v.vin ILIKE $1 OR v.make ILIKE $1 OR v.model ILIKE $1)
          ORDER BY v.rego LIMIT 50`,
         [like, compact]
       ),
       db.all(
-        `SELECT * FROM customers WHERE name ILIKE $1 OR replace(phone, ' ', '') ILIKE $2 OR email ILIKE $1
+        `SELECT * FROM customers WHERE archived_at IS NULL AND (name ILIKE $1 OR replace(phone, ' ', '') ILIKE $2 OR email ILIKE $1)
          ORDER BY lower(name) LIMIT 50`,
         [like, compact]
       ),

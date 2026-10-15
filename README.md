@@ -4,7 +4,8 @@ Workshop software for mechanics, built to be sold to many workshops on one share
 
 ## What it does
 
-- **Customers and vehicles**: rego, VIN, odometer, rego due date and next service, with full service history per car.
+- **Customers and vehicles**: rego, VIN, odometer, rego due date and next service, with full service history per car. Vehicles can change hands, keeping who owned them when. Both lists have search, filters (owing, companies, individuals, deleted; rego or service due), tags, sort and CSV download. Deleting a customer archives them and they can be restored.
+- **Invoices and quotes lists**: search, date range, status filters, sort, CSV download and bulk actions (mark sent, void, download).
 - **Diary and calendar**: week view of bookings, and a month calendar showing bookings, jobs spanning the days they're in the workshop, staff leave, public holidays, toolbox talks and notes, colour coded. Press "Car's here: start job" to turn a booking into a job card.
 - **Job cards**: work requested, mechanic's notes, assigned mechanic, priority and promised time, labour and parts. Print a job card for the floor. A list view sorted by what's promised soonest, a board view by status, and a "My jobs" tab.
 - **Inspection checklist**: a workshop-wide checklist (set under Settings) added to any job, marked OK / needs attention / urgent with notes, and printed as a customer-facing inspection report.

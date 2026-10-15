@@ -14,8 +14,8 @@ module.exports = function (app) {
          (SELECT MAX(at) FROM reminder_log r WHERE r.vehicle_id = v.id AND r.kind = 'service') AS service_reminded,
          (SELECT MAX(at) FROM reminder_log r WHERE r.vehicle_id = v.id AND r.kind = 'rego') AS rego_reminded
        FROM vehicles v JOIN customers c ON c.id = v.customer_id
-       WHERE ($2::text IN ('all', 'service') AND v.next_service_date IS NOT NULL AND v.next_service_date <= $1)
-          OR ($2::text IN ('all', 'rego') AND v.rego_due IS NOT NULL AND v.rego_due <= $1)
+       WHERE c.archived_at IS NULL AND (($2::text IN ('all', 'service') AND v.next_service_date IS NOT NULL AND v.next_service_date <= $1)
+          OR ($2::text IN ('all', 'rego') AND v.rego_due IS NOT NULL AND v.rego_due <= $1))
        ORDER BY LEAST(COALESCE(v.next_service_date, '9999'), COALESCE(v.rego_due, '9999')), lower(c.name)`,
       [until, kind]
     );
