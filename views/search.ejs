@@ -14,9 +14,9 @@
   </ul></section>
 <% } %>
 <% if (docs.length || jobs.length) { %>
-  <section class="card"><h2>Jobs, quotes and invoices</h2><ul class="list">
+  <section class="card"><h2>Jobs, estimates and invoices</h2><ul class="list">
     <% for (const j of jobs) { %><li><a href="/jobs/<%= j.id %>">Job J<%= j.number %></a> <span class="muted"><%= j.rego %> <%= j.description %></span></li><% } %>
-    <% for (const d of docs) { %><li><a href="/documents/<%= d.id %>"><%= d.type === 'quote' ? 'Quote' : 'Invoice' %> <%= u.docNumber(d) %></a> <span class="muted"><%= d.customer_name %> · <%= u.money(d.total) %></span></li><% } %>
+    <% for (const d of docs) { %><li><a href="/documents/<%= d.id %>"><%= d.type === 'quote' ? 'Estimate' : 'Invoice' %> <%= u.docNumber(d) %></a> <span class="muted"><%= d.customer_name %> · <%= u.money(d.total) %></span></li><% } %>
   </ul></section>
 <% } %>
 <%- include('partials/footer') %>

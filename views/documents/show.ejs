@@ -1,4 +1,4 @@
-<% const isQuote = doc.type === 'quote'; const label = isQuote ? 'Quote' : 'Tax invoice'; %>
+<% const isQuote = doc.type === 'quote'; const label = isQuote ? 'Estimate' : 'Tax invoice'; %>
 <%- include('../partials/header', { title: label + ' ' + u.docNumber(doc) }) %>
 <div class="page-head">
   <div>
@@ -7,7 +7,7 @@
       <a href="/customers/<%= doc.customer_id %>"><%= doc.customer_name %></a>
       <% if (doc.vehicle_id) { %> · <a href="/vehicles/<%= doc.vehicle_id %>"><%= u.vehicleLabel(doc) %></a><% } %>
       <% if (doc.job_id) { %> · <a href="/jobs/<%= doc.job_id %>">Job card</a><% } %>
-      <% for (const c of converted) { %> · <a href="/documents/<%= c.id %>"><%= c.type === 'quote' ? 'Quote' : 'Invoice' %> <%= u.docNumber(c) %></a><% } %>
+      <% for (const c of converted) { %> · <a href="/documents/<%= c.id %>"><%= c.type === 'quote' ? 'Estimate' : 'Invoice' %> <%= u.docNumber(c) %></a><% } %>
     </p>
   </div>
   <div class="actions">
@@ -110,7 +110,7 @@
 
 <div class="actions">
   <% if (isQuote) { %>
-    <form method="post" action="/documents/<%= doc.id %>/delete" data-confirm="Delete this quote?"><button class="btn danger small">Delete quote</button></form>
+    <form method="post" action="/documents/<%= doc.id %>/delete" data-confirm="Delete this estimate?"><button class="btn danger small">Delete estimate</button></form>
   <% } else if (doc.state === 'void') { %>
     <form method="post" action="/documents/<%= doc.id %>/unvoid"><button class="btn small">Restore invoice</button></form>
   <% } else { %>

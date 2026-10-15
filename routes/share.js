@@ -77,7 +77,7 @@ module.exports = {
       if (doc.status === 'draft' || doc.status === 'sent') {
         await db.tx(async (tx) => {
           await tx.run(`UPDATE documents SET status = 'accepted', customer_accepted_at = now() WHERE id = $1`, [doc.id]);
-          if (doc.job_id) await logEvent(tx, doc.job_id, null, 'quote', `Quote ${docNumber(doc)} accepted online by the customer`);
+          if (doc.job_id) await logEvent(tx, doc.job_id, null, 'quote', `Estimate ${docNumber(doc)} accepted online by the customer`);
         });
       }
       res.redirect(`/share/${req.params.token}?accepted=1`);
@@ -91,7 +91,7 @@ module.exports = {
       if (!doc) return next();
       const via = VIAS[req.body.via] ? req.body.via : 'link';
       const to = String(req.body.to || doc.customer_email || '').trim().slice(0, 200);
-      const label = doc.type === 'quote' ? 'Quote' : 'Tax invoice';
+      const label = doc.type === 'quote' ? 'Estimate' : 'Tax invoice';
       const link = `${appUrl(req)}/share/${await shareToken(store, req.user.workshop_id, doc.id)}`;
       if (via === 'email') {
         if (!mail.configured()) return res.redirect(`/documents/${doc.id}?error=${encodeURIComponent('Email sending is not set up on this server.')}`);
@@ -100,7 +100,7 @@ module.exports = {
         const subject = `${label} ${docNumber(doc)} from ${settings.business_name}`;
         const intro =
           doc.type === 'quote'
-            ? `Here is your quote for ${money(doc.total)}${doc.due_date ? `, valid until ${doc.due_date.split('-').reverse().join('/')}` : ''}. You can view it and accept it online here:`
+            ? `Here is your estimate for ${money(doc.total)}${doc.due_date ? `, valid until ${doc.due_date.split('-').reverse().join('/')}` : ''}. You can view it and accept it online here:`
             : `Here is your tax invoice for ${money(doc.total)}${doc.balance > 0 ? `, with ${money(doc.balance)} to pay${doc.due_date ? ` by ${doc.due_date.split('-').reverse().join('/')}` : ''}` : ''}. You can view it here:`;
         const text = `Hi ${doc.customer_name},\n\n${intro}\n${link}\n\n${settings.bank_details && doc.type === 'invoice' ? `Pay by bank transfer:\n${settings.bank_details}\n\n` : ''}Thanks,\n${settings.business_name}${settings.phone ? `\n${settings.phone}` : ''}`;
         const html = `<p>Hi ${mail.escapeHtml(doc.customer_name)},</p><p>${mail.escapeHtml(intro)}</p><p><a href="${link}">${mail.escapeHtml(`${label} ${docNumber(doc)}`)}</a></p>${

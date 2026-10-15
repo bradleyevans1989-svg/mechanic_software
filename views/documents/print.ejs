@@ -1,4 +1,4 @@
-<% const isQuote = doc.type === 'quote'; const label = isQuote ? 'QUOTE' : 'TAX INVOICE';
+<% const isQuote = doc.type === 'quote'; const label = isQuote ? 'ESTIMATE' : 'TAX INVOICE';
    const isShared = typeof shared !== 'undefined' && shared;
    const isPreview = typeof preview !== 'undefined' && preview;
    const tpl = typeof template !== 'undefined' && template ? template : (settings.invoice_template || 'classic');
@@ -10,7 +10,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title><%= isQuote ? 'Quote' : 'Invoice' %> <%= u.docNumber(doc) %> · <%= settings.business_name %></title>
+  <title><%= isQuote ? 'Estimate' : 'Invoice' %> <%= u.docNumber(doc) %> · <%= settings.business_name %></title>
   <link rel="stylesheet" href="/static/print.css">
 </head>
 <body class="tpl tpl-<%= tpl %> <%= logoUrl ? 'has-logo' : 'no-logo' %>" style="--brand: <%= settings.brand_colour || '#111111' %>">
@@ -19,9 +19,9 @@
     <div class="noprint">
       <button onclick="window.print()">Print or save as PDF</button>
       <% if (isQuote && (doc.status === 'draft' || doc.status === 'sent')) { %>
-        <form method="post" action="/share/<%= token %>/accept" style="display:inline" onsubmit="return confirm('Accept this quote and have <%= settings.business_name %> go ahead with the work?')"><button>Accept this quote</button></form>
+        <form method="post" action="/share/<%= token %>/accept" style="display:inline" onsubmit="return confirm('Accept this estimate and have <%= settings.business_name %> go ahead with the work?')"><button>Accept this estimate</button></form>
       <% } else if (isQuote && doc.status === 'accepted') { %>
-        <strong>✓ Quote accepted<%= typeof accepted !== 'undefined' && accepted ? '. Thanks! The workshop will be in touch.' : '.' %></strong>
+        <strong>✓ Estimate accepted<%= typeof accepted !== 'undefined' && accepted ? '. Thanks! The workshop will be in touch.' : '.' %></strong>
       <% } %>
       <% if (settings.phone) { %><span>Questions? Call <%= settings.business_name %> on <%= settings.phone %>.</span><% } %>
     </div>
@@ -94,6 +94,9 @@
     </div>
     <footer class="doc-foot">
       <% if (!isQuote && settings.bank_details && doc.balance > 0) { %><div class="pay"><h3>How to pay</h3><div class="pre"><%= settings.bank_details %></div></div><% } %>
+      <% if (isQuote && doc.due_date) { const days = Math.round((Date.parse(doc.due_date) - Date.parse(doc.issue_date)) / 86400000); %>
+        <p class="validity">This estimate is valid for <%= days %> day<%= days === 1 ? '' : 's' %>, until <%= u.fmtDate(doc.due_date) %>. Prices may change after that date, and the final invoice may differ if extra work or parts are needed once we start.</p>
+      <% } %>
       <% if (settings.invoice_terms) { %><div class="pre terms"><%= settings.invoice_terms %></div><% } %>
     </footer>
   </div>

@@ -245,3 +245,5 @@ td.urgent { color: #b3261e; font-weight: 700; }
 .tpl-inspection .checks-print tr.heading th { background: var(--ink); color: #fff; }
 .tpl-inspection .checks-print .res { font-size: 11pt; }
 .tpl-inspection .box.tall { min-height: 5rem; }
+
+.validity { font-size: 9.5pt; color: #444; margin: 0 0 .5rem; }

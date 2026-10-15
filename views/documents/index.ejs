@@ -1,10 +1,10 @@
-<% const isQuote = type === 'quote'; const base = isQuote ? '/quotes' : '/invoices';
+<% const isQuote = type === 'quote'; const base = isQuote ? '/estimates' : '/invoices';
    const qs = new URLSearchParams(); if (filters.q) qs.set('q', filters.q); if (filters.from) qs.set('from', filters.from); if (filters.to) qs.set('to', filters.to);
    for (const st of filters.state) qs.append('state', st); if (filters.sort !== 'newest') qs.set('sort', filters.sort); if (filters.show === 'all') qs.set('show', 'all');
    const query = qs.toString() ? '?' + qs.toString() : ''; %>
-<%- include('../partials/header', { title: isQuote ? 'Quotes' : 'Invoices' }) %>
+<%- include('../partials/header', { title: isQuote ? 'Estimates' : 'Invoices' }) %>
 <div class="page-head">
-  <h1><%= isQuote ? 'Quotes' : 'Invoices' %> <span class="muted"><%= docs.length %> shown</span></h1>
+  <h1><%= isQuote ? 'Estimates' : 'Invoices' %> <span class="muted"><%= docs.length %> shown</span></h1>
   <div class="actions">
     <a class="btn" href="<%= base %>.csv<%= query %>">Download</a>
     <% if (!isQuote) { %><a class="btn" href="/reports">Reports</a><% } %>

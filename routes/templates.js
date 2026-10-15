@@ -1,3 +1,4 @@
+const { addDays } = require('../lib/util');
 const express = require('express');
 const { requireOwner } = require('../lib/auth');
 const { INVOICE_TEMPLATES, JOBCARD_TEMPLATES, pick, sampleDocument, sampleJob } = require('../lib/templates');
@@ -27,7 +28,7 @@ module.exports = function (app, { store }) {
       return res.render('jobs/print', { ...sampleJob(today), CHECK_RESULTS, template: pick(JOBCARD_TEMPLATES, String(req.query.t || '')), preview: true });
     }
     const sample = sampleDocument(today);
-    if (req.query.type === 'quote') Object.assign(sample.doc, { type: 'quote', status: 'sent', state: 'sent' });
+    if (req.query.type === 'quote') Object.assign(sample.doc, { type: 'quote', status: 'sent', state: 'sent', due_date: addDays(sample.doc.issue_date, 7) });
     res.render('documents/print', { ...sample, template: pick(INVOICE_TEMPLATES, String(req.query.t || '')), preview: true });
   });
 

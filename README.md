@@ -5,19 +5,19 @@ Workshop software for mechanics, built to be sold to many workshops on one share
 ## What it does
 
 - **Customers and vehicles**: rego, VIN, odometer, rego due date and next service, with full service history per car. Vehicles can change hands, keeping who owned them when. Both lists have search, filters (owing, companies, individuals, deleted; rego or service due), tags, sort and CSV download. Deleting a customer archives them and they can be restored.
-- **Invoices and quotes lists**: search, date range, status filters, sort, CSV download and bulk actions (mark sent, void, download).
+- **Invoices and estimates lists**: search, date range, status filters, sort, CSV download and bulk actions (mark sent, void, download).
 - **Diary and calendar**: week view of bookings, and a month calendar showing bookings, jobs spanning the days they're in the workshop, staff leave, public holidays, toolbox talks and notes, colour coded. Press "Car's here: start job" to turn a booking into a job card.
 - **Job cards**: work requested, mechanic's notes, assigned mechanic, priority and promised time, labour and parts. Print a job card for the floor. A list view sorted by what's promised soonest, a board view by status, and a "My jobs" tab.
 - **Inspection checklist**: a workshop-wide checklist (set under Settings) added to any job, marked OK / needs attention / urgent with notes, and printed as a customer-facing inspection report.
 - **Time clock**: staff clock on and off jobs or add time by hand; unbilled time becomes a labour line in quarter hours at the workshop rate. Owners see weekly timesheets.
 - **Activity log**: every status change, assignment, clock on/off, invoice and note on a job, with who and when.
-- **Price list**: saved parts and services with codes and prices, dropped onto any job, quote or invoice from a search box in the line editor.
+- **Price list**: saved parts and services with codes and prices, dropped onto any job, estimate or invoice from a search box in the line editor.
 - **Reminders**: service intervals per vehicle (months and km) set the next service due when a service is invoiced. A Reminders page lists service and rego due or overdue with call, text and email links and a log of who was contacted.
-- **Quotes**: convert to a job or straight to an invoice.
+- **Estimates**: convert to a job or straight to an invoice.
 - **Your look**: upload your logo, set a brand colour, tagline, website and licence number, then pick one of ten invoice designs and ten job card designs under Settings. Previews show your own details.
 - **Tax invoices with GST**: ABN, GST breakdown, payments, balance owing, overdue tracking. Print or save as PDF.
 - **Today screen**: today's bookings, cars in the workshop, unpaid invoices, and services or rego coming due.
-- **Send to customer**: every quote and invoice has a private link the customer can open without logging in; quotes can be accepted online. Email and text buttons open your own apps with the message filled in, or set up Resend (below) to email straight from the app.
+- **Send to customer**: every estimate and invoice has a private link the customer can open without logging in; estimates can be accepted online. Email and text buttons open your own apps with the message filled in, or set up Resend (below) to email straight from the app.
 - **Reports**: monthly sales, GST collected and payments received; who owes you by how overdue; BAS quarter figures (G1 and 1A); sales and hours by mechanic; top customers; printable customer statements; and a CSV export for the accountant.
 - **Clocking and roster**: staff start their shift, take breaks and finish from the Today screen or the Clocking page; owners see who's in now and shift hours on the timesheets. A weekly roster with shifts, days off, RDOs and leave, with "my next shift" on the Today screen.
 - **Team**: a to-do chat for the team, step-by-step procedures (how we do things, with a print button), and training modules worth points with a points board.
@@ -69,7 +69,7 @@ That comfortably runs dozens of workshops. As you grow, move the database to a b
 | `XERO_CLIENT_ID`, `XERO_CLIENT_SECRET` | From your Xero app. Needed for any workshop to connect Xero. | none |
 | `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, `STRIPE_WEBHOOK_SECRET` | Turn on subscription billing (see below). Without them every workshop is free. | none |
 | `PLAN_PRICE_LABEL` | Shown on the Subscribe button, e.g. `$49/month`. | none |
-| `RESEND_API_KEY`, `EMAIL_FROM` | Send quotes and invoices by email through [Resend](https://resend.com). `EMAIL_FROM` is the sender, e.g. `Workshop <invoices@yourdomain.com.au>`, on a domain verified in Resend. Replies go to each workshop's own email. | email buttons open the user's own mail app |
+| `RESEND_API_KEY`, `EMAIL_FROM` | Send estimates and invoices by email through [Resend](https://resend.com). `EMAIL_FROM` is the sender, e.g. `Workshop <invoices@yourdomain.com.au>`, on a domain verified in Resend. Replies go to each workshop's own email. | email buttons open the user's own mail app |
 | `PGSSL` | Set to `require` if your database needs SSL from outside its network. | off |
 | `PORT` | Port to listen on. | `3000` |
 

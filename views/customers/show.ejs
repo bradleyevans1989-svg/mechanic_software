@@ -29,7 +29,7 @@
         <div class="row-actions">
           <a class="btn small" href="/bookings/new?vehicle_id=<%= v.id %>">Book in</a>
           <a class="btn small" href="/jobs/new?vehicle_id=<%= v.id %>">New job</a>
-          <a class="btn small" href="/documents/new?type=quote&vehicle_id=<%= v.id %>">Quote</a>
+          <a class="btn small" href="/documents/new?type=quote&vehicle_id=<%= v.id %>">Estimate</a>
         </div>
       </li>
     <% } %>
@@ -46,7 +46,7 @@
 
 <div class="grid-2">
   <section class="card">
-    <h2>Invoices and quotes</h2>
+    <h2>Invoices and estimates</h2>
     <table class="table">
       <% for (const d of docs) { %>
         <tr>
@@ -59,7 +59,7 @@
       <% } %>
       <% if (!docs.length) { %><tr><td class="muted">None yet.</td></tr><% } %>
     </table>
-    <p><a href="/documents/new?type=invoice&customer_id=<%= customer.id %>">New invoice</a> · <a href="/documents/new?type=quote&customer_id=<%= customer.id %>">New quote</a> · <a href="/customers/<%= customer.id %>/statement?show=all" target="_blank">Statement</a></p>
+    <p><a href="/documents/new?type=invoice&customer_id=<%= customer.id %>">New invoice</a> · <a href="/documents/new?type=quote&customer_id=<%= customer.id %>">New estimate</a> · <a href="/customers/<%= customer.id %>/statement?show=all" target="_blank">Statement</a></p>
   </section>
   <section class="card">
     <h2>Jobs</h2>

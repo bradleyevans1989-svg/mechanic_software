@@ -1,4 +1,4 @@
-// Share links: customers open quotes and invoices without a login, accept quotes, and get emails.
+// Share links: customers open estimates and invoices without a login, accept estimates, and get emails.
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const express = require('express');
@@ -30,7 +30,7 @@ after(async () => {
   if (fake) fake.close();
 });
 
-test('a quote is shared by link, accepted by the customer, and emailed', async () => {
+test('an estimate is shared by link, accepted by the customer, and emailed', async () => {
   await owner.post('/customers', { name: 'Shari Link', email: 'shari@example.com', phone: '0400 999 888', v_rego: 'SHR001' });
   const v = await owner.db.get(`SELECT id FROM vehicles WHERE rego = 'SHR001'`);
   const quoteId = idFrom(await owner.post('/documents', { type: 'quote', vehicle_id: v.id }));
@@ -48,10 +48,11 @@ test('a quote is shared by link, accepted by the customer, and emailed', async (
   const anon = t.client();
   let pub = await anon.get(`/share/${token}`);
   assert.equal(pub.status, 200);
-  assert.match(pub.text, /QUOTE/);
+  assert.match(pub.text, /ESTIMATE/);
+  assert.match(pub.text, /This estimate is valid for \d+ days?, until/);
   assert.match(pub.text, /Shari Link/);
   assert.match(pub.text, /\$165\.00/);
-  assert.match(pub.text, /Accept this quote/);
+  assert.match(pub.text, /Accept this estimate/);
   assert.equal((await anon.get('/share/0000000000000000000000000000ffff')).status, 404);
   assert.equal((await anon.get('/share/nope')).status, 404);
 
@@ -60,7 +61,7 @@ test('a quote is shared by link, accepted by the customer, and emailed', async (
   assert.equal(res.headers.get('location'), `/documents/${quoteId}?sent=1`);
   assert.equal(sent.length, 1);
   assert.equal(sent[0].to[0], 'shari@example.com');
-  assert.match(sent[0].subject, /Quote Q1001 from Share Co/);
+  assert.match(sent[0].subject, /Estimate EST-1001 from Share Co/);
   assert.match(sent[0].text, new RegExp(`/share/${token}`));
   let q = await owner.db.get('SELECT * FROM documents WHERE id = $1', [quoteId]);
   assert.equal(q.status, 'sent');
@@ -74,7 +75,7 @@ test('a quote is shared by link, accepted by the customer, and emailed', async (
   assert.equal(q.status, 'accepted');
   assert.ok(q.customer_accepted_at);
   pub = await anon.get(`/share/${token}?accepted=1`);
-  assert.match(pub.text, /Quote accepted\. Thanks!/);
+  assert.match(pub.text, /Estimate accepted\. Thanks!/);
   assert.match((await owner.get(`/documents/${quoteId}`)).text, /Accepted online by the customer/);
 
   // Invoices share too, and a bad address is refused.

@@ -11,14 +11,14 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 module.exports = function (app, { store, xero, QUOTE_STATUSES }) {
   async function createDoc(db, req, type, fields, lines) {
     const today = req.res.locals.today;
-    const settings = await db.get('SELECT payment_days FROM settings');
+    const settings = await db.get('SELECT payment_days, quote_days FROM settings');
     const f = {
       job_id: null,
       odometer: null,
       notes: '',
       issue_date: today,
-      // Quotes use due_date as "valid until".
-      due_date: addDays(today, type === 'invoice' ? settings.payment_days : 30),
+      // Estimates use due_date as "valid until".
+      due_date: addDays(today, type === 'invoice' ? settings.payment_days : settings.quote_days),
       status: type === 'invoice' ? 'issued' : 'draft',
       ...fields,
     };
@@ -67,31 +67,33 @@ module.exports = function (app, { store, xero, QUOTE_STATUSES }) {
   }
   const res_today = (req) => req.res.locals.today;
 
-  app.get(['/invoices', '/quotes'], async (req, res) => {
-    const type = req.path === '/quotes' ? 'quote' : 'invoice';
+  app.get(['/quotes', '/quotes.csv'], (req, res) => res.redirect(301, req.path.replace('/quotes', '/estimates') + (req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '')));
+
+  app.get(['/invoices', '/estimates'], async (req, res) => {
+    const type = req.path === '/estimates' ? 'quote' : 'invoice';
     const { docs, filters, STATES: states, SORTS: sorts } = await filteredList(req, type);
     res.render('documents/index', { type, docs, filters, filter: filters.show, states, sorts, done: req.query.done || '' });
   });
 
   // Download the list as it is filtered, for a spreadsheet.
-  app.get(['/invoices.csv', '/quotes.csv'], async (req, res) => {
-    const type = req.path === '/quotes.csv' ? 'quote' : 'invoice';
+  app.get(['/invoices.csv', '/estimates.csv'], async (req, res) => {
+    const type = req.path === '/estimates.csv' ? 'quote' : 'invoice';
     let { docs } = await filteredList(req, type);
     const ids = [].concat(req.query.ids || []).map(Number).filter(Boolean);
     if (ids.length) docs = docs.filter((d) => ids.includes(d.id));
     const rows = [['Number', 'Date', 'Due', 'Customer', 'Phone', 'Rego', 'Vehicle', 'Subtotal ex GST', 'GST', 'Total', 'Paid', 'Balance', 'Status', 'Job']];
     for (const d of docs) rows.push([docNumber(d), d.issue_date, d.due_date || '', d.customer_name, d.customer_phone, d.rego || '', [d.year, d.make, d.model].filter(Boolean).join(' '), dollars(d.subtotal), dollars(d.gst), dollars(d.total), dollars(d.paid), dollars(d.balance), d.state, d.job_id ? `J${d.job_number || ''}` : '']);
-    res.type('text/csv').attachment(`${type}s.csv`).send(rows.map((r) => r.map(csvCell).join(',')).join('\n') + '\n');
+    res.type('text/csv').attachment(`${type === 'quote' ? 'estimates' : 'invoices'}.csv`).send(rows.map((r) => r.map(csvCell).join(',')).join('\n') + '\n');
   });
 
   // Bulk actions on ticked rows.
   app.post('/documents/bulk', async (req, res) => {
     const type = req.body.type === 'quote' ? 'quote' : 'invoice';
     const ids = [].concat(req.body.ids || []).map(Number).filter(Boolean).slice(0, 200);
-    const back = `/${type}s${req.body.back && /^\?[\w=&%+.-]*$/.test(req.body.back) ? req.body.back : ''}`;
+    const back = `/${type === 'quote' ? 'estimates' : 'invoices'}${req.body.back && /^\?[\w=&%+.-]*$/.test(req.body.back) ? req.body.back : ''}`;
     const action = String(req.body.action || '');
     if (!ids.length) return res.redirect(back);
-    if (action === 'download') return res.redirect(`/${type}s.csv?${ids.map((i) => 'ids=' + i).join('&')}`);
+    if (action === 'download') return res.redirect(`/${type === 'quote' ? 'estimates' : 'invoices'}.csv?${ids.map((i) => 'ids=' + i).join('&')}`);
     let n = 0;
     for (const id of ids) {
       const doc = await getDoc(req.db, id, res.locals.today);
@@ -256,11 +258,11 @@ module.exports = function (app, { store, xero, QUOTE_STATUSES }) {
       const job = await db.get(
         `INSERT INTO jobs (number, customer_id, vehicle_id, status, description, odometer, created_at)
          VALUES ($1, $2, $3, 'open', $4, $5, $6) RETURNING id`,
-        [await nextNumber(db, 'job'), quote.customer_id, quote.vehicle_id, quote.notes || `From quote ${docNumber(quote)}`, quote.odometer, now(req.tz)]
+        [await nextNumber(db, 'job'), quote.customer_id, quote.vehicle_id, quote.notes || `From estimate ${docNumber(quote)}`, quote.odometer, now(req.tz)]
       );
       await saveLines(db, 'job', job.id, await getLines(db, 'document', quote.id));
       await db.run(`UPDATE documents SET status = 'accepted', job_id = $1 WHERE id = $2`, [job.id, quote.id]);
-      await logEvent(db, job.id, req.user.id, 'created', `Job opened from quote ${docNumber(quote)}`);
+      await logEvent(db, job.id, req.user.id, 'created', `Job opened from estimate ${docNumber(quote)}`);
       return job.id;
     });
     res.redirect(`/jobs/${jobId}`);
@@ -294,6 +296,6 @@ module.exports = function (app, { store, xero, QUOTE_STATUSES }) {
     if (!doc || doc.type !== 'quote') return next();
     await req.db.run('DELETE FROM documents WHERE id = $1', [doc.id]);
     await store.system.run('DELETE FROM share_links WHERE workshop_id = $1 AND document_id = $2', [req.user.workshop_id, doc.id]);
-    res.redirect('/quotes');
+    res.redirect('/estimates');
   });
 };

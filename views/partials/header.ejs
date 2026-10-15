@@ -12,7 +12,7 @@
 <header class="topbar">
   <a class="brand" href="/"><i><%= (settings.business_name || 'W').trim().charAt(0).toUpperCase() %></i><%= settings.business_name %></a>
   <nav class="nav">
-    <% const links = [['/', 'Today'], ['/bookings', 'Diary'], ['/jobs', 'Jobs'], ['/quotes', 'Quotes'], ['/invoices', 'Invoices'], ['/customers', 'Customers'], ['/reminders', 'Reminders'], ['/team', 'Team']];
+    <% const links = [['/', 'Today'], ['/bookings', 'Diary'], ['/jobs', 'Jobs'], ['/estimates', 'Estimates'], ['/invoices', 'Invoices'], ['/customers', 'Customers'], ['/reminders', 'Reminders'], ['/team', 'Team']];
        if (user && user.role === 'owner') links.push(['/reports', 'Reports'], ['/settings', 'Settings']); %>
     <% for (const [href, label] of links) { const active = href === '/' ? path === '/' : href === '/team' ? /^\/(team|procedures|training|roster|clocking)/.test(path) : href === '/customers' ? /^\/(customers|vehicles)/.test(path) : path.startsWith(href); %>
       <a href="<%= href %>" class="<%= active ? 'active' : '' %>"><%= label %></a>

@@ -158,7 +158,7 @@ test('quote converts to invoice with the same lines', async () => {
 });
 
 test('every main page renders', async () => {
-  for (const p of ['/', '/bookings', '/bookings/new', '/jobs', '/jobs/new', '/jobs?status=all', '/quotes', '/invoices', '/invoices?show=all', '/customers', '/customers/new', '/reports', '/settings', '/staff', '/staff/new', '/account', '/documents/new?type=quote']) {
+  for (const p of ['/', '/bookings', '/bookings/new', '/jobs', '/jobs/new', '/jobs?status=all', '/estimates', '/invoices', '/invoices?show=all', '/customers', '/customers/new', '/reports', '/settings', '/staff', '/staff/new', '/account', '/documents/new?type=quote']) {
     const r = await get(p);
     assert.equal(r.status, 200, `${p} returned ${r.status}: ${r.text.slice(0, 300)}`);
   }
