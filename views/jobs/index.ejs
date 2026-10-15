@@ -51,14 +51,27 @@
   <thead><tr><th>Job</th><th>Vehicle</th><th>Customer</th><th>Work</th><th>Mechanic</th><th>Promised</th><th>Status</th></tr></thead>
   <tbody>
     <% for (const j of jobs) { %>
-      <tr class="<%= j.priority === 'urgent' ? 'urgent' : '' %>">
+      <tr class="rowlink <%= j.priority === 'urgent' ? 'urgent' : '' %>" data-href="/jobs/<%= j.id %>">
         <td><a href="/jobs/<%= j.id %>">J<%= j.number %></a><% if (j.priority === 'urgent') { %> <span class="late">Urgent</span><% } %></td>
         <td><%= j.rego || '' %> <%= j.make %> <%= j.model %></td>
         <td><%= j.customer_name %></td>
         <td><%= j.description %><% if (j.flagged) { %> <span class="late">⚠ <%= j.flagged %></span><% } %></td>
         <td><%= j.mechanic_name || '' %><%= j.clocked_on ? ' ⏱' : '' %></td>
         <td><%- due(j) || '<span class="muted">' + u.fmtDate(j.created_at) + '</span>' %></td>
-        <td><%- include('../partials/pill', { state: j.status, label: JOB_STATUSES[j.status] }) %></td>
+        <td>
+          <% if (j.status === 'invoiced' || j.status === 'cancelled') { %>
+            <%- include('../partials/pill', { state: j.status, label: JOB_STATUSES[j.status] }) %>
+          <% } else { %>
+            <form method="post" action="/jobs/<%= j.id %>/status" class="status-form">
+              <input type="hidden" name="back" value="/jobs?status=<%= filter %>">
+              <select name="status" class="pill-select pill-<%= j.status %>" data-auto-submit aria-label="Status of job J<%= j.number %>">
+                <% for (const [k, label] of Object.entries(JOB_STATUSES)) { if (k === 'invoiced') continue; %><option value="<%= k %>" <%= j.status === k ? 'selected' : '' %>><%= label %></option><% } %>
+                <option value="invoice">Make invoice →</option>
+              </select>
+              <noscript><button class="btn small">Save</button></noscript>
+            </form>
+          <% } %>
+        </td>
       </tr>
     <% } %>
     <% if (!jobs.length) { %><tr><td colspan="7" class="muted">No jobs here.</td></tr><% } %>

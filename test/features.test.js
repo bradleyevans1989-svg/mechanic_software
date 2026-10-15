@@ -416,3 +416,28 @@ test('branding: logo upload, brand details, invoice and job card designs', async
   await owner.post('/settings/logo/remove');
   assert.equal((await owner.get('/logo')).status, 404);
 });
+
+test('jobs list: quick status change and make invoice from the dropdown', async () => {
+  await owner.post('/customers', { name: 'Quick Status', v_rego: 'QCK001' });
+  const vehicle = await owner.db.get(`SELECT id FROM vehicles WHERE rego = 'QCK001'`);
+  const jobId = idFrom(await owner.post('/jobs', { vehicle_id: vehicle.id, description: 'Quick job' }));
+  let page = (await owner.get('/jobs')).text;
+  assert.match(page, new RegExp(`data-href="/jobs/${jobId}"`));
+  assert.match(page, /option value="invoice"/);
+
+  let res = await owner.post(`/jobs/${jobId}/status`, { status: 'waiting_parts', back: '/jobs?status=active' });
+  assert.equal(res.status, 302);
+  assert.equal(res.headers.get('location'), '/jobs?status=active');
+  assert.equal((await owner.db.get('SELECT status FROM jobs WHERE id = $1', [jobId])).status, 'waiting_parts');
+  assert.match((await owner.get(`/jobs/${jobId}`)).text, /Status changed to Waiting on parts/);
+  res = await owner.post(`/jobs/${jobId}/status`, { status: 'bogus', back: 'https://evil.example' });
+  assert.equal(res.headers.get('location'), '/jobs');
+  assert.equal((await owner.db.get('SELECT status FROM jobs WHERE id = $1', [jobId])).status, 'waiting_parts');
+
+  res = await owner.post(`/jobs/${jobId}/status`, { status: 'invoice' });
+  assert.match(res.headers.get('location'), /^\/documents\/\d+$/);
+  assert.equal((await owner.db.get('SELECT status FROM jobs WHERE id = $1', [jobId])).status, 'invoiced');
+  const inv = await owner.db.get(`SELECT id FROM documents WHERE job_id = $1 AND type = 'invoice'`, [jobId]);
+  assert.ok(inv);
+  assert.equal((await other.post(`/jobs/${jobId}/status`, { status: 'open' })).status, 404);
+});

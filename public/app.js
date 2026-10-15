@@ -214,3 +214,20 @@ document.querySelectorAll('[data-lines]').forEach((box) => {
     img.src = URL.createObjectURL(f);
   });
 })();
+
+// Dropdowns that save as soon as they change, and table rows that open a link.
+document.addEventListener('change', (e) => {
+  const sel = e.target.closest('[data-auto-submit]');
+  if (!sel) return;
+  if (sel.value === 'invoice' && !window.confirm('Make an invoice from this job? It copies the labour and parts across and marks the job invoiced.')) {
+    sel.value = sel.dataset.was || sel.querySelector('option[selected]')?.value || sel.options[0].value;
+    return;
+  }
+  sel.closest('form').submit();
+});
+document.addEventListener('click', (e) => {
+  const row = e.target.closest('tr[data-href]');
+  if (!row || e.target.closest('a, button, select, input, label, form')) return;
+  if (window.getSelection && String(window.getSelection())) return;
+  window.location = row.dataset.href;
+});

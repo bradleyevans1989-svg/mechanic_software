@@ -300,10 +300,11 @@ module.exports = function (app, { store, xero, JOB_STATUSES }) {
   });
 
   // Turn the job card into a tax invoice with the same lines.
-  app.post('/jobs/:id/invoice', async (req, res, next) => {
+  // Turn a job into an invoice: copies the lines, marks the job invoiced, clocks everyone off.
+  async function invoiceJob(req, res, jobId) {
     const result = await req.db.tx(async (db) => {
       // Lock the job so a double click makes one invoice, not two.
-      const job = await db.get('SELECT * FROM jobs WHERE id = $1 FOR UPDATE', [req.params.id]);
+      const job = await db.get('SELECT * FROM jobs WHERE id = $1 FOR UPDATE', [jobId]);
       if (!job) return null;
       const existing = await db.get(`SELECT id FROM documents WHERE job_id = $1 AND type = 'invoice' AND status != 'void'`, [job.id]);
       if (existing) return { id: existing.id, created: false };
@@ -345,9 +346,36 @@ module.exports = function (app, { store, xero, JOB_STATUSES }) {
       await logEvent(db, job.id, req.user.id, 'invoice', `Invoice INV-${doc.number} created`);
       return { id: doc.id, created: true };
     });
+    if (result && result.created) await xero.queueInvoice(req.db, result.id);
+    return result;
+  }
+
+  app.post('/jobs/:id/invoice', async (req, res, next) => {
+    const result = await invoiceJob(req, res, req.params.id);
     if (!result) return next();
-    if (result.created) await xero.queueInvoice(req.db, result.id);
     res.redirect(`/documents/${result.id}`);
+  });
+
+  // Quick status change from the jobs list; "invoice" makes the invoice instead.
+  app.post('/jobs/:id/status', async (req, res, next) => {
+    const job = await getJob(req.db, req.params.id);
+    if (!job) return next();
+    const back = /^\/jobs(\?[\w=&%-]*)?$/.test(String(req.body.back || '')) ? req.body.back : '/jobs';
+    if (req.body.status === 'invoice') {
+      const result = await invoiceJob(req, res, job.id);
+      return res.redirect(`/documents/${result.id}`);
+    }
+    const status = JOB_STATUSES[req.body.status] ? req.body.status : job.status;
+    if (status !== job.status) {
+      await req.db.tx(async (db) => {
+        await db.run(
+          `UPDATE jobs SET status = $1, completed_at = CASE WHEN $1 IN ('ready', 'invoiced') THEN COALESCE(completed_at, $2) ELSE NULL END WHERE id = $3`,
+          [status, now(req.tz), job.id]
+        );
+        await logEvent(db, job.id, req.user.id, 'status', `Status changed to ${JOB_STATUSES[status]}`);
+      });
+    }
+    res.redirect(back);
   });
 
   app.post('/jobs/:id/delete', async (req, res) => {

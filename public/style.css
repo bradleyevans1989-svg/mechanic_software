@@ -438,3 +438,13 @@ form.inline { display: inline; }
 .logo-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
 input.colour { padding: .15rem; height: 2.6rem; width: 5rem; }
 h2 .flash { font-size: .8rem; padding: .2rem .7rem; margin-left: .5rem; vertical-align: middle; }
+
+/* Quick status dropdown on the jobs list */
+tr.rowlink { cursor: pointer; }
+tr.rowlink:hover td { background: var(--tile-2); }
+.status-form { margin: 0; }
+.pill-select { appearance: none; -webkit-appearance: none; width: auto; min-height: 0; padding: .25rem 1.6rem .25rem .7rem; border-radius: 999px; border: 0; font-size: .78rem; font-weight: 700; background: var(--tile) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23555' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right .6rem center / .55rem; color: var(--ink); cursor: pointer; }
+.pill-select.pill-in_progress { background-color: var(--ink); color: #fff; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23fff' stroke-width='1.6'/%3E%3C/svg%3E"); }
+.pill-select.pill-waiting_parts { background-color: var(--warn-bg); color: var(--warn); }
+.pill-select.pill-ready { background-color: var(--lime); color: var(--ink); }
+.pill-select:focus { outline: 2px solid var(--lime-deep); }
