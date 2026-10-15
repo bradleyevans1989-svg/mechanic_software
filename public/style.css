@@ -448,3 +448,20 @@ tr.rowlink:hover td { background: var(--tile-2); }
 .pill-select.pill-waiting_parts { background-color: var(--warn-bg); color: var(--warn); }
 .pill-select.pill-ready { background-color: var(--lime); color: var(--ink); }
 .pill-select:focus { outline: 2px solid var(--lime-deep); }
+
+/* List toolbar and bulk actions */
+.toolbar { padding: .85rem 1rem; }
+.toolbar-row { display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; }
+.toolbar-row + .toolbar-row { margin-top: .6rem; }
+.toolbar-search { flex: 1 1 16rem; }
+.toolbar label.inline { display: flex; align-items: center; gap: .4rem; margin: 0; font-size: .85rem; white-space: nowrap; }
+.toolbar label.inline input, .toolbar label.inline select { width: auto; min-height: 2.4rem; }
+.toolbar .btn { min-height: 2.4rem; }
+.checks-row label.check { margin: 0; cursor: pointer; }
+.checks-row .pill { cursor: pointer; }
+.checks-row .sep { margin-left: auto; }
+.tick-cell { width: 2rem; }
+.tick-cell input { width: 1.1rem; height: 1.1rem; min-height: 0; margin: 0; }
+.bulk-bar { display: flex; gap: .6rem; align-items: center; background: var(--ink); color: #fff; border-radius: 999px; padding: .4rem .5rem .4rem 1rem; margin-bottom: .6rem; }
+.bulk-bar select { width: auto; min-height: 2rem; padding: .25rem .6rem; font-size: .85rem; background: #fff; }
+.bulk-bar[hidden] { display: none; }

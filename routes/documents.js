@@ -1,6 +1,7 @@
 const { now, addDays, parseLines, parseIntOrNull, parseDollars, docNumber } = require('../lib/util');
 const { nextNumber, getLines, saveLines } = require('../lib/db');
 const { getDoc, listDocs } = require('../lib/docs');
+const { dollars, csvCell } = require('../lib/util');
 const { getCustomer, getVehicle, vehicleOptions, customerOptions, resolveParty, logEvent } = require('../lib/records');
 const { shareToken, appUrl } = require('./share');
 const mail = require('../lib/mail');
@@ -30,13 +31,94 @@ module.exports = function (app, { store, xero, QUOTE_STATUSES }) {
     return doc.id;
   }
 
+  const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+  const STATES = { invoice: ['unpaid', 'part paid', 'overdue', 'paid', 'void'], quote: ['draft', 'sent', 'accepted', 'declined'] };
+  const SORTS = {
+    newest: { label: 'Newest first', fn: (a, b) => (b.issue_date + b.number).localeCompare(a.issue_date + a.number) },
+    oldest: { label: 'Oldest first', fn: (a, b) => (a.issue_date + a.number).localeCompare(b.issue_date + b.number) },
+    due: { label: 'Due date', fn: (a, b) => String(a.due_date || '9').localeCompare(String(b.due_date || '9')) },
+    customer: { label: 'Customer A to Z', fn: (a, b) => a.customer_name.localeCompare(b.customer_name) },
+    total_desc: { label: 'Total, highest first', fn: (a, b) => b.total - a.total },
+    balance_desc: { label: 'Balance owing, highest first', fn: (a, b) => b.balance - a.balance },
+  };
+
+  // The list with its filters: search, dates, status, sort. Shared by the page, the CSV and bulk actions.
+  async function filteredList(req, type) {
+    const q = String(req.query.q || '').trim().toLowerCase().slice(0, 100);
+    const from = DATE_RE.test(req.query.from || '') ? req.query.from : '';
+    const to = DATE_RE.test(req.query.to || '') ? req.query.to : '';
+    const wanted = [].concat(req.query.state || []).filter((s) => STATES[type].includes(s));
+    const show = req.query.show === 'all' ? 'all' : wanted.length || q || from || to ? 'filtered' : type === 'invoice' ? 'unpaid' : 'open';
+    const sort = SORTS[req.query.sort] ? req.query.sort : 'newest';
+    let docs = await listDocs(req.db, res_today(req), 'd.type = $1', [type], 'ORDER BY d.issue_date DESC, d.number DESC LIMIT 2000');
+    if (show === 'unpaid') docs = docs.filter((d) => d.state !== 'void' && d.balance > 0);
+    if (show === 'open') docs = docs.filter((d) => ['draft', 'sent'].includes(d.status));
+    if (wanted.length) docs = docs.filter((d) => wanted.includes(d.state));
+    if (from) docs = docs.filter((d) => d.issue_date >= from);
+    if (to) docs = docs.filter((d) => d.issue_date <= to);
+    if (q) {
+      const compact = q.replace(/\s/g, '');
+      docs = docs.filter((d) =>
+        [docNumber(d), String(d.number), d.customer_name, d.customer_phone, d.rego, d.make, d.model, d.notes].some((v) => String(v || '').toLowerCase().replace(/\s/g, '').includes(compact))
+      );
+    }
+    docs.sort(SORTS[sort].fn);
+    return { docs, filters: { q, from, to, state: wanted, sort, show }, STATES: STATES[type], SORTS };
+  }
+  const res_today = (req) => req.res.locals.today;
+
   app.get(['/invoices', '/quotes'], async (req, res) => {
     const type = req.path === '/quotes' ? 'quote' : 'invoice';
-    const filter = req.query.show || (type === 'invoice' ? 'unpaid' : 'open');
-    let docs = await listDocs(req.db, res.locals.today, 'd.type = $1', [type], 'ORDER BY d.issue_date DESC, d.number DESC LIMIT 1000');
-    if (type === 'invoice' && filter === 'unpaid') docs = docs.filter((d) => d.state !== 'void' && d.balance > 0);
-    if (type === 'quote' && filter === 'open') docs = docs.filter((d) => ['draft', 'sent'].includes(d.status));
-    res.render('documents/index', { type, docs, filter });
+    const { docs, filters, STATES: states, SORTS: sorts } = await filteredList(req, type);
+    res.render('documents/index', { type, docs, filters, filter: filters.show, states, sorts, done: req.query.done || '' });
+  });
+
+  // Download the list as it is filtered, for a spreadsheet.
+  app.get(['/invoices.csv', '/quotes.csv'], async (req, res) => {
+    const type = req.path === '/quotes.csv' ? 'quote' : 'invoice';
+    let { docs } = await filteredList(req, type);
+    const ids = [].concat(req.query.ids || []).map(Number).filter(Boolean);
+    if (ids.length) docs = docs.filter((d) => ids.includes(d.id));
+    const rows = [['Number', 'Date', 'Due', 'Customer', 'Phone', 'Rego', 'Vehicle', 'Subtotal ex GST', 'GST', 'Total', 'Paid', 'Balance', 'Status', 'Job']];
+    for (const d of docs) rows.push([docNumber(d), d.issue_date, d.due_date || '', d.customer_name, d.customer_phone, d.rego || '', [d.year, d.make, d.model].filter(Boolean).join(' '), dollars(d.subtotal), dollars(d.gst), dollars(d.total), dollars(d.paid), dollars(d.balance), d.state, d.job_id ? `J${d.job_number || ''}` : '']);
+    res.type('text/csv').attachment(`${type}s.csv`).send(rows.map((r) => r.map(csvCell).join(',')).join('\n') + '\n');
+  });
+
+  // Bulk actions on ticked rows.
+  app.post('/documents/bulk', async (req, res) => {
+    const type = req.body.type === 'quote' ? 'quote' : 'invoice';
+    const ids = [].concat(req.body.ids || []).map(Number).filter(Boolean).slice(0, 200);
+    const back = `/${type}s${req.body.back && /^\?[\w=&%+.-]*$/.test(req.body.back) ? req.body.back : ''}`;
+    const action = String(req.body.action || '');
+    if (!ids.length) return res.redirect(back);
+    if (action === 'download') return res.redirect(`/${type}s.csv?${ids.map((i) => 'ids=' + i).join('&')}`);
+    let n = 0;
+    for (const id of ids) {
+      const doc = await getDoc(req.db, id, res.locals.today);
+      if (!doc || doc.type !== type) continue;
+      if (action === 'sent' && ['draft', 'sent', 'issued'].includes(doc.status) && doc.status !== 'void') {
+        await req.db.run(`UPDATE documents SET sent_at = COALESCE(sent_at, now()), sent_via = CASE WHEN sent_via = '' THEN 'marked' ELSE sent_via END${type === 'quote' ? ", status = 'sent'" : ''} WHERE id = $1`, [doc.id]);
+        n++;
+      } else if (action === 'void' && type === 'invoice' && doc.status !== 'void' && doc.paid === 0) {
+        await req.db.tx(async (db) => {
+          await db.run(`UPDATE documents SET status = 'void' WHERE id = $1`, [doc.id]);
+          if (doc.job_id) {
+            await db.run(`UPDATE jobs SET status = 'ready' WHERE id = $1 AND status = 'invoiced'`, [doc.job_id]);
+            await logEvent(db, doc.job_id, req.user.id, 'invoice', `Invoice ${docNumber(doc)} voided`);
+          }
+        });
+        await xero.queueInvoice(req.db, doc.id);
+        n++;
+      } else if (action === 'declined' && type === 'quote' && ['draft', 'sent'].includes(doc.status)) {
+        await req.db.run(`UPDATE documents SET status = 'declined' WHERE id = $1`, [doc.id]);
+        n++;
+      } else if (action === 'delete' && type === 'quote') {
+        await req.db.run('DELETE FROM documents WHERE id = $1', [doc.id]);
+        await store.system.run('DELETE FROM share_links WHERE workshop_id = $1 AND document_id = $2', [req.user.workshop_id, doc.id]);
+        n++;
+      }
+    }
+    res.redirect(`${back}${back.includes('?') ? '&' : '?'}done=${n}`);
   });
 
   async function renderNew(req, res, type, doc, error) {

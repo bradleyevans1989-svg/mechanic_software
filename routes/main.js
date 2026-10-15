@@ -1,4 +1,4 @@
-const { addDays, addMonths, parseDollars, parseIntOrNull, docNumber, vehicleLabel } = require('../lib/util');
+const { addDays, addMonths, csvCell, parseDollars, parseIntOrNull, docNumber, vehicleLabel } = require('../lib/util');
 const { listDocs } = require('../lib/docs');
 const { requireOwner } = require('../lib/auth');
 const { DEFAULT_CHECKLIST } = require('../lib/records');
@@ -16,12 +16,6 @@ const TIMEZONES = {
   'Pacific/Auckland': 'New Zealand (Auckland)',
 };
 
-function csvCell(v) {
-  let s = String(v ?? '');
-  // Stop spreadsheet apps treating a customer name like "=SUM(...)" as a formula.
-  if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-}
 
 module.exports = function (app) {
   app.get('/', async (req, res) => {

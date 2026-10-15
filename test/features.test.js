@@ -441,3 +441,55 @@ test('jobs list: quick status change and make invoice from the dropdown', async 
   assert.ok(inv);
   assert.equal((await other.post(`/jobs/${jobId}/status`, { status: 'open' })).status, 404);
 });
+
+test('invoices list: search, status and date filters, sort, download and bulk actions', async () => {
+  await owner.post('/customers', { name: 'Filter Fred', phone: '0400 999 888', v_rego: 'FLT001', v_make: 'Kia', v_model: 'Sportage' });
+  const vehicle = await owner.db.get(`SELECT id FROM vehicles WHERE rego = 'FLT001'`);
+  const mk = async (price) => {
+    const id = idFrom(await owner.post('/documents', { type: 'invoice', vehicle_id: vehicle.id }));
+    await owner.post(`/documents/${id}`, { 'lines[0][kind]': 'labour', 'lines[0][description]': 'Work', 'lines[0][qty]': '1', 'lines[0][price]': price, 'lines[0][gst]': '1' });
+    return id;
+  };
+  const a = await mk('100');
+  const b = await mk('250');
+  await owner.db.run(`UPDATE documents SET issue_date = '2020-01-01', due_date = '2020-01-08' WHERE id = $1`, [a]);
+  await owner.post(`/documents/${b}/payments`, { amount: '275', method: 'cash' });
+
+  let page = (await owner.get('/invoices?q=flt001')).text;
+  assert.match(page, /Filter Fred/);
+  assert.match(page, /2 shown/, 'a search looks across every invoice, paid ones too');
+  assert.match((await owner.get('/invoices')).text, /pill-unpaid|pill-overdue/);
+  page = (await owner.get('/invoices?q=filter%20fred&show=all')).text;
+  assert.match(page, /2 shown/);
+  page = (await owner.get('/invoices?state=paid&q=fred')).text;
+  assert.match(page, /1 shown/);
+  const rows = (html) => html.slice(html.indexOf('<tbody'));
+  assert.doesNotMatch(rows(page), /pill-overdue/);
+  page = (await owner.get('/invoices?from=2020-01-01&to=2020-12-31&q=fred')).text;
+  assert.match(page, /1 shown/);
+  assert.match(rows(page), /pill-overdue/);
+  page = (await owner.get('/invoices?show=all&q=fred&sort=total_desc')).text;
+  assert.ok(page.indexOf('$275.00') < page.indexOf('$110.00'), 'highest total first');
+
+  const csv = await owner.get('/invoices.csv?q=fred&show=all');
+  assert.equal(csv.status, 200);
+  assert.match(csv.text, /Number,Date,Due,Customer/);
+  assert.equal(csv.text.trim().split('\n').length, 3);
+  assert.match(csv.text, /FLT001/);
+  assert.doesNotMatch((await other.get('/invoices.csv?show=all')).text, /FLT001/);
+
+  // Bulk: mark sent, then void the unpaid one; the paid one stays.
+  let res = await owner.post('/documents/bulk', { type: 'invoice', action: 'sent', ids: String(a), back: '?show=all' });
+  assert.equal(res.headers.get('location'), '/invoices?show=all&done=1');
+  assert.ok((await owner.db.get('SELECT sent_at FROM documents WHERE id = $1', [a])).sent_at);
+  res = await owner.post('/documents/bulk', new URLSearchParams([['type', 'invoice'], ['action', 'void'], ['ids', String(a)], ['ids', String(b)]]));
+  assert.match(res.headers.get('location'), /done=1$/);
+  assert.equal((await owner.db.get('SELECT status FROM documents WHERE id = $1', [a])).status, 'void');
+  assert.equal((await owner.db.get('SELECT status FROM documents WHERE id = $1', [b])).status, 'issued');
+  res = await owner.post('/documents/bulk', { type: 'invoice', action: 'download', ids: String(b) });
+  assert.equal(res.headers.get('location'), `/invoices.csv?ids=${b}`);
+  assert.match((await owner.get(`/invoices.csv?ids=${b}&show=all`)).text, /275\.00/);
+  // Another workshop's bulk action touches nothing.
+  await other.post('/documents/bulk', { type: 'invoice', action: 'void', ids: String(b) });
+  assert.equal((await owner.db.get('SELECT status FROM documents WHERE id = $1', [b])).status, 'issued');
+});

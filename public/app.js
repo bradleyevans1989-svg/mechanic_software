@@ -231,3 +231,22 @@ document.addEventListener('click', (e) => {
   if (window.getSelection && String(window.getSelection())) return;
   window.location = row.dataset.href;
 });
+
+// Tick rows, and a bar appears with the bulk actions.
+(() => {
+  const bar = document.querySelector('[data-bulk-bar]');
+  if (!bar) return;
+  const all = document.querySelector('[data-check-all]');
+  const boxes = () => Array.from(document.querySelectorAll('[data-check]'));
+  const sync = () => {
+    const n = boxes().filter((b) => b.checked).length;
+    bar.hidden = n === 0;
+    bar.querySelector('[data-bulk-count]').textContent = n;
+  };
+  document.addEventListener('change', (e) => {
+    if (e.target === all) boxes().forEach((b) => { b.checked = all.checked; });
+    if (e.target === all || e.target.matches('[data-check]')) sync();
+  });
+  bar.closest('form').addEventListener('submit', (e) => { if (!bar.querySelector('select').value) { e.preventDefault(); window.alert('Choose an action first.'); } });
+  sync();
+})();
