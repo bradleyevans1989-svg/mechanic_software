@@ -8,7 +8,7 @@
   <div class="actions">
     <a class="btn" href="<%= base %>.csv<%= query %>">Download</a>
     <% if (!isQuote) { %><a class="btn" href="/reports">Reports</a><% } %>
-    <a class="btn primary" href="/documents/new?type=<%= type %>">New <%= type %></a>
+    <a class="btn primary" href="/documents/new?type=<%= type %>">New <%= isQuote ? 'estimate' : 'invoice' %></a>
   </div>
 </div>
 <% if (done) { %><p class="flash"><%= done %> updated.</p><% } %>
@@ -48,7 +48,7 @@
       <option value="download">Download selected</option>
       <% if (isQuote) { %><option value="declined">Mark as declined</option><option value="delete">Delete</option><% } else { %><option value="void">Void (unpaid only)</option><% } %>
     </select>
-    <button class="btn small primary" data-confirm-btn="Apply this to the selected <%= type %>s?">Apply</button>
+    <button class="btn small primary" data-confirm-btn="Apply this to the selected <%= isQuote ? 'estimates' : 'invoices' %>?">Apply</button>
   </div>
   <table class="table card">
     <thead><tr><th class="tick-cell"><input type="checkbox" data-check-all aria-label="Select all"></th><th>#</th><th>Date</th><th>Customer</th><th>Vehicle</th><th class="num">Total</th><% if (!isQuote) { %><th class="num">Balance</th><% } %><th>Status</th></tr></thead>

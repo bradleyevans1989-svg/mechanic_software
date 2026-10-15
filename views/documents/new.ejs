@@ -1,10 +1,11 @@
 <%- include('../partials/header', { title: 'New ' + type }) %>
-<h1>New <%= type %></h1>
+<% const noun = type === 'quote' ? 'estimate' : 'invoice'; %>
+<h1>New <%= noun %></h1>
 <% if (error) { %><p class="error"><%= error %></p><% } %>
 <form method="post" action="/documents" class="card form">
   <input type="hidden" name="type" value="<%= type %>">
   <%- include('../partials/party', { record: doc }) %>
-  <label>Notes <span class="muted">(shown on the <%= type %>)</span><textarea name="notes" rows="2"><%= doc.notes || '' %></textarea></label>
+  <label>Notes <span class="muted">(shown on the <%= noun %>)</span><textarea name="notes" rows="2"><%= doc.notes || '' %></textarea></label>
   <div class="form-actions">
     <button class="btn primary">Next: add items</button>
     <a class="btn" href="<%= type === 'quote' ? '/estimates' : '/invoices' %>">Cancel</a>
