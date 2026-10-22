@@ -1,0 +1,40 @@
+<% if (tv) { %>
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bay Watch · <%= settings.business_name %></title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body class="bw-tv">
+<main>
+<% } else { %>
+<%- include('../partials/header', { title: 'Bay Watch' }) %>
+<% } %>
+<div class="page-head bw-head">
+  <div>
+    <h1>Bay Watch <span class="muted"><%= settings.business_name %></span></h1>
+    <p class="muted">Time on each job against its estimate. Updates by itself, so it can stay up on the workshop screen.</p>
+  </div>
+  <div class="actions">
+    <span class="bw-now" data-bw-clock><%= u.fmtTime(new Date(renderedAt), settings.timezone) %></span>
+    <% if (tv) { %>
+      <a class="btn" href="/baywatch">Exit full screen</a>
+    <% } else { %>
+      <a class="btn" href="/jobs">Jobs</a>
+      <a class="btn primary" href="/baywatch?tv=1">Workshop screen</a>
+    <% } %>
+  </div>
+</div>
+<div id="bays" data-baywatch data-tz="<%= settings.timezone %>" aria-live="polite">
+  <%- include('board') %>
+</div>
+<% if (tv) { %>
+</main>
+</body>
+</html>
+<% } else { %>
+<%- include('../partials/footer') %>
+<% } %>

@@ -87,6 +87,7 @@ function createApp(store, { autoSync = true } = {}) {
   require('./routes/timesheets')(app, ctx);
   require('./routes/calendar')(app, ctx);
   require('./routes/clocking')(app, ctx);
+  require('./routes/baywatch')(app, ctx);
   require('./routes/team')(app, ctx);
   require('./routes/templates')(app, ctx);
   shareRoutes.pages(app, ctx);
