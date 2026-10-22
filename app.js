@@ -6,6 +6,7 @@ const { createXero } = require('./lib/xero');
 const { createBilling } = require('./lib/stripe');
 const billingRoutes = require('./routes/billing');
 const shareRoutes = require('./routes/share');
+const bookingPage = require('./routes/online-booking');
 const { INVOICE_TOTAL } = require('./lib/dashboard');
 
 const JOB_STATUSES = {
@@ -75,17 +76,19 @@ function createApp(store, { autoSync = true } = {}) {
 
   billingRoutes.webhook(app, ctx);
   shareRoutes.public(app, ctx);
+  bookingPage.public(app, ctx);
   auth.setup(app, store);
   billingRoutes.gate(app, ctx);
   billingRoutes.pages(app, ctx);
 
-  // What the bell in the top bar counts: open to-dos and overdue invoices.
+  // What the bell in the top bar counts: open to-dos, overdue invoices and online booking requests.
   app.use(async (req, res, next) => {
     if (req.method !== 'GET' || !req.db) return next();
     res.locals.notices = await req.db.get(
       `SELECT (SELECT COUNT(*) FROM team_posts WHERE kind = 'todo' AND done_at IS NULL)::int AS todos,
          (SELECT COUNT(*) FROM documents d WHERE d.type = 'invoice' AND d.status != 'void' AND d.due_date < $1
-            AND ${INVOICE_TOTAL} > COALESCE((SELECT SUM(amount_cents) FROM payments WHERE document_id = d.id), 0))::int AS overdue`,
+            AND ${INVOICE_TOTAL} > COALESCE((SELECT SUM(amount_cents) FROM payments WHERE document_id = d.id), 0))::int AS overdue,
+         (SELECT COUNT(*) FROM booking_requests WHERE status = 'pending')::int AS requests`,
       [res.locals.today]
     );
     next();
@@ -94,6 +97,7 @@ function createApp(store, { autoSync = true } = {}) {
   require('./routes/main')(app, ctx);
   require('./routes/staff')(app, ctx);
   require('./routes/customers')(app, ctx);
+  bookingPage.pages(app, ctx);
   require('./routes/bookings')(app, ctx);
   require('./routes/jobs')(app, ctx);
   require('./routes/documents')(app, ctx);
