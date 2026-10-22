@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <title>Inspection report J<%= job.number %></title>
   <link rel="stylesheet" href="/static/print.css">
+  <%- include('../partials/brand-head') %>
 </head>
 <body>
   <div class="noprint"><button onclick="window.print()">Print</button> <a href="/jobs/<%= job.id %>">Back to job</a></div>
@@ -42,5 +43,6 @@
   </table>
   <% if (job.tech_notes) { %><h3>Mechanic's notes</h3><div class="box pre"><%= job.tech_notes %></div><% } %>
   <p class="muted small">OK: in good order. Needs attention: will need work soon. Urgent: should be fixed before further driving. Mechanic: <%= job.mechanic_name || '' %></p>
+  <%- include('../partials/made-with') %>
 </body>
 </html>

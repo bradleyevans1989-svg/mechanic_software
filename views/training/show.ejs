@@ -8,7 +8,7 @@
     <a class="btn" href="/training">All modules</a>
     <% if (user.role === 'owner') { %><a class="btn" href="/training/<%= module.id %>/edit">Edit</a><% } %>
     <% if (mine) { %><span class="pill pill-paid plain">You completed this <%= u.fmtDateTime(mine.completed_at, settings.timezone) %></span>
-    <% } else { %><form method="post" action="/training/<%= module.id %>/complete"><button class="btn lime" data-confirm-btn="Mark this module as completed by you?">I've done this</button></form><% } %>
+    <% } else { %><form method="post" action="/training/<%= module.id %>/complete"><button class="btn accent" data-confirm-btn="Mark this module as completed by you?">I've done this</button></form><% } %>
   </div>
 </div>
 <div class="grid-2 wide">
