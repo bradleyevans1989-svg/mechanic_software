@@ -2,7 +2,7 @@
 <div class="page-head">
   <h1>Today <span class="muted"><%= u.fmtDate(today) %></span></h1>
   <div class="actions">
-    <a class="btn lime" href="/bookings/new">New booking</a>
+    <a class="btn accent" href="/bookings/new">New booking</a>
     <a class="btn" href="/jobs/new">New job</a>
     <a class="btn" href="/documents/new?type=quote">New estimate</a>
     <a class="btn primary" href="/customers/new">New customer</a>
@@ -24,12 +24,12 @@
   <span class="dot" aria-hidden="true"></span>
   <% if (clock.entry) { %>
     <span><strong><%= clock.onBreak ? 'On a break' : 'On shift' %></strong> <span class="muted">since <%= u.fmtTime(clock.entry.started_at, settings.timezone) %></span></span>
-    <% if (clock.onBreak) { %><form method="post" action="/clocking/resume"><input type="hidden" name="back" value="/"><button class="btn small lime">Back from break</button></form>
+    <% if (clock.onBreak) { %><form method="post" action="/clocking/resume"><input type="hidden" name="back" value="/"><button class="btn small accent">Back from break</button></form>
     <% } else { %><form method="post" action="/clocking/break"><input type="hidden" name="back" value="/"><button class="btn small">Start break</button></form><% } %>
     <form method="post" action="/clocking/finish"><input type="hidden" name="back" value="/"><button class="btn small primary" data-confirm-btn="Finish your shift now?">Finish shift</button></form>
   <% } else { %>
     <span><strong>Not clocked in</strong></span>
-    <form method="post" action="/clocking/start"><input type="hidden" name="back" value="/"><button class="btn small lime">Start shift</button></form>
+    <form method="post" action="/clocking/start"><input type="hidden" name="back" value="/"><button class="btn small accent">Start shift</button></form>
   <% } %>
   <span class="spacer"></span>
   <span class="muted">My next shift: <% if (nextShift) { %><strong class="ink"><%= nextShift.date === today ? 'today' : u.fmtDate(nextShift.date) %> <%= nextShift.start_time %>–<%= nextShift.end_time %></strong><% } else { %>nothing rostered<% } %></span>

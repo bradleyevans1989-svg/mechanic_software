@@ -12,6 +12,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><%= isQuote ? 'Estimate' : 'Invoice' %> <%= u.docNumber(doc) %> · <%= settings.business_name %></title>
   <link rel="stylesheet" href="/static/print.css">
+  <%- include('../partials/brand-head') %>
 </head>
 <body class="tpl tpl-<%= tpl %> <%= logoUrl ? 'has-logo' : 'no-logo' %>" style="--brand: <%= settings.brand_colour || '#111111' %>">
   <% if (isPreview) { %>
@@ -100,5 +101,6 @@
       <% if (settings.invoice_terms) { %><div class="pre terms"><%= settings.invoice_terms %></div><% } %>
     </footer>
   </div>
+  <%- include('../partials/made-with') %>
 </body>
 </html>

@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <title>Statement · <%= customer.name %></title>
   <link rel="stylesheet" href="/static/print.css">
+  <%- include('../partials/brand-head') %>
 </head>
 <body>
   <div class="noprint"><button onclick="window.print()">Print or save as PDF</button> <a href="/customers/<%= customer.id %>">Back</a> · <a href="/customers/<%= customer.id %>/statement<%= all ? '' : '?show=all' %>"><%= all ? 'Unpaid only' : 'Show all invoices' %></a></div>
@@ -36,5 +37,6 @@
   </table>
   <% if (settings.bank_details) { %><h3>Pay by bank transfer</h3><div class="box pre"><%= settings.bank_details %></div><% } %>
   <p class="muted small"><%= settings.invoice_terms %></p>
+  <%- include('../partials/made-with') %>
 </body>
 </html>

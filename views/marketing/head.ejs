@@ -6,10 +6,11 @@
   <title><%= title %></title>
   <meta name="description" content="<%= description %>">
   <link rel="stylesheet" href="/static/style.css">
+  <%- include('../partials/brand-head') %>
 </head>
 <body class="mk">
 <header class="mk-top">
-  <a class="brand" href="/workshops"><i><%= PRODUCT.charAt(0) %></i><%= PRODUCT %></a>
+  <a class="brand" href="/workshops" title="<%= PRODUCT %>"><%- include('../partials/mark') %><span class="wordmark">BAY <b>WATCH</b></span></a>
   <nav class="mk-nav">
     <a href="/workshops">Who it's for</a>
     <a href="/login">Log in</a>

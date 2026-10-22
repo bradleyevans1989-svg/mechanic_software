@@ -1,6 +1,6 @@
-# Workshop
+# Bay Watch
 
-Workshop software for mechanics, built to be sold to many workshops on one shared system. Each workshop signs up, gets its own logins, and only ever sees its own data.
+Bay Watch is workshop software for mechanics, built to be sold to many workshops on one shared system. Each workshop signs up, gets its own logins, and only ever sees its own data.
 
 ## What it does
 
@@ -71,7 +71,7 @@ That comfortably runs dozens of workshops. As you grow, move the database to a b
 | `XERO_CLIENT_ID`, `XERO_CLIENT_SECRET` | From your Xero app. Needed for any workshop to connect Xero. | none |
 | `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, `STRIPE_WEBHOOK_SECRET` | Turn on subscription billing (see below). Without them every workshop is free. | none |
 | `PLAN_PRICE_LABEL` | Shown on the Subscribe button, e.g. `$49/month`. | none |
-| `RESEND_API_KEY`, `EMAIL_FROM` | Send estimates and invoices by email through [Resend](https://resend.com). `EMAIL_FROM` is the sender, e.g. `Workshop <invoices@yourdomain.com.au>`, on a domain verified in Resend. Replies go to each workshop's own email. | email buttons open the user's own mail app |
+| `RESEND_API_KEY`, `EMAIL_FROM` | Send estimates and invoices by email through [Resend](https://resend.com). `EMAIL_FROM` is the sender, e.g. `Bay Watch <invoices@yourdomain.com.au>`, on a domain verified in Resend. Replies go to each workshop's own email. | email buttons open the user's own mail app |
 | `PGSSL` | Set to `require` if your database needs SSL from outside its network. | off |
 | `PORT` | Port to listen on. | `3000` |
 

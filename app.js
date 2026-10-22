@@ -44,13 +44,14 @@ function createApp(store, { autoSync = true } = {}) {
     await store.system.get('SELECT 1');
     res.send('ok');
   });
+  app.get('/favicon.ico', (req, res) => res.redirect(301, '/static/brand/favicon-32.png'));
 
   app.use((req, res, next) => {
     res.locals.u = util;
     res.locals.JOB_STATUSES = JOB_STATUSES;
     res.locals.BOOKING_STATUSES = BOOKING_STATUSES;
     res.locals.QUOTE_STATUSES = QUOTE_STATUSES;
-    res.locals.settings = { business_name: 'Workshop' };
+    res.locals.settings = { business_name: 'Bay Watch' };
     res.locals.vt = termsFor();
     res.locals.today = util.today();
     res.locals.path = req.path;
