@@ -7,12 +7,11 @@ const { now, today, addDays } = require('../lib/util');
 const EMAIL = 'demo@example.com';
 const PASSWORD = 'demo-password';
 
-async function main() {
-  const store = createStore();
-  await store.migrate();
+// Adds the demo workshop if it isn't there yet. Safe to run on every boot (SEED_DEMO=1).
+async function seedDemo(store) {
   if (await store.system.get('SELECT id FROM users WHERE email = $1', [EMAIL])) {
     console.log(`Demo workshop already exists. Log in as ${EMAIL} / ${PASSWORD}`);
-    return store.close();
+    return false;
   }
   const ws = await store.system.get(`INSERT INTO workshops (name) VALUES ('Demo Motors') RETURNING id`);
   await store.system.run(`INSERT INTO users (workshop_id, name, email, password_hash, role) VALUES ($1, 'Demo Owner', $2, $3, 'owner')`, [
@@ -77,10 +76,19 @@ async function main() {
     await saveLines(db, 'document', doc.id, lines);
   });
   console.log(`Added the demo workshop. Log in as ${EMAIL} / ${PASSWORD}`);
-  await store.close();
+  return true;
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+module.exports = { seedDemo, EMAIL, PASSWORD };
+
+if (require.main === module) {
+  (async () => {
+    const store = createStore();
+    await store.migrate();
+    await seedDemo(store);
+    await store.close();
+  })().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}
