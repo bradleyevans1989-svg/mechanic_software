@@ -12,6 +12,7 @@
 <nav class="tabs">
   <a href="/bookings">Week</a>
   <a href="/calendar">Month</a>
+  <a href="/bookings/requests">Online requests</a>
   <a href="/loan-cars" class="active">Loan cars</a>
 </nav>
 <% if (overdue.length) { %><p class="banner warn"><% for (const l of overdue) { %><a href="/loans/<%= l.id %>"><%= l.car_rego %></a> was due back from <%= l.customer_name %> on <%= u.fmtDate(l.due_date) %>. <% } %></p><% } %>
