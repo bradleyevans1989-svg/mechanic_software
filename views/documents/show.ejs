@@ -57,7 +57,7 @@
 <section class="card" id="send">
   <h2>Send to customer</h2>
   <% if (doc.sent_at) { %><p class="muted">Last sent by <%= doc.sent_via === 'sms' ? 'text' : doc.sent_via === 'link' ? 'link' : 'email' %><%= doc.sent_to ? ' to ' + doc.sent_to : '' %> on <%= u.fmtDateTime(doc.sent_at, settings.timezone) %>.</p><% } %>
-  <p>The customer can open this link to see the <%= label.toLowerCase() %><%= isQuote ? ' and accept it' : '' %>, no login needed:</p>
+  <p>The customer can open this link to see the <%= label.toLowerCase() %><%= isQuote ? ' and accept it' : (typeof payOnline !== 'undefined' && payOnline ? ' and pay it online' : '') %>, no login needed:</p>
   <p><input value="<%= shareUrl %>" readonly onclick="this.select()" aria-label="Link for the customer"></p>
   <div class="actions">
     <% if (canEmail) { %>

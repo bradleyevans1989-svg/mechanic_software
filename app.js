@@ -6,6 +6,7 @@ const { createXero } = require('./lib/xero');
 const { createBilling } = require('./lib/stripe');
 const billingRoutes = require('./routes/billing');
 const shareRoutes = require('./routes/share');
+const onlinePayments = require('./routes/online-payments');
 const { INVOICE_TOTAL } = require('./lib/dashboard');
 
 const JOB_STATUSES = {
@@ -74,6 +75,7 @@ function createApp(store, { autoSync = true } = {}) {
   const ctx = { store, xero, billing, JOB_STATUSES, BOOKING_STATUSES, QUOTE_STATUSES };
 
   billingRoutes.webhook(app, ctx);
+  onlinePayments.public(app, ctx);
   shareRoutes.public(app, ctx);
   auth.setup(app, store);
   billingRoutes.gate(app, ctx);
@@ -96,6 +98,7 @@ function createApp(store, { autoSync = true } = {}) {
   require('./routes/customers')(app, ctx);
   require('./routes/bookings')(app, ctx);
   require('./routes/jobs')(app, ctx);
+  onlinePayments.pages(app, ctx);
   require('./routes/documents')(app, ctx);
   require('./routes/integrations')(app, ctx);
   require('./routes/pricelist')(app, ctx);

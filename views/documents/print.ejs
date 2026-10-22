@@ -24,6 +24,11 @@
       <% } else if (isQuote && doc.status === 'accepted') { %>
         <strong>✓ Estimate accepted<%= typeof accepted !== 'undefined' && accepted ? '. Thanks! The workshop will be in touch.' : '.' %></strong>
       <% } %>
+      <% if (typeof payOnline !== 'undefined' && payOnline) { %>
+        <form method="post" action="/share/<%= token %>/pay" style="display:inline"><button class="pay-now">Pay <%= u.money(doc.balance) %> now</button></form>
+        <span class="small">Card, Apple Pay or Google Pay<%= settings.pay_provider === 'stripe' ? ', or Afterpay and Zip where offered' : '' %>.</span>
+      <% } %>
+      <% if (typeof paidOnline !== 'undefined' && paidOnline === 'yes') { %><strong>✓ Payment received. Thank you!</strong><% } else if (typeof paidOnline !== 'undefined' && paidOnline === 'no') { %><strong>The payment didn't go through. You can try again.</strong><% } %>
       <% if (settings.phone) { %><span>Questions? Call <%= settings.business_name %> on <%= settings.phone %>.</span><% } %>
     </div>
   <% } else { %>
