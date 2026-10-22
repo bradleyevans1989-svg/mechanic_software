@@ -1,0 +1,56 @@
+<%- include('../partials/header', { title: 'Online booking requests' }) %>
+<div class="page-head">
+  <div>
+    <h1>Online booking requests</h1>
+    <p class="muted">Customers ask for a day on your <a href="/book/<%= slug %>" target="_blank">booking page</a>. Accept to put them in the diary.</p>
+  </div>
+  <div class="actions">
+    <a class="btn" href="/bookings">Diary</a>
+    <% if (user.role === 'owner') { %><a class="btn" href="/settings/booking">Booking page settings</a><% } %>
+  </div>
+</div>
+<% if (done === 'accepted') { %><p class="flash">Added to the diary.</p><% } else if (done === 'declined') { %><p class="flash">Declined.</p><% } %>
+<% if (!settings.online_booking) { %><p class="banner warn">Your booking page is turned off. <% if (user.role === 'owner') { %><a href="/settings/booking">Turn it on</a><% } %></p><% } %>
+<% if (!pending.length) { %><p class="card muted">No requests waiting.</p><% } %>
+<% for (const r of pending) { %>
+  <section class="card request">
+    <div class="reminder-head">
+      <div>
+        <strong><%= r.dayLabel %></strong> · <%= DROP_OFFS[r.drop_off] || 'Any time' %>
+        <div><strong><%= r.name %></strong> · <a href="tel:<%= r.phone %>"><%= r.phone %></a><% if (r.email) { %> · <a href="mailto:<%= r.email %>"><%= r.email %></a><% } %></div>
+        <div><%= [r.rego, r.car].filter(Boolean).join(' · ') %> · <%= r.service %></div>
+        <% if (r.notes) { %><p class="note"><%= r.notes %></p><% } %>
+        <div class="muted small">
+          <% if (r.vehicle) { %>Matches <a href="/vehicles/<%= r.vehicle.id %>"><%= u.vehicleLabel(r.vehicle) %></a>, owned by <a href="/customers/<%= r.vehicle.customer_id %>"><%= r.vehicle.customer_name %></a>.
+          <% } else if (r.customer) { %>Phone matches <a href="/customers/<%= r.customer.id %>"><%= r.customer.name %></a>; the car will be added to them.
+          <% } else { %>New customer: they'll be added when you accept.<% } %>
+          Asked <%= u.fmtDateTime(r.created_at, settings.timezone) %>.
+        </div>
+      </div>
+      <div class="row-actions">
+        <form method="post" action="/bookings/requests/<%= r.id %>/accept" class="inline-form">
+          <label class="small">Time <input type="time" name="time" step="900"></label>
+          <button class="btn small primary">Accept</button>
+        </form>
+        <form method="post" action="/bookings/requests/<%= r.id %>/decline" data-confirm="Decline this request? Let the customer know by phone or text."><button class="btn small">Decline</button></form>
+      </div>
+    </div>
+  </section>
+<% } %>
+<% if (handled.length) { %>
+  <section class="card">
+    <h2>Recently handled</h2>
+    <table class="table">
+      <% for (const r of handled) { %>
+        <tr>
+          <td><%= u.fmtDate(r.date) %></td>
+          <td><%= r.name %></td>
+          <td><%= [r.rego, r.service].filter(Boolean).join(' · ') %></td>
+          <td><%- include('../partials/pill', { state: r.status === 'accepted' ? 'paid' : 'void', label: r.status === 'accepted' ? 'Accepted' : 'Declined' }) %></td>
+          <td class="muted small"><%= r.handled_by_name || '' %></td>
+        </tr>
+      <% } %>
+    </table>
+  </section>
+<% } %>
+<%- include('../partials/footer') %>
