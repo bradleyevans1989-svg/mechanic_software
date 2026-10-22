@@ -1,0 +1,68 @@
+<%- include('partials/header', { title: 'KPIs' }) %>
+<% const pct = (v) => v == null ? '–' : Math.round(v * 100) + '%';
+   const hrs = (v) => v == null ? '–' : (Math.round(v * 10) / 10).toLocaleString('en-AU') + ' h';
+   const num = (v, dp = 0) => v == null ? '–' : Number(v).toLocaleString('en-AU', { maximumFractionDigits: dp });
+   const cash = (v) => v == null ? '–' : u.money(Math.round(v));
+   // Change against the period before: up, down or level, and whether that's good.
+   const change = (a, b, goodWhenUp = true) => {
+     if (a == null || b == null || b === 0) return '';
+     const d = (a - b) / Math.abs(b);
+     if (Math.abs(d) < 0.005) return '<span class="kpi-change">level</span>';
+     const good = (d > 0) === goodWhenUp;
+     return `<span class="kpi-change ${good ? 'up' : 'down'}">${d > 0 ? '▲' : '▼'} ${Math.abs(Math.round(d * 100))}%</span>`;
+   };
+   const tiles = [
+     ['Sales ex GST', u.money(now.sales), change(now.sales, before.sales), 'Invoices dated in the period, voids left out.'],
+     ['Car count', num(now.cars), change(now.cars, before.cars), `${num(now.invoices)} invoice${now.invoices === 1 ? '' : 's'}`],
+     ['Average invoice', cash(now.averageInvoice), change(now.averageInvoice, before.averageInvoice), 'Ex GST. Lifting this is usually the quickest win.'],
+     ['Labour share', pct(now.labourShare), change(now.labourShare, before.labourShare), `${u.money(now.labour)} labour, ${u.money(now.parts)} parts`],
+     ['Effective labour rate', cash(now.labourRate), change(now.labourRate, before.labourRate), `Per hour sold, against your ${u.money(settings.labour_rate_cents)} rate`],
+     ['Technician efficiency', pct(now.efficiency), change(now.efficiency, before.efficiency), `Hours sold against ${hrs(now.hoursClocked)} clocked on those jobs`],
+     ['Estimate close rate', pct(now.closeRate), change(now.closeRate, before.closeRate), `${num(now.quotes)} estimate${now.quotes === 1 ? '' : 's'} sent`],
+     ['Returning customers', pct(now.returningShare), change(now.returningShare, before.returningShare), `${num(now.customers)} invoiced, ${num(now.newCustomers)} new`],
+     ['Parts margin', pct(now.partsMargin), change(now.partsMargin, before.partsMargin), now.partsCost ? `On ${u.money(now.partsCost)} of parts ordered for these jobs` : 'Shows once parts are ordered through Parts'],
+     ['Days in the workshop', now.turnaroundDays == null ? '–' : num(now.turnaroundDays, 1), change(now.turnaroundDays, before.turnaroundDays, false), 'Average from job opened to ready'],
+     ['No-shows', pct(now.noShowRate), change(now.noShowRate, before.noShowRate, false), 'Of bookings in the period'],
+     ['Debtor days', debtors.days == null ? '–' : num(debtors.days), '', `${u.money(debtors.owing)} owing now, against the last 90 days of sales`],
+   ]; %>
+<div class="page-head">
+  <div>
+    <h1>KPIs <span class="muted"><%= label %></span></h1>
+    <p class="muted"><%= u.fmtDate(from) %> to <%= u.fmtDate(last) %>, compared with <%= u.fmtDate(prev.from) %> to <%= u.fmtDate(u.addDays(prev.to, -1)) %>.</p>
+  </div>
+  <div class="actions"><a class="btn" href="/reports">Sales and GST reports</a></div>
+</div>
+<nav class="tabs">
+  <% for (const [k, p] of Object.entries(presets)) { %><a href="/reports/kpi?period=<%= k %>" class="<%= key === k ? 'active' : '' %>"><%= p.label %></a><% } %>
+</nav>
+<form method="get" action="/reports/kpi" class="inline-form kpi-dates">
+  <label>From <input type="date" name="from" value="<%= from %>"></label>
+  <label>To <input type="date" name="to" value="<%= last %>"></label>
+  <button class="btn small">Show</button>
+</form>
+
+<div class="kpi-grid">
+  <% for (const [title, value, delta, hint] of tiles) { %>
+    <section class="card kpi-tile">
+      <h2><%= title %></h2>
+      <div class="kpi-value"><%= value %> <%- delta %></div>
+      <p class="muted small"><%= hint %></p>
+    </section>
+  <% } %>
+</div>
+
+<section class="card">
+  <h2>By mechanic</h2>
+  <% if (!now.mechanics.length) { %><p class="muted">No invoices from jobs in this period.</p><% } else { %>
+    <table class="table">
+      <thead><tr><th>Mechanic</th><th class="num">Jobs</th><th class="num">Sales ex GST</th><th class="num">Hours sold</th><th class="num">Hours clocked</th><th class="num">Efficiency</th></tr></thead>
+      <tbody>
+        <% for (const m of now.mechanics) { %>
+          <tr><td><%= m.name %></td><td class="num"><%= m.jobs %></td><td class="num"><%= u.money(m.sales) %></td><td class="num"><%= hrs(m.sold) %></td><td class="num"><%= hrs(m.clocked) %></td><td class="num"><%= pct(m.efficiency) %></td></tr>
+        <% } %>
+      </tbody>
+    </table>
+  <% } %>
+  <p class="hint">Efficiency is labour hours charged on a mechanic's invoiced jobs against the time clocked on them. Over 100% means jobs are beating the book time. Labour hours come from the quantity on labour lines.</p>
+</section>
+<%- include('partials/footer') %>

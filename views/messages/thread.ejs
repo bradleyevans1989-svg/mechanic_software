@@ -1,0 +1,37 @@
+<%- include('../partials/header', { title: 'Texts with ' + customer.name }) %>
+<div class="page-head">
+  <div>
+    <h1>Texts with <%= customer.name %></h1>
+    <p class="muted"><% if (customer.phone) { %><a href="tel:<%= customer.phone %>"><%= customer.phone %></a> · <% } %><a href="/customers/<%= customer.id %>">Customer page</a> · <a href="/messages">All messages</a></p>
+  </div>
+</div>
+<% if (error) { %><p class="error"><%= error %></p><% } %>
+<% if (testMode) { %><p class="banner warn">Test mode: texts are saved here but not sent to phones.</p><% } %>
+<section class="card">
+  <% if (!messages.length) { %><p class="muted">No texts with this customer yet.</p><% } %>
+  <div class="chat">
+    <% for (const m of messages) { %>
+      <div class="bubble <%= m.direction === 'in' ? 'in' : 'out' %> <%= m.status === 'failed' ? 'failed' : '' %>">
+        <div class="bubble-body"><%= m.body %></div>
+        <div class="bubble-meta"><%= m.direction === 'in' ? customer.name : (m.user_name || 'Automatic') %> · <%= u.fmtDateTime(m.at, settings.timezone) %><% if (m.status === 'failed') { %> · <span class="error">Not sent: <%= m.error %></span><% } %><% if (m.test) { %> · test<% } %></div>
+      </div>
+    <% } %>
+  </div>
+  <% if (!configured) { %>
+    <p class="hint">Texting isn't set up on this server. <% if (customer.phone) { %><a href="sms:<%= customer.phone %>">Text from your phone</a>.<% } %></p>
+  <% } else if (!customer.phone) { %>
+    <p class="hint">Add a mobile number to this customer to text them.</p>
+  <% } else { %>
+    <form method="post" action="/customers/<%= customer.id %>/messages" class="form chat-send">
+      <label>Message to <%= customer.phone %><textarea name="body" rows="3" maxlength="640" required><%= draft %></textarea></label>
+      <div class="form-actions"><button class="btn primary">Send text</button></div>
+    </form>
+    <% if (testMode) { %>
+      <form method="post" action="/customers/<%= customer.id %>/messages/test-reply" class="inline-form">
+        <input name="body" placeholder="Pretend the customer replied…" aria-label="Test reply" required>
+        <button class="btn small">Add test reply</button>
+      </form>
+    <% } %>
+  <% } %>
+</section>
+<%- include('../partials/footer') %>

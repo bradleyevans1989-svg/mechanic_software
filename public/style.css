@@ -665,6 +665,23 @@ form.banner.warn { display: flex; align-items: center; gap: .75rem; flex-wrap: w
 .pre { white-space: pre-wrap; }
 .scroll-x { overflow-x: auto; }
 
+/* Text messages */
+.chat { display: flex; flex-direction: column; gap: .6rem; margin-bottom: 1rem; }
+.bubble { max-width: min(36rem, 85%); padding: .55rem .8rem; border-radius: 1rem; background: var(--accent-soft); align-self: flex-end; }
+.bubble.in { background: #eef0f3; align-self: flex-start; }
+.bubble.failed { outline: 2px solid var(--warn); }
+.bubble-body { white-space: pre-wrap; }
+.bubble-meta { font-size: .78rem; color: var(--muted, #666); margin-top: .2rem; }
+.list li.unread strong { color: var(--accent-deep); }
+/* KPI report */
+.kpi-dates { margin: 0 0 1rem; }
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+.kpi-grid .card { margin: 0; }
+.kpi-tile h2 { font-size: .85rem; color: var(--muted); font-weight: 600; margin: 0 0 .35rem; }
+.kpi-value { font-size: 1.6rem; font-weight: 700; line-height: 1.2; }
+.kpi-change { font-size: .8rem; font-weight: 600; color: var(--muted); margin-left: .3rem; white-space: nowrap; }
+.kpi-change.up { color: #1a7f37; }
+.kpi-change.down { color: var(--danger, #c62828); }
 /* Public online booking page */
 .book-page { background: var(--bg); }
 .book { width: min(640px, 100%); margin: 0 auto; padding: 1.25rem 1rem 2rem; }
