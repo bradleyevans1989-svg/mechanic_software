@@ -9,6 +9,7 @@ const shareRoutes = require('./routes/share');
 const messageRoutes = require('./routes/messages');
 const bookingPage = require('./routes/online-booking');
 const inspectionApproval = require('./routes/inspection-approval');
+const onlinePayments = require('./routes/online-payments');
 const { INVOICE_TOTAL } = require('./lib/dashboard');
 const sms = require('./lib/sms');
 const vehicleLookup = require('./lib/vehicle-lookup');
@@ -83,6 +84,7 @@ function createApp(store, { autoSync = true } = {}) {
   const ctx = { store, xero, billing, JOB_STATUSES, BOOKING_STATUSES, QUOTE_STATUSES };
 
   billingRoutes.webhook(app, ctx);
+  onlinePayments.public(app, ctx);
   shareRoutes.public(app, ctx);
   messageRoutes.public(app, ctx);
   bookingPage.public(app, ctx);
@@ -115,6 +117,7 @@ function createApp(store, { autoSync = true } = {}) {
   inspectionApproval.pages(app, ctx);
   require('./routes/loan-cars')(app, ctx);
   require('./routes/jobs')(app, ctx);
+  onlinePayments.pages(app, ctx);
   require('./routes/documents')(app, ctx);
   require('./routes/integrations')(app, ctx);
   require('./routes/pricelist')(app, ctx);
