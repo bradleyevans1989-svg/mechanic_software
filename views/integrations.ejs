@@ -8,7 +8,7 @@
 
 <section class="card">
   <h2>Xero <% if (connected) { %><%- include('partials/pill', { state: 'paid', label: 'Connected' }) %><% } %></h2>
-  <p class="hint">Customers, invoices and payments are sent to Xero automatically as you work. Nothing comes back from Xero, so keep making changes here.</p>
+  <p class="hint">Customers, invoices and payments are sent to Xero automatically as you work. Payments made in Xero, whether entered there or matched from the bank feed, come back every few minutes and mark the invoice paid here. Make other changes to invoices here, not in Xero.</p>
 
   <% if (!xeroConfigured) { %>
     <p class="banner warn">Xero isn't set up on the server yet.</p>
@@ -38,6 +38,13 @@
         <label>Bank account for payments <input name="payment_account" value="<%= config.payment_account %>" placeholder="e.g. 090"></label>
       </div>
       <p class="hint">Codes come from your Xero chart of accounts. 200 is usually Sales. Payments are only sent once a bank account code is set; 090 is often the business bank account.</p>
+      <h3>Tax rates</h3>
+      <div class="grid-4">
+        <label>Lines with GST <input name="gst_tax_type" value="<%= config.gst_tax_type %>"></label>
+        <label>GST-free lines <input name="free_tax_type" value="<%= config.free_tax_type %>"></label>
+      </div>
+      <p class="hint">Xero tax types. Leave these as OUTPUT (GST on Income) and EXEMPTOUTPUT (GST Free Income) unless your accountant has set up different ones.</p>
+      <label class="check"><input type="checkbox" name="pull_payments" value="1"<%= config.pull_payments !== false ? ' checked' : '' %>> Bring payments made in Xero back here</label>
       <div class="form-actions"><button class="btn primary">Save Xero settings</button></div>
     </form>
 
