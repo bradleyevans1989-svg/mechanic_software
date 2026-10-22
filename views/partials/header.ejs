@@ -62,13 +62,14 @@
     <input type="search" name="q" value="<%= q %>" placeholder="Search rego, name, phone…" aria-label="Search">
   </form>
   <% if (user) { %>
-    <% const n = typeof notices !== 'undefined' && notices ? notices : { todos: 0, overdue: 0, texts: 0 }; const count = n.todos + n.overdue + (n.texts || 0); %>
+    <% const n = typeof notices !== 'undefined' && notices ? notices : { todos: 0, overdue: 0, texts: 0, requests: 0 }; const count = n.todos + n.overdue + (n.texts || 0) + (n.requests || 0); %>
     <details class="bell">
       <summary aria-label="Notifications<%= count ? ': ' + count : '' %>"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path class="acc" d="M10 21h4"/></svg><% if (count) { %><b class="count"><%= count > 99 ? '99+' : count %></b><% } %></summary>
       <div class="bell-menu">
         <a href="/team"><strong><%= n.todos %></strong> open to-do<%= n.todos === 1 ? '' : 's' %> for the team</a>
         <a href="/invoices?state=overdue"><strong><%= n.overdue %></strong> overdue invoice<%= n.overdue === 1 ? '' : 's' %></a>
         <% if (n.texts) { %><a href="/messages"><strong><%= n.texts %></strong> new text<%= n.texts === 1 ? '' : 's' %> from customers</a><% } %>
+        <% if (n.requests) { %><a href="/bookings/requests"><strong><%= n.requests %></strong> online booking request<%= n.requests === 1 ? '' : 's' %></a><% } %>
         <a href="/reminders">Service and rego reminders</a>
       </div>
     </details>

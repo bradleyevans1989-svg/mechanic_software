@@ -682,3 +682,16 @@ form.banner.warn { display: flex; align-items: center; gap: .75rem; flex-wrap: w
 .kpi-change { font-size: .8rem; font-weight: 600; color: var(--muted); margin-left: .3rem; white-space: nowrap; }
 .kpi-change.up { color: #1a7f37; }
 .kpi-change.down { color: var(--danger, #c62828); }
+/* Public online booking page */
+.book-page { background: var(--bg); }
+.book { width: min(640px, 100%); margin: 0 auto; padding: 1.25rem 1rem 2rem; }
+.book-head { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+.book-head h1 { margin: 0; font-size: 1.5rem; }
+.book-head p { margin: .1rem 0 0; }
+.book-logo { max-height: 64px; max-width: 140px; object-fit: contain; }
+.book-form fieldset { border: 0; padding: 0; margin: 0 0 1rem; }
+.book-form legend { font-weight: 700; margin-bottom: .4rem; }
+.btn.primary.book-submit { width: 100%; background: var(--book-brand); border-color: var(--book-brand); color: #fff; }
+.book-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+.book-foot { text-align: center; margin-top: 1rem; }
+.count-pill { display: inline-block; min-width: 1.3rem; padding: 0 .35rem; border-radius: 999px; background: var(--accent); color: #fff; font-size: .75rem; text-align: center; }
