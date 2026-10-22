@@ -12,7 +12,7 @@ async function main() {
   const app = createApp(store);
   app.locals.xero.startSweep();
   const port = process.env.PORT || 3000;
-  app.listen(port, () => console.log(`Bay Watch running on http://localhost:${port}`));
+  app.listen(port, () => console.log(`Bay Boss running on http://localhost:${port}`));
 }
 
 main().catch((err) => {
