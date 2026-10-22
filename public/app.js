@@ -271,3 +271,15 @@ document.addEventListener('click', (e) => {
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') document.documentElement.classList.remove('side-open');
 });
+
+// A CSV file picked on the price file import fills the textarea, so the form posts as plain text.
+document.querySelectorAll('[data-csv-into]').forEach((input) => {
+  input.addEventListener('change', () => {
+    const file = input.files && input.files[0];
+    const target = document.getElementById(input.dataset.csvInto);
+    if (!file || !target) return;
+    const reader = new FileReader();
+    reader.onload = () => { target.value = reader.result; };
+    reader.readAsText(file);
+  });
+});

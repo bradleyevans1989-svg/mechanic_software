@@ -4,6 +4,8 @@ const {
   getCustomer, getVehicle, vehicleOptions, customerOptions, resolveParty, mechanics, logEvent, CHECK_RESULTS, checklistItems,
 } = require('../lib/records');
 
+const { PO_STATUSES } = require('./parts');
+
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const PRIORITIES = { normal: 'Normal', urgent: 'Urgent' };
 
@@ -87,7 +89,7 @@ module.exports = function (app, { store, xero, JOB_STATUSES }) {
   });
 
   async function jobExtras(req, job) {
-    const [lines, staff, checks, time, events] = await Promise.all([
+    const [lines, staff, checks, time, events, orders, suppliers] = await Promise.all([
       getLines(req.db, 'job', job.id),
       mechanics(store, req.user.workshop_id),
       req.db.all('SELECT * FROM job_checks WHERE job_id = $1 ORDER BY sort, id', [job.id]),
@@ -101,6 +103,13 @@ module.exports = function (app, { store, xero, JOB_STATUSES }) {
          WHERE e.job_id = $1 ORDER BY e.at DESC, e.id DESC LIMIT 200`,
         [job.id]
       ),
+      req.db.all(
+        `SELECT o.*, s.name AS supplier_name,
+           (SELECT COALESCE(SUM(ROUND(l.qty * l.cost_cents)), 0) FROM purchase_order_lines l WHERE l.order_id = o.id) AS cost_cents
+         FROM purchase_orders o JOIN suppliers s ON s.id = o.supplier_id WHERE o.job_id = $1 ORDER BY o.id`,
+        [job.id]
+      ),
+      req.db.all('SELECT id, name FROM suppliers WHERE active ORDER BY lower(name)'),
     ]);
     for (const t of time) t.minutes = minutesBetween(t.started_at, t.ended_at);
     const unbilled = time.filter((t) => t.ended_at && !t.billed).reduce((s, t) => s + t.minutes, 0);
@@ -111,6 +120,9 @@ module.exports = function (app, { store, xero, JOB_STATUSES }) {
       checks,
       time,
       events,
+      orders,
+      suppliers,
+      PO_STATUSES,
       myOpenEntry: time.find((t) => !t.ended_at && t.user_id === req.user.id) || null,
       totalMinutes: time.reduce((s, t) => s + t.minutes, 0),
       unbilledMinutes: unbilled,

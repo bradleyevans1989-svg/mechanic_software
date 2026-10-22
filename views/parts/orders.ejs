@@ -1,0 +1,42 @@
+<%- include('../partials/header', { title: 'Parts orders' }) %>
+<div class="page-head">
+  <div>
+    <h1>Parts</h1>
+    <p class="muted">Purchase orders to your suppliers, for jobs or for stock.</p>
+  </div>
+  <% if (suppliers.length) { %>
+  <div class="actions">
+    <form method="post" action="/purchase-orders" class="inline-form">
+      <select name="supplier_id" aria-label="Supplier"><% for (const s of suppliers) { %><option value="<%= s.id %>"><%= s.name %></option><% } %></select>
+      <button class="btn primary">New stock order</button>
+    </form>
+  </div>
+  <% } %>
+</div>
+<%- include('tabs', { tab: 'orders' }) %>
+<nav class="tabs">
+  <a href="/purchase-orders" class="<%= show === 'open' ? 'active' : '' %>">Open</a>
+  <a href="/purchase-orders?show=received" class="<%= show === 'received' ? 'active' : '' %>">Received</a>
+  <a href="/purchase-orders?show=all" class="<%= show === 'all' ? 'active' : '' %>">All</a>
+</nav>
+<% if (!orders.length) { %>
+  <p class="card muted"><%= suppliers.length ? 'No orders here. Start one from a job card, from Find parts, or with "New stock order".' : 'Add a supplier first under Suppliers.' %></p>
+<% } else { %>
+<table class="table card">
+  <thead><tr><th>Order</th><th>Supplier</th><th>For</th><th>Status</th><th>Their ref</th><th class="num">Lines</th><th class="num">Cost ex GST</th></tr></thead>
+  <tbody>
+    <% for (const o of orders) { %>
+      <tr>
+        <td><a href="/purchase-orders/<%= o.id %>">PO-<%= o.number %></a></td>
+        <td><%= o.supplier_name %></td>
+        <td><% if (o.job_id) { %><a href="/jobs/<%= o.job_id %>">J<%= o.job_number %></a><%= o.rego ? ' · ' + o.rego.toUpperCase() : '' %><% } else { %><%= o.reference || 'Stock' %><% } %></td>
+        <td><%- include('../partials/pill', { state: o.status, label: PO_STATUSES[o.status] }) %></td>
+        <td><%= o.supplier_ref %><%= o.supplier_invoice ? ' · Inv ' + o.supplier_invoice : '' %></td>
+        <td class="num"><%= o.line_count %></td>
+        <td class="num"><%= u.money(o.cost_cents) %></td>
+      </tr>
+    <% } %>
+  </tbody>
+</table>
+<% } %>
+<%- include('../partials/footer') %>

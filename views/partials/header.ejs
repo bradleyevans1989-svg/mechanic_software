@@ -29,9 +29,9 @@
   '/settings': '<path d="M3.5 7h9.5M18 7h2.5M3.5 17h3M11 17h9.5"/><circle class="acc" cx="15.5" cy="7" r="2.5"/><circle class="acc" cx="8.5" cy="17" r="2.5"/>',
 }; %>
   <nav class="nav" aria-label="Main menu">
-    <% const links = [['/', 'Today'], ['/bookings', 'Diary'], ['/jobs', 'Jobs'], ['/estimates', 'Estimates'], ['/invoices', 'Invoices'], ['/customers', 'Customers'], ['/reminders', 'Reminders'], ['/team', 'Team']];
+    <% const links = [['/', 'Today'], ['/bookings', 'Diary'], ['/jobs', 'Jobs'], ['/estimates', 'Estimates'], ['/invoices', 'Invoices'], ['/customers', 'Customers'], ['/parts', 'Parts'], ['/reminders', 'Reminders'], ['/team', 'Team']];
        if (user && user.role === 'owner') links.push(['/reports', 'Reports'], ['/settings', 'Settings']); %>
-    <% for (const [href, label] of links) { const active = href === '/' ? path === '/' : href === '/team' ? /^\/(team|procedures|training|roster|clocking)/.test(path) : href === '/customers' ? /^\/(customers|vehicles)/.test(path) : path.startsWith(href); %>
+    <% for (const [href, label] of links) { const active = href === '/' ? path === '/' : href === '/team' ? /^\/(team|procedures|training|roster|clocking)/.test(path) : href === '/customers' ? /^\/(customers|vehicles)/.test(path) : href === '/parts' ? /^\/(parts|purchase-orders|suppliers)/.test(path) : path.startsWith(href); %>
       <a href="<%= href %>" class="<%= active ? 'active' : '' %>" data-label="<%= label %>"<%- active ? ' aria-current="page"' : '' %>><svg viewBox="0 0 24 24" aria-hidden="true"><%- icons[href] || icons['/parts'] %></svg><span><%= label %></span></a>
     <% } %>
   </nav>
