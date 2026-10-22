@@ -24,6 +24,9 @@
       <% } else if (isQuote && doc.status === 'accepted') { %>
         <strong>✓ Estimate accepted<%= typeof accepted !== 'undefined' && accepted ? '. Thanks! The workshop will be in touch.' : '.' %></strong>
       <% } %>
+      <% if (!isQuote && doc.state === 'paid' && settings.review_url) { %>
+        <a class="review-link" href="<%= settings.review_url %>" target="_blank" rel="noopener">Happy with the job? Leave us a Google review ★</a>
+      <% } %>
       <% if (settings.phone) { %><span>Questions? Call <%= settings.business_name %> on <%= settings.phone %>.</span><% } %>
     </div>
   <% } else { %>

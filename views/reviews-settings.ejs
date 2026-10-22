@@ -1,0 +1,45 @@
+<%- include('partials/header', { title: 'Google reviews' }) %>
+<div class="page-head">
+  <h1>Google reviews</h1>
+  <div class="actions"><a class="btn" href="/settings">Back to settings</a></div>
+</div>
+<% if (saved) { %><p class="flash">Saved.</p><% } %>
+<% if (error) { %><p class="error">That link didn't look right. Paste the https:// link from Google, or your Place ID.</p><% } %>
+<p class="hint">Customers mostly pick a workshop by its Google stars. Asking straight after a job you've been paid for is the easiest way to get more of them.</p>
+
+<form method="post" action="/settings/reviews" class="card form">
+  <label>Your Google review link
+    <input name="review_url" value="<%= settings.review_url %>" placeholder="https://g.page/r/…/review" inputmode="url">
+  </label>
+  <p class="hint">In your Google Business Profile, choose <strong>Ask for reviews</strong> and copy the link. A Place ID (starting with ChI) works too.</p>
+  <label>Message
+    <textarea name="review_message" rows="3" maxlength="600"><%= settings.review_message || DEFAULT_MESSAGE %></textarea>
+  </label>
+  <p class="hint">{first} is the customer's first name, {business} your business name, {car} the make and model, and {link} your review link.</p>
+  <label class="check">
+    <input type="checkbox" name="review_auto" value="1" <%= settings.review_auto ? 'checked' : '' %> <%= canEmail ? '' : 'disabled' %>>
+    Email the request when an invoice is paid in full
+  </label>
+  <p class="hint">
+    <% if (canEmail) { %>It goes to the customer's email once, and nobody is asked twice within <%= QUIET_DAYS %> days.<% } else { %>Sending email on its own needs an email service set up on the server (see the README). You can still ask by text from each invoice.<% } %>
+  </p>
+  <% if (preview) { %><p class="muted small">Preview: <%= preview %></p><% } %>
+  <div class="form-actions"><button class="btn primary">Save</button></div>
+</form>
+
+<section class="card">
+  <h2>Asked so far <span class="muted"><%= counts.month %> in the last 30 days, <%= counts.total %> in all</span></h2>
+  <% if (!recent.length) { %><p class="muted">Nobody yet. Ask from the Google review box on a paid invoice.</p><% } else { %>
+    <table class="table">
+      <% for (const d of recent) { %>
+        <tr>
+          <td><a href="/documents/<%= d.id %>"><%= u.docNumber(d) %></a></td>
+          <td><%= d.customer_name %></td>
+          <td><%= d.review_via === 'sms' ? 'Text' : d.review_via === 'auto' ? 'Email, when paid' : 'Email' %></td>
+          <td class="num"><%= u.fmtDateTime(d.review_requested_at, settings.timezone) %></td>
+        </tr>
+      <% } %>
+    </table>
+  <% } %>
+</section>
+<%- include('partials/footer') %>
