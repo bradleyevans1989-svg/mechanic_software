@@ -1,0 +1,25 @@
+<%- include('../partials/header', { title: 'Messages' }) %>
+<div class="page-head">
+  <div>
+    <h1>Messages</h1>
+    <p class="muted">Texts to and from customers. Replies land here and on the customer's page.</p>
+  </div>
+  <div class="actions"><% if (user.role === 'owner') { %><a class="btn" href="/settings/messages">Text settings</a><% } %></div>
+</div>
+<% if (!configured) { %><p class="banner warn">Texting isn't set up on this server, so Text buttons open your own phone. See <a href="/settings/messages">Text settings</a>.</p><% } else if (testMode) { %><p class="banner warn">Test mode: texts are saved here but not sent to phones.</p><% } %>
+<% if (!threads.length) { %><p class="card muted">No texts yet. Open a customer and press Text, or send an invoice or reminder by text.</p><% } %>
+<section class="card">
+  <ul class="list">
+    <% for (const t of threads) { %>
+      <li class="<%= t.unread ? 'unread' : '' %>">
+        <div>
+          <% if (t.customer_id) { %><a href="/customers/<%= t.customer_id %>/messages"><strong><%= t.customer_name %></strong></a><% } else { %><strong><%= t.phone %></strong><% } %>
+          <% if (t.unread) { %><span class="pill pill-overdue"><%= t.unread %> new</span><% } %>
+          <div class="muted small"><%= t.direction === 'in' ? 'They said: ' : 'You: ' %><%= t.body.length > 120 ? t.body.slice(0, 120) + '…' : t.body %></div>
+        </div>
+        <span class="muted small"><%= u.fmtDateTime(t.at, settings.timezone) %></span>
+      </li>
+    <% } %>
+  </ul>
+</section>
+<%- include('../partials/footer') %>
