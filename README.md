@@ -9,6 +9,7 @@ Bay Boss is workshop software for mechanics, built to be sold to many workshops 
 - **Diary and calendar**: week view of bookings, and a month calendar showing bookings, jobs spanning the days they're in the workshop, staff leave, public holidays, toolbox talks and notes, colour coded. Press "Car's here: start job" to turn a booking into a job card.
 - **Job cards**: work requested, mechanic's notes, assigned mechanic, priority and promised time, labour and parts. Print a job card for the floor. A list view sorted by what's promised soonest, a board view by status, and a "My jobs" tab.
 - **Inspection checklist**: a workshop-wide checklist (set under Settings) added to any job, marked OK / needs attention / urgent with notes, and printed as a customer-facing inspection report.
+- **Customer approval of inspections**: put a price on anything that needs attention, make a link, and text or email it. The customer sees the inspection on their phone with prices including GST and approves or declines each item; the job card shows when they opened and answered, and one button puts the approved work on the job as labour lines.
 - **Time clock**: staff clock on and off jobs or add time by hand; unbilled time becomes a labour line in quarter hours at the workshop rate. Owners see weekly timesheets.
 - **Activity log**: every status change, assignment, clock on/off, invoice and note on a job, with who and when.
 - **Price list**: saved parts and services with codes and prices, dropped onto any job, estimate or invoice from a search box in the line editor.

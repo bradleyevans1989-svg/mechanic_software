@@ -664,3 +664,22 @@ label .hint { display: block; font-weight: 400; }
 form.banner.warn { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
 .pre { white-space: pre-wrap; }
 .scroll-x { overflow-x: auto; }
+
+/* Customer inspection approval */
+.book-page { background: var(--bg); }
+.book { width: min(640px, 100%); margin: 0 auto; padding: 1.25rem 1rem 2rem; }
+.book-head { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+.book-head h1 { margin: 0; font-size: 1.5rem; }
+.book-head p { margin: .1rem 0 0; }
+.book-logo { max-height: 64px; max-width: 140px; object-fit: contain; }
+.btn.primary.book-submit { width: 100%; }
+.book-foot { text-align: center; margin-top: 1rem; }
+.approve-item { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: .8rem 0; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.approve-item .pill { margin-right: .35rem; }
+.approve-price { font-weight: 700; margin-top: .2rem; }
+.approve-choice { display: flex; gap: .5rem; }
+.approve-choice .res { display: inline-flex; align-items: center; gap: .35rem; padding: .45rem .8rem; border: 1.5px solid var(--line); border-radius: 999px; font-weight: 600; cursor: pointer; }
+.approve-choice .res input { width: auto; min-height: 0; margin: 0; }
+.approve-choice .res:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.checks .price { width: 9rem; white-space: nowrap; }
+.checks .price input { min-height: 2.1rem; padding: .3rem .6rem; width: 6rem; }
