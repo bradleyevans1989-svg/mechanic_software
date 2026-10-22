@@ -1,0 +1,113 @@
+<%- include('../partials/header', { title: poNumber(order) }) %>
+<% const draft = order.status === 'draft';
+   const receiving = ['ordered', 'part_received'].includes(order.status);
+   const mailBody = [`Order ${poNumber(order)}${supplier.account_no ? ' for account ' + supplier.account_no : ''}${order.reference ? ', ref ' + order.reference : ''}`, '']
+     .concat(lines.map((l) => `${l.qty} x ${l.code ? l.code + ' ' : ''}${l.description}`))
+     .concat(['', 'Thanks,', settings.business_name]).join('\n'); %>
+<div class="page-head">
+  <div>
+    <h1><%= poNumber(order) %> <%- include('../partials/pill', { state: order.status, label: PO_STATUSES[order.status] }) %></h1>
+    <p>
+      <a href="/suppliers/<%= order.supplier_id %>"><%= order.supplier_name %></a>
+      <% if (order.supplier_phone) { %> · <a href="tel:<%= order.supplier_phone %>"><%= order.supplier_phone %></a><% } %>
+      <% if (order.job_id) { %> · for <a href="/jobs/<%= order.job_id %>#parts">job J<%= order.job_number %></a><%= order.rego ? ' · ' + order.rego.toUpperCase() : '' %><% } %>
+      <% if (order.supplier_ref) { %> · their order <%= order.supplier_ref %><% } %>
+      <% if (order.supplier_invoice) { %> · their invoice <%= order.supplier_invoice %><% } %>
+    </p>
+  </div>
+  <div class="actions">
+    <a class="btn" href="/purchase-orders/<%= order.id %>/print" target="_blank">Print</a>
+    <% if (order.supplier_email && lines.length) { %>
+      <a class="btn" href="mailto:<%= order.supplier_email %>?subject=<%= encodeURIComponent(poNumber(order) + ' from ' + settings.business_name) %>&body=<%= encodeURIComponent(mailBody) %>">Email order</a>
+    <% } %>
+    <% if (draft) { %>
+      <form method="post" action="/purchase-orders/<%= order.id %>/send" data-confirm="<%= connector.live ? 'Send this order to ' + order.supplier_name + ' now?' : 'Mark this order as placed? Phone or email it through to ' + order.supplier_name + ' as well.' %>">
+        <button class="btn primary"><%= connector.live ? 'Send order' : 'Mark as ordered' %></button>
+      </form>
+    <% } %>
+  </div>
+</div>
+<% if (notice) { %><p class="flash"><%= notice %></p><% } %>
+
+<% if (draft) { %>
+<form method="post" action="/purchase-orders/<%= order.id %>" class="card form">
+  <div class="grid-3">
+    <label>Supplier
+      <select name="supplier_id">
+        <% for (const s of suppliers) { %><option value="<%= s.id %>" <%= s.id === order.supplier_id ? 'selected' : '' %>><%= s.name %></option><% } %>
+      </select>
+    </label>
+    <label>Your reference <input name="reference" value="<%= order.reference %>" placeholder="Job number, STOCK…"></label>
+  </div>
+  <div class="scroll-x"><table class="lines-table">
+    <thead><tr><th>Code</th><th class="w-desc">Description</th><th class="num">Qty</th><th class="num">Cost ex GST</th><th class="num">Sell ex GST</th><th>GST</th></tr></thead>
+    <tbody>
+      <% const rows = lines.concat([{}, {}, {}]);
+         rows.forEach((l, i) => { %>
+        <tr>
+          <td><input name="lines[<%= i %>][code]" value="<%= l.code || '' %>" class="upper" style="max-width:9rem">
+            <input type="hidden" name="lines[<%= i %>][item]" value="<%= l.price_item_id || '' %>">
+            <input type="hidden" name="lines[<%= i %>][from_job]" value="<%= l.from_job ? '1' : '0' %>"></td>
+          <td><input name="lines[<%= i %>][description]" value="<%= l.description || '' %>" placeholder="<%= l.description === undefined ? 'Add a part' : '' %>"></td>
+          <td class="num"><input name="lines[<%= i %>][qty]" value="<%= l.qty ?? 1 %>" inputmode="decimal"></td>
+          <td class="num"><input name="lines[<%= i %>][cost]" value="<%= l.cost_cents ? u.dollars(l.cost_cents) : '' %>" inputmode="decimal"></td>
+          <td class="num"><input name="lines[<%= i %>][sell]" value="<%= l.sell_cents ? u.dollars(l.sell_cents) : '' %>" inputmode="decimal"></td>
+          <td><select name="lines[<%= i %>][gst]"><option value="1">Yes</option><option value="0" <%= l.gst === false ? 'selected' : '' %>>No</option></select></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table></div>
+  <p class="hint">Clear a description to remove a line. Save to get more blank rows. Parts that came from the job card are already on it, so receiving them won't add them twice.</p>
+  <label>Notes for the supplier <textarea name="notes" rows="2"><%= order.notes %></textarea></label>
+  <div class="form-actions">
+    <button class="btn primary">Save order</button>
+    <a class="btn" href="/parts?supplier=<%= order.supplier_id %><%= order.job_id ? '&job_id=' + order.job_id : '' %>">Find parts to add</a>
+  </div>
+</form>
+<% } else { %>
+<form method="post" action="/purchase-orders/<%= order.id %>/receive" class="card form">
+  <div class="scroll-x"><table class="table">
+    <thead><tr><th>Code</th><th>Description</th><th class="num">Ordered</th><th class="num">Received</th><% if (receiving) { %><th class="num">Arrived now</th><% } %><th class="num">Cost ex GST</th><th class="num">Amount</th></tr></thead>
+    <% for (const l of lines) { const left = l.qty - l.received_qty; %>
+      <tr class="<%= left <= 0 ? 'muted' : '' %>">
+        <td><%= l.code %></td>
+        <td><%= l.description %><%= l.from_job ? ' (on the job)' : '' %></td>
+        <td class="num"><%= l.qty %></td>
+        <td class="num"><%= l.received_qty || '' %></td>
+        <% if (receiving) { %><td class="num"><% if (left > 0) { %><input name="received[l<%= l.id %>]" value="<%= left %>" inputmode="decimal" style="max-width:5rem;margin-left:auto;display:block"><% } %></td><% } %>
+        <td class="num"><%= u.money(l.cost_cents) %></td>
+        <td class="num"><%= u.money(u.roundCents(l.qty * l.cost_cents)) %></td>
+      </tr>
+    <% } %>
+  </table></div>
+  <table class="totals">
+    <tr><th>Subtotal ex GST</th><td><%= u.money(totals.subtotal) %></td></tr>
+    <tr><th>GST</th><td><%= u.money(totals.gst) %></td></tr>
+    <tr class="grand"><th>Total inc GST</th><td><%= u.money(totals.total) %></td></tr>
+  </table>
+  <% if (receiving) { %>
+    <h3>Parts arrived</h3>
+    <div class="grid-3">
+      <label>Their invoice or packing slip number <input name="supplier_invoice" value="<%= order.supplier_invoice %>"></label>
+      <% if (order.job_id) { %>
+        <label>Parts not already on the job
+          <select name="add_to_job"><option value="1">Add them to job J<%= order.job_number %></option><option value="0">Put them into stock</option></select>
+        </label>
+      <% } %>
+    </div>
+    <p class="hint">Set "Arrived now" to what came in. Received parts go into your price list with their latest cost<%= order.job_id ? '' : ', and stock on hand goes up' %>.</p>
+    <div class="form-actions"><button class="btn primary">Receive parts</button></div>
+  <% } %>
+  <% if (order.notes) { %><p class="hint">Notes: <%= order.notes %></p><% } %>
+</form>
+<% } %>
+
+<div class="actions">
+  <% if (['draft', 'ordered'].includes(order.status)) { %>
+    <form method="post" action="/purchase-orders/<%= order.id %>/cancel" data-confirm="Cancel this order? Let the supplier know too if it was placed."><button class="btn small">Cancel order</button></form>
+  <% } %>
+  <% if (['draft', 'cancelled'].includes(order.status)) { %>
+    <form method="post" action="/purchase-orders/<%= order.id %>/delete" data-confirm="Delete this order?"><button class="btn danger small">Delete order</button></form>
+  <% } %>
+</div>
+<%- include('../partials/footer') %>

@@ -13,6 +13,7 @@ Bay Boss is workshop software for mechanics, built to be sold to many workshops 
 - **Live board**: every job on the floor, with time logged against the estimate (from the estimate's labour, the booking, or the job card), a bar split by technician that turns amber near the estimate and red once over, and a graph of hours logged since the first clock on. Clocks tick every second and the board refreshes itself; the workshop screen mode drops the menus and keeps the display awake.
 - **Activity log**: every status change, assignment, clock on/off, invoice and note on a job, with who and when.
 - **Price list**: saved parts and services with codes and prices, dropped onto any job, estimate or invoice from a search box in the line editor.
+- **Parts ordering**: suppliers (Burson, Repco, Capricorn or your local shop) with their trade price files imported from CSV, a parts search, purchase orders started from the parts on a job card, and receiving that puts parts onto the job or into stock. Low stock makes reorder drafts. The job goes to "Waiting on parts" when ordered and back to "In progress" when everything has arrived.
 - **Reminders**: service intervals per vehicle (months and km) set the next service due when a service is invoiced. A Reminders page lists service and rego due or overdue with call, text and email links and a log of who was contacted.
 - **Estimates**: convert to a job or straight to an invoice.
 - **Your look**: upload your logo, set a brand colour, tagline, website and licence number, then pick one of ten invoice designs and ten job card designs under Settings. Previews show your own details.
@@ -99,6 +100,12 @@ One Xero app serves every workshop; each workshop connects its own Xero organisa
 Xero limits an uncertified app to 25 connected organisations. Before more than 25 workshops use Xero, apply to the [Xero App Partner program](https://developer.xero.com/documentation/xero-app-store/app-partner-guides/app-partner-steps/).
 
 Sync is one way: the app sends to Xero and never reads back. Invoices made before connecting are only sent if the owner chooses "Send older invoices", so invoices already in Xero aren't duplicated.
+
+## Parts suppliers (Burson, Repco)
+
+Burson (EzyParts) and Repco (Navigator Pro) don't publish open APIs. Workshop software links to them as an approved partner: the mechanic opens the supplier's catalogue from the job, already filtered to the car, picks parts, and they come back to the job; orders go through electronically and supplier invoices can download automatically. Each workshop then enters its own trade login.
+
+Until this software is approved, suppliers work by hand: import their price file, order from the job, then email, print or phone the order through. Each supplier names a connector in `lib/suppliers.js`; the Burson and Repco ones already save the workshop's login. Once a supplier gives partner access, write its `search`, `placeOrder`, `punchoutUrl` and `parseReturn` there and set `live: true`. Nothing else in the app changes. To apply: Burson EzyParts on ezyparts@burson.com.au or 1300 733 849; for Repco ask your trade rep for the Navigator Pro integration team.
 
 ## Development
 

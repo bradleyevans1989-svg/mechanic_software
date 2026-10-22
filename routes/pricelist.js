@@ -35,6 +35,14 @@ function itemFrom(body) {
   };
 }
 
+const suppliers = (db) => db.all('SELECT id, name FROM suppliers ORDER BY active DESC, lower(name)');
+
+// Stock fields, only on the edit form.
+function nonNegative(v) {
+  const n = parseFloat(v);
+  return Number.isFinite(n) && n > 0 ? Math.min(n, 1e6) : 0;
+}
+
 module.exports = function (app) {
   app.get('/price-list', async (req, res) => {
     const q = String(req.query.q || '').trim().slice(0, 100);
@@ -90,17 +98,23 @@ module.exports = function (app) {
   app.get('/price-list/:id/edit', async (req, res, next) => {
     const item = await req.db.get('SELECT * FROM price_items WHERE id = $1', [req.params.id]);
     if (!item) return next();
-    res.render('pricelist/form', { item, error: null });
+    res.render('pricelist/form', { item, error: null, suppliers: await suppliers(req.db) });
   });
 
   app.post('/price-list/:id', async (req, res, next) => {
     const existing = await req.db.get('SELECT id FROM price_items WHERE id = $1', [req.params.id]);
     if (!existing) return next();
     const item = itemFrom(req.body);
-    if (!item.description) return res.status(400).render('pricelist/form', { item: { ...item, id: existing.id }, error: 'Give the item a description.' });
+    if (!item.description) {
+      return res.status(400).render('pricelist/form', { item: { ...item, id: existing.id }, error: 'Give the item a description.', suppliers: await suppliers(req.db) });
+    }
+    const supplierId = parseIntOrNull(req.body.supplier_id);
+    const supplier = supplierId ? await req.db.get('SELECT id FROM suppliers WHERE id = $1', [supplierId]) : null;
     await req.db.run(
-      `UPDATE price_items SET kind = $1, code = $2, description = $3, unit_cents = $4, cost_cents = $5, gst = $6, active = $7 WHERE id = $8`,
-      [item.kind, item.code, item.description, item.unit_cents, item.cost_cents, item.gst, item.active, existing.id]
+      `UPDATE price_items SET kind = $1, code = $2, description = $3, unit_cents = $4, cost_cents = $5, gst = $6, active = $7,
+         supplier_id = $9, stock_qty = $10, reorder_level = $11 WHERE id = $8`,
+      [item.kind, item.code, item.description, item.unit_cents, item.cost_cents, item.gst, item.active, existing.id,
+        supplier ? supplier.id : null, nonNegative(req.body.stock_qty), nonNegative(req.body.reorder_level)]
     );
     res.redirect('/price-list?saved=1');
   });

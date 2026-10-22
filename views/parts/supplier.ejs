@@ -1,0 +1,97 @@
+<%- include('../partials/header', { title: supplier.name }) %>
+<div class="page-head">
+  <div>
+    <h1><%= supplier.name %> <% if (!supplier.active) { %><span class="pill">Hidden</span><% } %></h1>
+    <p class="muted"><%= connector.name %><%= supplier.account_no ? ' · Account ' + supplier.account_no : '' %><%= partCount ? ' · ' + partCount + ' parts in your price list' : '' %></p>
+  </div>
+  <div class="actions">
+    <a class="btn" href="/parts?supplier=<%= supplier.id %>">Search their parts</a>
+    <form method="post" action="/purchase-orders"><input type="hidden" name="supplier_id" value="<%= supplier.id %>"><button class="btn primary">New order</button></form>
+  </div>
+</div>
+<%- include('tabs', { tab: 'suppliers' }) %>
+<% if (notice) { %><p class="flash"><%= notice %></p><% } %>
+<% if (error) { %><p class="error"><%= error %></p><% } %>
+
+<% if (user.role === 'owner') { %>
+<form method="post" action="/suppliers/<%= supplier.id %>" class="card form">
+  <h2>Details</h2>
+  <div class="grid-3">
+    <label>Name <input name="name" value="<%= supplier.name %>" required></label>
+    <label>How you order
+      <select name="connector">
+        <% for (const c of Object.values(CONNECTORS)) { %><option value="<%= c.key %>" <%= supplier.connector === c.key ? 'selected' : '' %>><%= c.name %></option><% } %>
+      </select>
+    </label>
+    <label>Account number <input name="account_no" value="<%= supplier.account_no %>"></label>
+    <label>Phone <input name="phone" value="<%= supplier.phone %>"></label>
+    <label>Email for orders <input name="email" type="email" value="<%= supplier.email %>"></label>
+    <label>Shown when ordering
+      <select name="active"><option value="1">Yes</option><option value="0" <%= supplier.active ? '' : 'selected' %>>No, hide it</option></select>
+    </label>
+  </div>
+  <label>Notes <textarea name="notes" rows="2" placeholder="Rep's name, delivery runs, cut-off times…"><%= supplier.notes %></textarea></label>
+
+  <p class="hint"><%= connector.blurb %></p>
+  <% if (connector.fields.length) { %>
+    <h3><%= connector.name %> login</h3>
+    <div class="grid-3">
+      <% for (const f of connector.fields) { %>
+        <label><%= f.label %>
+          <% if (f.secret) { %>
+            <input name="config[<%= f.key %>]" type="password" autocomplete="new-password" placeholder="<%= config[f.key] ? 'Saved; leave blank to keep' : '' %>">
+          <% } else { %>
+            <input name="config[<%= f.key %>]" value="<%= config[f.key] || '' %>">
+          <% } %>
+        </label>
+      <% } %>
+    </div>
+  <% } %>
+  <div class="form-actions"><button class="btn primary">Save supplier</button></div>
+</form>
+
+<form method="post" action="/suppliers/<%= supplier.id %>/import" class="card form">
+  <h2>Import their price file</h2>
+  <p class="hint">Ask the supplier for your trade price list as a CSV (or save their spreadsheet as CSV). The first row needs column names: <strong>Code</strong> or Part number, <strong>Description</strong>, <strong>Cost</strong> or Trade, and optionally <strong>Sell</strong> or RRP. Parts already imported are matched on code and their prices updated.</p>
+  <label>CSV file <input type="file" accept=".csv,text/csv" data-csv-into="csv"></label>
+  <label>Or paste it here <textarea name="csv" id="csv" rows="6" placeholder="Code,Description,Cost,RRP&#10;OF123,Oil filter Ryco Z386,8.50,18.95" required></textarea></label>
+  <div class="grid-3">
+    <label>Prices in the file include GST
+      <select name="inc_gst"><option value="0">No, ex GST</option><option value="1">Yes, take GST off</option></select>
+    </label>
+    <label>Markup when there's no sell price (%) <input name="markup" inputmode="decimal" value="40"></label>
+  </div>
+  <div class="form-actions"><button class="btn primary">Import parts</button></div>
+</form>
+<% } else { %>
+  <section class="card">
+    <p><% if (supplier.phone) { %>Phone <a href="tel:<%= supplier.phone %>"><%= supplier.phone %></a><% } %> <% if (supplier.email) { %>· <a href="mailto:<%= supplier.email %>"><%= supplier.email %></a><% } %></p>
+    <% if (supplier.notes) { %><p class="pre"><%= supplier.notes %></p><% } %>
+  </section>
+<% } %>
+
+<section class="card">
+  <h2>Orders</h2>
+  <% if (!orders.length) { %><p class="muted">No orders with <%= supplier.name %> yet.</p><% } else { %>
+  <div class="scroll-x"><table class="table">
+    <thead><tr><th>Order</th><th>Date</th><th>Job</th><th>Status</th><th>Their invoice</th><th class="num">Cost ex GST</th></tr></thead>
+    <% for (const o of orders) { %>
+      <tr>
+        <td><a href="/purchase-orders/<%= o.id %>">PO-<%= o.number %></a></td>
+        <td><%= u.fmtDateTime(o.created_at, settings.timezone).split(' ')[0] %></td>
+        <td><% if (o.job_id) { %><a href="/jobs/<%= o.job_id %>">J<%= o.job_number %></a><% } else { %><%= o.reference %><% } %></td>
+        <td><%- include('../partials/pill', { state: o.status, label: PO_STATUSES[o.status] }) %></td>
+        <td><%= o.supplier_invoice %></td>
+        <td class="num"><%= u.money(o.cost_cents) %></td>
+      </tr>
+    <% } %>
+  </table></div>
+  <% } %>
+</section>
+
+<% if (user.role === 'owner') { %>
+<form method="post" action="/suppliers/<%= supplier.id %>/delete" data-confirm="Remove this supplier? If you've ordered from them they're hidden instead, so the orders keep their history.">
+  <button class="btn danger small">Remove supplier</button>
+</form>
+<% } %>
+<%- include('../partials/footer') %>
