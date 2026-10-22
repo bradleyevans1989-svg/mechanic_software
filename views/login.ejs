@@ -9,7 +9,7 @@
 </head>
 <body class="login-page">
   <form method="post" action="/login" class="card login">
-    <div class="login-logo"><%- include('partials/mark') %><div class="wordmark">BAY <b>BOSS</b></div><div class="tagline">Workshop software</div></div>
+    <div class="login-logo"><img src="/static/brand/logo.svg" alt="Bay Boss, workshop software" width="300" height="101"></div>
     <h1>Log in</h1>
     <% if (error) { %><p class="error"><%= error %></p><% } %>
     <label>Email <input type="email" name="email" value="<%= email %>" autocomplete="username" autofocus required></label>

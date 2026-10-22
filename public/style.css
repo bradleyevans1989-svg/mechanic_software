@@ -1,20 +1,20 @@
 /* Bay Boss UI: light grey canvas, white rounded cards, dark rail, orange accent. */
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Barlow+Condensed:wght@800&family=Barlow:wght@600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
   --bg: #f1f1f1;
   --card: #ffffff;
   --tile: #e9e9e9;
   --tile-2: #f6f6f6;
-  --ink: #16181d;
+  --ink: #18171c;
   --muted: #6f6f6f;
   --line: #e2e2e2;
-  --rail: #16181d;
+  --rail: #18171c;
   --rail-ink: #a3aab4;
   --accent: #e8590c;
   --accent-deep: #c94a07;
-  --accent-ink: #16181d;
-  --primary: #16181d;
+  --accent-ink: #18171c;
+  --primary: #18171c;
   --danger: #d12b2b;
   --danger-bg: #fde8e8;
   --ok: #1f7a3a;
@@ -28,7 +28,6 @@
   --r-md: 10px;
   --radius: var(--r-md);
   --rail-w: 72px;
-  --font-brand: "Barlow Condensed", "Arial Narrow", sans-serif;
   --font: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 * { box-sizing: border-box; }
@@ -55,10 +54,8 @@ h3 { font-size: .95rem; font-weight: 700; margin: 1rem 0 .5rem; }
 .shell { display: grid; grid-template-columns: var(--rail-w) minmax(0, 1fr); grid-template-rows: auto 1fr; align-content: start; gap: 0 1rem; max-width: 1360px; margin: 0 auto; padding: .75rem 1rem 2rem; min-height: 100vh; }
 .topbar { grid-column: 1 / -1; min-width: 0; background: var(--card); border-radius: 999px; display: flex; align-items: center; gap: .75rem; padding: .5rem .6rem .5rem 1.1rem; margin-bottom: 1rem; position: sticky; top: .5rem; z-index: 20; box-shadow: 0 1px 0 rgba(0,0,0,.03); }
 .brand { display: inline-flex; align-items: center; gap: .55rem; font-weight: 800; font-size: 1rem; white-space: nowrap; letter-spacing: -.01em; margin-right: .5rem; }
-.brand .bw-mark { width: 34px; height: auto; color: var(--ink); flex: none; }
+.brand-logo { display: block; height: 34px; width: auto; }
 .brand:hover { text-decoration: none; }
-.wordmark { font-family: var(--font-brand); font-weight: 800; font-size: 1.35rem; line-height: 1; letter-spacing: .02em; color: var(--ink); }
-.wordmark b { color: var(--accent); font-weight: inherit; }
 .brand-ws { color: var(--muted); font-weight: 600; font-size: .85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 12rem; padding-left: .75rem; border-left: 1px solid var(--line); }
 .nav { display: flex; gap: .2rem; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
 .nav::-webkit-scrollbar { display: none; }
@@ -246,10 +243,8 @@ th.today { background: var(--accent); border-radius: 999px; }
 .login { width: min(400px, 94vw); padding: 2rem; }
 .login h1 { margin-bottom: 1.25rem; }
 .login .btn { width: 100%; margin-top: .25rem; }
-.login-logo { display: flex; flex-direction: column; align-items: center; gap: .45rem; margin-bottom: 1.75rem; text-align: center; }
-.login-logo .bw-mark { width: 84px; height: auto; color: var(--ink); }
-.login-logo .wordmark { font-size: 2.6rem; }
-.login-logo .tagline { font-family: "Barlow", var(--font); font-weight: 600; font-size: .72rem; letter-spacing: .32em; text-transform: uppercase; color: #5a616b; }
+.login-logo { display: flex; justify-content: center; margin-bottom: 1.75rem; }
+.login-logo img { width: 100%; max-width: 300px; height: auto; }
 
 .xero-status { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem; font-size: .9rem; }
 .xero-status form { margin: 0; }
