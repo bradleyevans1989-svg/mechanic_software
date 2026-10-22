@@ -12,6 +12,7 @@
   <a href="/bookings" class="active">Week</a>
   <a href="/calendar?month=<%= start.slice(0, 7) %>">Month</a>
   <a href="/bookings/requests">Online requests<% if (requests) { %> <b class="count-pill"><%= requests %></b><% } %></a>
+  <a href="/loan-cars">Loan cars</a>
 </nav>
 <% if (requests) { %><p class="banner warn"><%= requests %> online booking request<%= requests === 1 ? '' : 's' %> waiting. <a href="/bookings/requests">Accept or decline</a></p><% } %>
 <div class="week">

@@ -137,6 +137,7 @@ module.exports = function (app, { store, xero, JOB_STATUSES }) {
       job,
       ...(await jobExtras(req, job)),
       approval: await require('./inspection-approval').jobApproval(store, req, job.id),
+      loans: await require('./loan-cars').jobLoans(req.db, job.id),
       CHECK_RESULTS,
       PRIORITIES,
       saved: req.query.saved === '1',

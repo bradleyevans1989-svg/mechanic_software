@@ -108,6 +108,7 @@ function createApp(store, { autoSync = true } = {}) {
   bookingPage.pages(app, ctx);
   require('./routes/bookings')(app, ctx);
   inspectionApproval.pages(app, ctx);
+  require('./routes/loan-cars')(app, ctx);
   require('./routes/jobs')(app, ctx);
   require('./routes/documents')(app, ctx);
   require('./routes/integrations')(app, ctx);
