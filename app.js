@@ -11,6 +11,7 @@ const bookingPage = require('./routes/online-booking');
 const inspectionApproval = require('./routes/inspection-approval');
 const { INVOICE_TOTAL } = require('./lib/dashboard');
 const sms = require('./lib/sms');
+const vehicleLookup = require('./lib/vehicle-lookup');
 
 const JOB_STATUSES = {
   open: 'Booked in',
@@ -63,6 +64,9 @@ function createApp(store, { autoSync = true } = {}) {
     res.locals.q = '';
     res.locals.user = null;
     res.locals.smsReady = sms.configured();
+    res.locals.regoLookup = vehicleLookup.configured();
+    res.locals.REGO_STATES = vehicleLookup.STATES;
+    res.locals.stateFor = vehicleLookup.stateFor;
     next();
   });
 
@@ -106,6 +110,7 @@ function createApp(store, { autoSync = true } = {}) {
   require('./routes/staff')(app, ctx);
   require('./routes/customers')(app, ctx);
   bookingPage.pages(app, ctx);
+  require('./routes/lookup')(app, ctx);
   require('./routes/bookings')(app, ctx);
   inspectionApproval.pages(app, ctx);
   require('./routes/loan-cars')(app, ctx);

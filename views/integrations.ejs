@@ -73,6 +73,15 @@
 </section>
 
 <section class="card">
+  <h2>Rego lookup</h2>
+  <% if (!regoProvider) { %>
+    <p>Fill in make, model, year, colour and VIN from the rego. Needs a <a href="https://www.carregistrationapi.com.au/" target="_blank" rel="noopener">Car Registration API</a> account on the server (charged per lookup). Decode VIN works without it.</p>
+  <% } else { %>
+    <p>Look up rego is on the vehicle forms, through <strong><%= regoProvider %></strong>. This month: <%= regoLookups.month %> lookup<%= regoLookups.month === 1 ? '' : 's' %>, <%= regoLookups.found %> found.</p>
+  <% } %>
+</section>
+
+<section class="card">
   <h2>Coming later</h2>
   <ul class="list">
     <li><div><strong>MYOB</strong><div class="muted">Same sync as Xero, for when you move to MYOB.</div></div><span class="pill">Planned</span></li>

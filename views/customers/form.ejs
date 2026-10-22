@@ -28,6 +28,7 @@
       <label>Odometer (km) <input name="v_odometer" inputmode="numeric"></label>
       <label>VIN <input name="v_vin" class="upper"></label>
     </div>
+    <%- include('../partials/vehicle-lookup', { prefix: 'v_' }) %>
   <% } %>
   <div class="form-actions">
     <button class="btn primary">Save</button>
