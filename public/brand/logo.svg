@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 120" role="img" aria-label="Bay Watch, workshop software">
+  <path d="M8 60 C30 26 90 26 112 60 C90 94 30 94 8 60 Z" fill="none" stroke="#16181D" stroke-width="8" stroke-linejoin="round"/>
+  <polygon points="60,38 79,49 79,71 60,82 41,71 41,49" fill="#E8590C"/>
+  <circle cx="60" cy="60" r="8.5" fill="#FFFFFF"/>
+  <text x="140" y="72" font-size="72" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="800" letter-spacing="1.8" fill="#16181D">BAY <tspan fill="#E8590C">WATCH</tspan></text>
+  <text x="142" y="98" font-size="14" font-family="Barlow, Arial, sans-serif" font-weight="600" letter-spacing="5.4" fill="#5A616B">WORKSHOP SOFTWARE</text>
+</svg>
