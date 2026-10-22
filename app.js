@@ -38,8 +38,9 @@ function createApp(store, { autoSync = true } = {}) {
   app.set('trust proxy', 1);
   app.disable('x-powered-by');
 
-  // Supplier price files can be a few megabytes; everything else stays small.
+  // Supplier price files and job photos can be a few megabytes; everything else stays small.
   app.use(/^\/suppliers\/\d+\/import$/, express.urlencoded({ extended: true, limit: '20mb' }));
+  app.use(/^\/jobs\/\d+\/photos$/, express.urlencoded({ extended: true, limit: '8mb' }));
   app.use(express.urlencoded({ extended: true, limit: '1mb' }));
   app.use('/static', express.static(path.join(__dirname, 'public'), { maxAge: '1h' }));
   app.get('/healthz', async (req, res) => {
@@ -77,6 +78,7 @@ function createApp(store, { autoSync = true } = {}) {
   shareRoutes.public(app, ctx);
   auth.setup(app, store);
   billingRoutes.gate(app, ctx);
+  app.use(auth.techGate);
   billingRoutes.pages(app, ctx);
 
   // What the bell in the top bar counts: open to-dos and overdue invoices.
@@ -95,6 +97,7 @@ function createApp(store, { autoSync = true } = {}) {
   require('./routes/staff')(app, ctx);
   require('./routes/customers')(app, ctx);
   require('./routes/bookings')(app, ctx);
+  require('./routes/myjobs')(app, ctx);
   require('./routes/jobs')(app, ctx);
   require('./routes/documents')(app, ctx);
   require('./routes/integrations')(app, ctx);

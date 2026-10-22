@@ -215,6 +215,30 @@ document.querySelectorAll('[data-lines]').forEach((box) => {
   });
 })();
 
+// Job photos: shrink the picture from the phone's camera to a JPEG and send it straight away.
+document.querySelectorAll('[data-photo-form]').forEach((form) => {
+  const file = form.querySelector('[data-photo-file]');
+  const hidden = form.querySelector('[data-photo-data]');
+  const btn = file.closest('label');
+  file.addEventListener('change', () => {
+    const f = file.files && file.files[0];
+    if (!f) return;
+    btn.firstChild.textContent = 'Uploading…';
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, 1600 / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * scale);
+      c.height = Math.round(img.height * scale);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      hidden.value = c.toDataURL('image/jpeg', 0.82);
+      URL.revokeObjectURL(img.src);
+      form.submit();
+    };
+    img.src = URL.createObjectURL(f);
+  });
+});
+
 // Dropdowns that save as soon as they change, and table rows that open a link.
 document.addEventListener('change', (e) => {
   const sel = e.target.closest('[data-auto-submit]');

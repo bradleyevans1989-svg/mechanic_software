@@ -1,6 +1,4 @@
-const { requireOwner, hashPassword, verifyPassword, passwordProblem } = require('../lib/auth');
-
-const ROLES = { owner: 'Owner', staff: 'Staff' };
+const { requireOwner, hashPassword, verifyPassword, passwordProblem, ROLES } = require('../lib/auth');
 
 // Users sit outside the per-workshop tables, so every query here names the workshop.
 module.exports = function (app, { store }) {

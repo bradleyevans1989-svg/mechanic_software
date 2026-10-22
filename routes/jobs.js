@@ -5,6 +5,7 @@ const {
 } = require('../lib/records');
 
 const { PO_STATUSES } = require('./parts');
+const { jobPage } = require('./myjobs');
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const PRIORITIES = { normal: 'Normal', urgent: 'Urgent' };
@@ -89,7 +90,7 @@ module.exports = function (app, { store, xero, JOB_STATUSES }) {
   });
 
   async function jobExtras(req, job) {
-    const [lines, staff, checks, time, events, orders, suppliers] = await Promise.all([
+    const [lines, staff, checks, time, events, orders, suppliers, tasks, photos, procedures] = await Promise.all([
       getLines(req.db, 'job', job.id),
       mechanics(store, req.user.workshop_id),
       req.db.all('SELECT * FROM job_checks WHERE job_id = $1 ORDER BY sort, id', [job.id]),
@@ -110,6 +111,18 @@ module.exports = function (app, { store, xero, JOB_STATUSES }) {
         [job.id]
       ),
       req.db.all('SELECT id, name FROM suppliers WHERE active ORDER BY lower(name)'),
+      req.db.all(
+        `SELECT t.*, p.title AS procedure_title, u.name AS done_by_name FROM job_tasks t
+         LEFT JOIN procedures p ON p.id = t.procedure_id LEFT JOIN users u ON u.id = t.done_by
+         WHERE t.job_id = $1 ORDER BY t.sort, t.id`,
+        [job.id]
+      ),
+      req.db.all(
+        `SELECT p.id, p.caption, p.created_at, u.name AS user_name FROM job_photos p
+         LEFT JOIN users u ON u.id = p.user_id WHERE p.job_id = $1 ORDER BY p.created_at, p.id`,
+        [job.id]
+      ),
+      req.db.all('SELECT id, title FROM procedures ORDER BY lower(title)'),
     ]);
     for (const t of time) t.minutes = minutesBetween(t.started_at, t.ended_at);
     const unbilled = time.filter((t) => t.ended_at && !t.billed).reduce((s, t) => s + t.minutes, 0);
@@ -122,6 +135,9 @@ module.exports = function (app, { store, xero, JOB_STATUSES }) {
       events,
       orders,
       suppliers,
+      tasks,
+      photos,
+      procedures,
       PO_STATUSES,
       myOpenEntry: time.find((t) => !t.ended_at && t.user_id === req.user.id) || null,
       totalMinutes: time.reduce((s, t) => s + t.minutes, 0),
@@ -131,6 +147,7 @@ module.exports = function (app, { store, xero, JOB_STATUSES }) {
   }
 
   app.get('/jobs/:id', async (req, res, next) => {
+    if (req.user.role === 'tech') return res.redirect(`/my-jobs/${req.params.id}`);
     const job = await getJob(req.db, req.params.id);
     if (!job) return next();
     res.render('jobs/show', { job, ...(await jobExtras(req, job)), CHECK_RESULTS, PRIORITIES, saved: req.query.saved === '1' });
@@ -191,7 +208,7 @@ module.exports = function (app, { store, xero, JOB_STATUSES }) {
     if (!job) return next();
     const text = String(req.body.text || '').trim().slice(0, 2000);
     if (text) await logEvent(req.db, job.id, req.user.id, 'note', text);
-    res.redirect(`/jobs/${job.id}#activity`);
+    res.redirect(`${jobPage(req, job.id)}#activity`);
   });
 
   // Inspection checklist from the workshop's template.
@@ -207,7 +224,7 @@ module.exports = function (app, { store, xero, JOB_STATUSES }) {
       }
       await logEvent(db, job.id, req.user.id, 'checklist', 'Inspection checklist added');
     });
-    res.redirect(`/jobs/${job.id}#inspection`);
+    res.redirect(`${jobPage(req, job.id)}#inspection`);
   });
 
   app.post('/jobs/:id/checklist/remove', async (req, res, next) => {
@@ -244,7 +261,7 @@ module.exports = function (app, { store, xero, JOB_STATUSES }) {
       await db.run('INSERT INTO time_entries (job_id, user_id) VALUES ($1, $2)', [job.id, req.user.id]);
       await logEvent(db, job.id, req.user.id, 'clock', `${req.user.name} clocked on`);
     });
-    res.redirect(`/jobs/${job.id}#time`);
+    res.redirect(`${jobPage(req, job.id)}#time`);
   });
 
   app.post('/jobs/:id/clock-off', async (req, res, next) => {
@@ -255,7 +272,7 @@ module.exports = function (app, { store, xero, JOB_STATUSES }) {
       const r = await db.run('UPDATE time_entries SET ended_at = now(), note = $3 WHERE job_id = $1 AND user_id = $2 AND ended_at IS NULL', [job.id, req.user.id, note]);
       if (r.rowCount) await logEvent(db, job.id, req.user.id, 'clock', `${req.user.name} clocked off${note ? ': ' + note : ''}`);
     });
-    res.redirect(`/jobs/${job.id}#time`);
+    res.redirect(`${jobPage(req, job.id)}#time`);
   });
 
   // A manual entry for time that wasn't clocked.

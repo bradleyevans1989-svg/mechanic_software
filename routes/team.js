@@ -256,3 +256,5 @@ module.exports = function (app, { store }) {
     res.redirect('/training');
   });
 };
+
+module.exports.STARTER_PROCEDURES = STARTER_PROCEDURES;
