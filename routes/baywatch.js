@@ -1,9 +1,8 @@
 const { minutesBetween, docNumber } = require('../lib/util');
 
-// Technician colours, in a fixed order by staff id so a person keeps their colour.
-// Orange and red are left out: orange is the brand accent, red means "over".
-const TECH_COLOURS = ['#3987e5', '#199e70', '#9085e9', '#d55181', '#c98500', '#008300'];
-const OTHERS_COLOUR = '#8a8a86';
+// Technician colour slots, in a fixed order by staff id so a person keeps their colour.
+// The colours themselves are in style.css (--tech-0 to --tech-5), light and dark.
+const TECH_SLOTS = 6;
 
 // On track until 80% of the estimate, nearing until 100%, then over.
 const NEARING_AT = 0.8;
@@ -58,7 +57,7 @@ async function bayBoard(req, store) {
 
   const colourOf = (userId) => {
     const i = staff.findIndex((s) => s.id === userId);
-    return i >= 0 && i < TECH_COLOURS.length ? TECH_COLOURS[i] : OTHERS_COLOUR;
+    return i >= 0 && i < TECH_SLOTS ? `var(--tech-${i})` : 'var(--tech-other)';
   };
   const nameOf = (userId) => (staff.find((s) => s.id === userId) || {}).name || 'Unknown';
   const nowMs = Date.now();
