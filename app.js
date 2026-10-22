@@ -8,6 +8,7 @@ const billingRoutes = require('./routes/billing');
 const shareRoutes = require('./routes/share');
 const messageRoutes = require('./routes/messages');
 const bookingPage = require('./routes/online-booking');
+const inspectionApproval = require('./routes/inspection-approval');
 const { INVOICE_TOTAL } = require('./lib/dashboard');
 const sms = require('./lib/sms');
 
@@ -81,6 +82,7 @@ function createApp(store, { autoSync = true } = {}) {
   shareRoutes.public(app, ctx);
   messageRoutes.public(app, ctx);
   bookingPage.public(app, ctx);
+  inspectionApproval.public(app, ctx);
   auth.setup(app, store);
   billingRoutes.gate(app, ctx);
   billingRoutes.pages(app, ctx);
@@ -105,6 +107,7 @@ function createApp(store, { autoSync = true } = {}) {
   require('./routes/customers')(app, ctx);
   bookingPage.pages(app, ctx);
   require('./routes/bookings')(app, ctx);
+  inspectionApproval.pages(app, ctx);
   require('./routes/jobs')(app, ctx);
   require('./routes/documents')(app, ctx);
   require('./routes/integrations')(app, ctx);

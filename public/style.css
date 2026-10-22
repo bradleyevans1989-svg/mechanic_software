@@ -682,7 +682,7 @@ form.banner.warn { display: flex; align-items: center; gap: .75rem; flex-wrap: w
 .kpi-change { font-size: .8rem; font-weight: 600; color: var(--muted); margin-left: .3rem; white-space: nowrap; }
 .kpi-change.up { color: #1a7f37; }
 .kpi-change.down { color: var(--danger, #c62828); }
-/* Public online booking page */
+/* Public online booking page (also the inspection approval page) */
 .book-page { background: var(--bg); }
 .book { width: min(640px, 100%); margin: 0 auto; padding: 1.25rem 1rem 2rem; }
 .book-head { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
@@ -691,7 +691,17 @@ form.banner.warn { display: flex; align-items: center; gap: .75rem; flex-wrap: w
 .book-logo { max-height: 64px; max-width: 140px; object-fit: contain; }
 .book-form fieldset { border: 0; padding: 0; margin: 0 0 1rem; }
 .book-form legend { font-weight: 700; margin-bottom: .4rem; }
-.btn.primary.book-submit { width: 100%; background: var(--book-brand); border-color: var(--book-brand); color: #fff; }
+.btn.primary.book-submit { width: 100%; background: var(--book-brand, var(--accent)); border-color: var(--book-brand, var(--accent)); color: #fff; }
 .book-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
 .book-foot { text-align: center; margin-top: 1rem; }
 .count-pill { display: inline-block; min-width: 1.3rem; padding: 0 .35rem; border-radius: 999px; background: var(--accent); color: #fff; font-size: .75rem; text-align: center; }
+/* Customer inspection approval */
+.approve-item { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: .8rem 0; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.approve-item .pill { margin-right: .35rem; }
+.approve-price { font-weight: 700; margin-top: .2rem; }
+.approve-choice { display: flex; gap: .5rem; }
+.approve-choice .res { display: inline-flex; align-items: center; gap: .35rem; padding: .45rem .8rem; border: 1.5px solid var(--line); border-radius: 999px; font-weight: 600; cursor: pointer; }
+.approve-choice .res input { width: auto; min-height: 0; margin: 0; }
+.approve-choice .res:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.checks .price { width: 9rem; white-space: nowrap; }
+.checks .price input { min-height: 2.1rem; padding: .3rem .6rem; width: 6rem; }
