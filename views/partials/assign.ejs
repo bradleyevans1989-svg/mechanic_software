@@ -1,0 +1,9 @@
+<% /* Who's on a job: a dropdown that saves as soon as it changes. Pass job, back, and optionally away (ids on leave). */ %>
+<form method="post" action="/jobs/<%= job.id %>/assign" class="assign-form">
+  <input type="hidden" name="back" value="<%= back %>">
+  <select name="mechanic_id" class="pill-select assign-select<%= job.mechanic_id ? '' : ' unassigned' %>" data-auto-submit aria-label="Who's on job J<%= job.number %>">
+    <option value="">Unassigned</option>
+    <% for (const m of mechanics) { const off = typeof away !== 'undefined' && away.includes(m.id); %><option value="<%= m.id %>" <%= job.mechanic_id === m.id ? 'selected' : '' %>><%= m.name %><%= m.role === 'tech' ? ' (tech)' : '' %><%= off ? ' · on leave' : '' %></option><% } %>
+  </select>
+  <noscript><button class="btn small">Save</button></noscript>
+</form>

@@ -34,7 +34,10 @@
           <% if (b.job_id) { %>
             <a class="btn small" href="/jobs/<%= b.job_id %>">Job card</a>
           <% } else if (b.status === 'booked') { %>
-            <form method="post" action="/bookings/<%= b.id %>/start"><button class="btn small">Start job</button></form>
+<form method="post" action="/bookings/<%= b.id %>/start" class="start-form">
+              <select name="mechanic_id" class="pill-select" aria-label="Who's doing it"><option value="">Who's on it?</option><% for (const m of mechanics) { %><option value="<%= m.id %>"><%= m.name %></option><% } %></select>
+              <button class="btn small">Start job</button>
+            </form>
           <% } %>
         </div>
       <% } %>

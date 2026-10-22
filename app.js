@@ -82,8 +82,10 @@ function createApp(store, { autoSync = true } = {}) {
   billingRoutes.pages(app, ctx);
 
   // What the bell in the top bar counts: open to-dos and overdue invoices.
+  // Also who can be put on a job, for the quick-assign dropdowns.
   app.use(async (req, res, next) => {
     if (req.method !== 'GET' || !req.db) return next();
+    res.locals.mechanics = req.user.role === 'tech' ? [] : await require('./lib/records').mechanics(store, req.user.workshop_id);
     res.locals.notices = await req.db.get(
       `SELECT (SELECT COUNT(*) FROM team_posts WHERE kind = 'todo' AND done_at IS NULL)::int AS todos,
          (SELECT COUNT(*) FROM documents d WHERE d.type = 'invoice' AND d.status != 'void' AND d.due_date < $1

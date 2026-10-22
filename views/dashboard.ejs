@@ -145,7 +145,7 @@
               <td><a href="/jobs/<%= j.id %>"><strong>J<%= j.number %></strong></a></td>
               <td><%= j.customer_name %><div class="muted small"><%= j.description %></div></td>
               <td><%= j.rego || '' %> <span class="muted"><%= j.make %> <%= j.model %></span></td>
-              <td><%= j.mechanic_name || '—' %></td>
+              <td><%- include('partials/assign', { job: j, back: '/' }) %></td>
               <td><% if (j.due_date) { %><span class="<%= j.due_date < today ? 'late' : '' %>"><%= j.due_date === today ? 'Today' : u.fmtDate(j.due_date) %> <%= j.due_time %></span><% } else { %><span class="muted">—</span><% } %></td>
               <td><%- include('partials/pill', { state: j.status, label: JOB_STATUSES[j.status] }) %><% if (j.priority === 'urgent') { %> <span class="late small">Urgent</span><% } %></td>
             </tr>
@@ -170,7 +170,10 @@
             <% if (b.job_id) { %>
               <a class="btn small" href="/jobs/<%= b.job_id %>">Job card</a>
             <% } else { %>
-              <form method="post" action="/bookings/<%= b.id %>/start"><button class="btn small primary">Car's here: start job</button></form>
+<form method="post" action="/bookings/<%= b.id %>/start" class="start-form">
+              <select name="mechanic_id" class="pill-select" aria-label="Who's doing it"><option value="">Who's on it?</option><% for (const m of mechanics) { %><option value="<%= m.id %>"><%= m.name %></option><% } %></select>
+              <button class="btn small primary">Car's here: start job</button>
+            </form>
             <% } %>
           </div>
         </li>

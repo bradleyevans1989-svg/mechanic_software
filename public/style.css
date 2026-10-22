@@ -740,3 +740,13 @@ form.banner.warn { display: flex; align-items: center; gap: .75rem; flex-wrap: w
 .tasks li .push-right { margin-left: auto; }
 #tasks .inline-form .grow { min-width: 12rem; }
 #tasks .inline-form select { max-width: 12rem; }
+
+/* Quick assign: who's on a job, changed right from the list, board, Today and the calendar */
+.assign-form, .start-form { margin: 0; }
+.assign-select { max-width: 12rem; }
+.assign-select.unassigned { background-color: var(--warn-bg); color: var(--warn); }
+.start-form { display: inline-flex; gap: .35rem; align-items: center; flex-wrap: wrap; }
+.start-form .pill-select { max-width: 9.5rem; }
+.board .tile-link { display: block; color: var(--ink); }
+.board .tile-link:hover { text-decoration: none; }
+.board .meta .assign-select { font-size: .74rem; }

@@ -20,7 +20,7 @@ const BOOKING_SELECT = `
   FROM bookings b JOIN customers c ON c.id = b.customer_id
   LEFT JOIN vehicles v ON v.id = b.vehicle_id`;
 
-module.exports = function (app, { BOOKING_STATUSES }) {
+module.exports = function (app, { store, BOOKING_STATUSES }) {
   app.get('/bookings', async (req, res) => {
     const start = mondayOf(DATE_RE.test(req.query.week || '') ? req.query.week : res.locals.today);
     const end = addDays(start, 6);
@@ -93,18 +93,23 @@ module.exports = function (app, { BOOKING_STATUSES }) {
 
   // Car has arrived: open a job card from the booking.
   app.post('/bookings/:id/start', async (req, res, next) => {
+    // Optionally straight onto someone's My jobs.
+    const mechanic = /^\d{1,9}$/.test(String(req.body.mechanic_id || ''))
+      ? await store.system.get('SELECT id, name FROM users WHERE id = $1 AND workshop_id = $2 AND active', [Number(req.body.mechanic_id), req.user.workshop_id])
+      : null;
     const jobId = await req.db.tx(async (db) => {
       const b = await db.get('SELECT * FROM bookings WHERE id = $1 FOR UPDATE', [req.params.id]);
       if (!b) return null;
       if (b.job_id) return b.job_id;
       const v = b.vehicle_id ? await db.get('SELECT odometer FROM vehicles WHERE id = $1', [b.vehicle_id]) : null;
       const job = await db.get(
-        `INSERT INTO jobs (number, customer_id, vehicle_id, status, description, odometer, created_at, due_date, is_service)
-         VALUES ($1, $2, $3, 'in_progress', $4, $5, $6, $7, $8) RETURNING id`,
-        [await nextNumber(db, 'job'), b.customer_id, b.vehicle_id, b.description, v ? v.odometer : null, now(req.tz), b.date, /service/i.test(b.description)]
+        `INSERT INTO jobs (number, customer_id, vehicle_id, status, description, odometer, created_at, due_date, is_service, mechanic_id)
+         VALUES ($1, $2, $3, 'in_progress', $4, $5, $6, $7, $8, $9) RETURNING id`,
+        [await nextNumber(db, 'job'), b.customer_id, b.vehicle_id, b.description, v ? v.odometer : null, now(req.tz), b.date, /service/i.test(b.description), mechanic ? mechanic.id : null]
       );
       await db.run(`UPDATE bookings SET status = 'arrived', job_id = $1 WHERE id = $2`, [job.id, b.id]);
       await logEvent(db, job.id, req.user.id, 'created', `Job opened from the booking for ${b.date}`);
+      if (mechanic) await logEvent(db, job.id, req.user.id, 'mechanic', `Assigned to ${mechanic.name}`);
       return job.id;
     });
     if (!jobId) return next();

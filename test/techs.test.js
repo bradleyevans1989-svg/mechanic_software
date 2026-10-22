@@ -133,3 +133,38 @@ test('technicians can pick up an unassigned job but not closed ones', async () =
   await tech.post(`/jobs/${otherJobId}/tasks`, { text: 'Sneaky' });
   assert.equal((await owner.db.all('SELECT id FROM job_tasks WHERE job_id = $1', [otherJobId])).length, 0);
 });
+
+test('owners assign a technician straight from the jobs list, Today and the calendar day', async () => {
+  const vehicle = await owner.db.get(`SELECT id FROM vehicles WHERE rego = 'TECH01'`);
+  const id = idFrom(await owner.post('/jobs', { vehicle_id: vehicle.id, description: 'Aircon regas' }));
+
+  // The dropdown shows on the list, the board, Today and the calendar day.
+  for (const path of ['/jobs', '/jobs?view=board', '/', `/calendar/day/${(await owner.db.get('SELECT substr(created_at, 1, 10) AS d FROM jobs WHERE id = $1', [id])).d}`]) {
+    const page = await owner.get(path);
+    assert.match(page.text, new RegExp(`action="/jobs/${id}/assign"`), path);
+    assert.match(page.text, /Jess Carter \(tech\)/, path);
+  }
+
+  let res = await owner.post(`/jobs/${id}/assign`, { mechanic_id: String(techId), back: '/jobs?status=active&view=board' });
+  assert.equal(res.headers.get('location'), '/jobs?status=active&view=board');
+  assert.equal((await owner.db.get('SELECT mechanic_id FROM jobs WHERE id = $1', [id])).mechanic_id, techId);
+  assert.ok(await owner.db.get(`SELECT id FROM job_events WHERE job_id = $1 AND text = 'Assigned to Jess Carter'`, [id]));
+  assert.match((await tech.get('/my-jobs')).text, /Aircon regas/);
+
+  // Somewhere else to go back to isn't followed, and unassigning works.
+  res = await owner.post(`/jobs/${id}/assign`, { mechanic_id: '', back: 'https://example.com' });
+  assert.equal(res.headers.get('location'), '/jobs');
+  assert.equal((await owner.db.get('SELECT mechanic_id FROM jobs WHERE id = $1', [id])).mechanic_id, null);
+
+  // Technicians can't hand out work.
+  assert.equal((await tech.post(`/jobs/${id}/assign`, { mechanic_id: String(techId) })).status, 403);
+});
+
+test('starting a job from a booking can put it straight on a technician', async () => {
+  const vehicle = await owner.db.get(`SELECT id FROM vehicles WHERE rego = 'TECH01'`);
+  await owner.post('/bookings', { vehicle_id: vehicle.id, date: '2030-01-07', time: '08:00', duration_hours: '2', description: 'Clutch' });
+  const booking = await owner.db.get(`SELECT id FROM bookings WHERE description = 'Clutch'`);
+  const res = await owner.post(`/bookings/${booking.id}/start`, { mechanic_id: String(techId) });
+  const job = await owner.db.get('SELECT mechanic_id FROM jobs WHERE id = $1', [idFrom(res)]);
+  assert.equal(job.mechanic_id, techId);
+});

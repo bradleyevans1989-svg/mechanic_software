@@ -385,6 +385,22 @@ module.exports = function (app, { store, xero, JOB_STATUSES }) {
     res.redirect(`/documents/${result.id}`);
   });
 
+  // Quick assign from the jobs list, board, Today and the calendar day.
+  app.post('/jobs/:id/assign', async (req, res, next) => {
+    const job = await req.db.get('SELECT id, mechanic_id FROM jobs WHERE id = $1', [req.params.id]);
+    if (!job) return next();
+    const back = /^\/(jobs(\?[\w=&%-]*)?|calendar\/day\/\d{4}-\d{2}-\d{2})?$/.test(String(req.body.back || '')) ? req.body.back : '/jobs';
+    const mechanicId = await validMechanic(req, req.body.mechanic_id);
+    if (mechanicId !== job.mechanic_id) {
+      await req.db.tx(async (db) => {
+        await db.run('UPDATE jobs SET mechanic_id = $1 WHERE id = $2', [mechanicId, job.id]);
+        const m = mechanicId ? await store.system.get('SELECT name FROM users WHERE id = $1', [mechanicId]) : null;
+        await logEvent(db, job.id, req.user.id, 'mechanic', m ? `Assigned to ${m.name}` : 'Mechanic unassigned');
+      });
+    }
+    res.redirect(back);
+  });
+
   // Quick status change from the jobs list; "invoice" makes the invoice instead.
   app.post('/jobs/:id/status', async (req, res, next) => {
     const job = await getJob(req.db, req.params.id);
