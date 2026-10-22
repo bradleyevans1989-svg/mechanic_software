@@ -95,6 +95,7 @@ function createApp(store, { autoSync = true } = {}) {
   require('./routes/staff')(app, ctx);
   require('./routes/customers')(app, ctx);
   require('./routes/bookings')(app, ctx);
+  require('./routes/loan-cars')(app, ctx);
   require('./routes/jobs')(app, ctx);
   require('./routes/documents')(app, ctx);
   require('./routes/integrations')(app, ctx);

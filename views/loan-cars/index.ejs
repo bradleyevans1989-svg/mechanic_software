@@ -1,0 +1,88 @@
+<%- include('../partials/header', { title: 'Loan cars' }) %>
+<div class="page-head">
+  <div>
+    <h1>Loan cars</h1>
+    <p class="muted">Courtesy cars, who has them, and when they're free.</p>
+  </div>
+  <div class="actions">
+    <a class="btn" href="/loan-cars/new">Add a loan car</a>
+    <a class="btn primary" href="/loans/new">Book a loan car</a>
+  </div>
+</div>
+<nav class="tabs">
+  <a href="/bookings">Week</a>
+  <a href="/calendar">Month</a>
+  <a href="/loan-cars" class="active">Loan cars</a>
+</nav>
+<% if (overdue.length) { %><p class="banner warn"><% for (const l of overdue) { %><a href="/loans/<%= l.id %>"><%= l.car_rego %></a> was due back from <%= l.customer_name %> on <%= u.fmtDate(l.due_date) %>. <% } %></p><% } %>
+
+<% if (!cars.length) { %>
+  <section class="card"><p>No loan cars yet. <a href="/loan-cars/new">Add your first one</a> to book it out to customers while their car is in.</p></section>
+<% } else { %>
+  <section class="card">
+    <div class="loan-grid-head">
+      <h2>Availability</h2>
+      <div class="actions"><a class="btn small" href="/loan-cars?from=<%= u.addDays ? u.addDays(from, -14) : from %>">← Earlier</a><a class="btn small" href="/loan-cars">Today</a><a class="btn small" href="/loan-cars?from=<%= u.addDays ? u.addDays(from, 14) : from %>">Later →</a></div>
+    </div>
+    <div class="loan-grid-wrap">
+      <table class="loan-grid">
+        <thead><tr><th></th><% for (const d of days) { %><th class="<%= d === today ? 'is-today' : '' %>"><%= ['Su','Mo','Tu','We','Th','Fr','Sa'][new Date(d + 'T12:00:00Z').getUTCDay()] %><br><%= d.slice(8) %></th><% } %></tr></thead>
+        <tbody>
+          <% for (const car of cars) { %>
+            <tr>
+              <th><a href="/loan-cars/<%= car.id %>/edit"><%= car.rego %></a><div class="muted small"><%= [car.make, car.model].filter(Boolean).join(' ') %></div></th>
+              <% for (const day of car.days) { %>
+                <td class="<%= day.loan ? 'busy ' + day.loan.status : 'free' %>">
+                  <% if (day.loan) { %><a href="/loans/<%= day.loan.id %>" title="<%= day.loan.customer_name %>"><%= day.loan.customer_name.split(' ')[0] %></a><% } else { %><a href="/loans/new?car_id=<%= car.id %>&date=<%= day.date %>" aria-label="Book <%= car.rego %> on <%= u.fmtDate(day.date) %>">+</a><% } %>
+                </td>
+              <% } %>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+    <p class="hint">Orange is out now, grey is booked. Press + on a free day to book it.</p>
+  </section>
+
+  <section class="card">
+    <h2>Out and booked</h2>
+    <table class="table">
+      <% for (const l of loans) { %>
+        <tr>
+          <td><a href="/loans/<%= l.id %>"><strong><%= l.car_rego %></strong></a></td>
+          <td><a href="/customers/<%= l.customer_id %>"><%= l.customer_name %></a><% if (l.job_number) { %> · <a href="/jobs/<%= l.job_id %>">J<%= l.job_number %></a><% } %></td>
+          <td><%= u.fmtDate(l.start_date) %> to <%= u.fmtDate(l.due_date) %></td>
+          <td><%- include('../partials/pill', { state: l.status === 'out' ? (l.due_date < today ? 'overdue' : 'unpaid') : 'draft', label: LOAN_STATUSES[l.status] }) %></td>
+        </tr>
+      <% } %>
+      <% if (!loans.length) { %><tr><td class="muted">All cars are in.</td></tr><% } %>
+    </table>
+  </section>
+<% } %>
+
+<section class="card">
+  <h2>Who had a car on a day?</h2>
+  <p class="muted">For a fine, toll or camera notice that arrives later.</p>
+  <form method="get" action="/loan-cars" class="inline-form">
+    <label>Date <input type="date" name="on" value="<%= on %>" required></label>
+    <button class="btn">Look up</button>
+  </form>
+  <% if (who) { %>
+    <% if (!who.length) { %><p>None of the loan cars were out on <%= u.fmtDate(on) %>.</p><% } %>
+    <ul class="list compact">
+      <% for (const l of who) { %>
+        <li><strong><%= l.car_rego %></strong>: <a href="/customers/<%= l.customer_id %>"><%= l.customer_name %></a>, licence <%= l.licence_no || 'not recorded' %>, out <%= u.fmtDateTime(l.out_at, settings.timezone) %><%= l.back_at ? ', back ' + u.fmtDateTime(l.back_at, settings.timezone) : ', still out' %> · <a href="/loans/<%= l.id %>">Agreement</a></li>
+      <% } %>
+    </ul>
+  <% } %>
+</section>
+
+<% if (user.role === 'owner') { %>
+  <form method="post" action="/settings/loan-terms" class="card form">
+    <h2>Loan car terms</h2>
+    <p class="muted">Printed on the agreement the customer signs, and shown when they take the keys. Leave empty to use the standard terms.</p>
+    <textarea name="loan_terms" rows="6"><%= settings.loan_terms %></textarea>
+    <div class="form-actions"><button class="btn">Save terms</button></div>
+  </form>
+<% } %>
+<%- include('../partials/footer') %>

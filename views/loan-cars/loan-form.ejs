@@ -1,0 +1,29 @@
+<%- include('../partials/header', { title: 'Book a loan car' }) %>
+<h1>Book a loan car</h1>
+<% if (error) { %><p class="error"><%= error %></p><% } %>
+<% if (!cars.length) { %><p class="card">No loan cars yet. <a href="/loan-cars/new">Add one first</a>.</p><% } else { %>
+<form method="post" action="/loans" class="card form">
+  <% if (job) { %>
+    <input type="hidden" name="job_id" value="<%= job.id %>">
+    <p>For job <a href="/jobs/<%= job.id %>">J<%= job.number %></a>, <%= job.customer_name %>.</p>
+  <% } else { %>
+    <label>Customer
+      <select name="customer_id" required>
+        <option value="">Pick a customer…</option>
+        <% for (const c of customers) { %><option value="<%= c.id %>" <%= loan.customer_id === c.id ? 'selected' : '' %>><%= c.name %><%= c.phone ? ' · ' + c.phone : '' %></option><% } %>
+      </select>
+    </label>
+  <% } %>
+  <div class="grid-3">
+    <label>Car
+      <select name="loan_car_id" required>
+        <% for (const c of cars) { %><option value="<%= c.id %>" <%= loan.loan_car_id === c.id ? 'selected' : '' %>><%= carLabel(c) %></option><% } %>
+      </select>
+    </label>
+    <label>From <input type="date" name="start_date" value="<%= loan.start_date %>" required></label>
+    <label>Due back <input type="date" name="due_date" value="<%= loan.due_date %>" required></label>
+  </div>
+  <div class="form-actions"><button class="btn primary">Book it</button> <a class="btn" href="<%= job ? '/jobs/' + job.id : '/loan-cars' %>">Cancel</a></div>
+</form>
+<% } %>
+<%- include('../partials/footer') %>

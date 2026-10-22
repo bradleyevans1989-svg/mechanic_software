@@ -10,6 +10,9 @@
       <% if (job.customer_phone) { %> · <a href="tel:<%= job.customer_phone %>"><%= job.customer_phone %></a><% } %>
       <% if (job.due_date) { %> · Promised <%= u.fmtDate(job.due_date) %> <%= job.due_time %><% } %>
     </p>
+    <p class="small">Loan car:
+      <% for (const l of loans) { %><a href="/loans/<%= l.id %>"><%= l.car_rego %></a> <span class="muted">(<%= l.status === 'out' ? 'out, due back ' + u.fmtDate(l.due_date) : l.status === 'returned' ? 'returned' : 'booked ' + u.fmtDate(l.start_date) %>)</span> · <% } %>
+      <a href="/loans/new?job_id=<%= job.id %>"><%= loans.length ? 'Book another' : 'Book one' %></a></p>
   </div>
   <div class="actions">
     <% if (myOpenEntry) { %>

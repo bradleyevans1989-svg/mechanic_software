@@ -133,7 +133,14 @@ module.exports = function (app, { store, xero, JOB_STATUSES }) {
   app.get('/jobs/:id', async (req, res, next) => {
     const job = await getJob(req.db, req.params.id);
     if (!job) return next();
-    res.render('jobs/show', { job, ...(await jobExtras(req, job)), CHECK_RESULTS, PRIORITIES, saved: req.query.saved === '1' });
+    res.render('jobs/show', {
+      job,
+      ...(await jobExtras(req, job)),
+      loans: await require('./loan-cars').jobLoans(req.db, job.id),
+      CHECK_RESULTS,
+      PRIORITIES,
+      saved: req.query.saved === '1',
+    });
   });
 
   app.post('/jobs/:id', async (req, res, next) => {
