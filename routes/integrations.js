@@ -62,11 +62,20 @@ module.exports = function (app, { xero }) {
 
   app.post('/xero/settings', requireOwner, async (req, res) => {
     const code = (k) => String(req.body[k] || '').trim().slice(0, 10);
+    const taxType = (k) => String(req.body[k] || '').trim().toUpperCase().replace(/[^A-Z0-9_]/g, '').slice(0, 30);
     await xero.saveConfig(req.db, {
       labour_account: code('labour_account') || '200',
       parts_account: code('parts_account') || '200',
       other_account: code('other_account') || '200',
       payment_account: code('payment_account'),
+      gst_tax_type: taxType('gst_tax_type') || 'OUTPUT',
+      free_tax_type: taxType('free_tax_type') || 'EXEMPTOUTPUT',
+      pull_payments: req.body.pull_payments === '1',
+      send_bills: req.body.send_bills === '1',
+      bills_account: code('bills_account') || '300',
+      bill_gst_tax_type: taxType('bill_gst_tax_type') || 'INPUT',
+      bill_free_tax_type: taxType('bill_free_tax_type') || 'EXEMPTEXPENSES',
+      bill_status: req.body.bill_status === 'AUTHORISED' ? 'AUTHORISED' : 'DRAFT',
     });
     back(res, 'notice', 'Xero settings saved.');
   });
@@ -78,13 +87,26 @@ module.exports = function (app, { xero }) {
   });
 
   app.post('/xero/sync', requireOwner, async (req, res) => {
-    const r = await xero.runPending(req.db, { retryErrors: true });
-    back(res, 'notice', r.stopped ? `Sync stopped: ${r.stopped}` : `Sent ${r.synced} to Xero${r.failed ? `, ${r.failed} failed` : ''}.`);
+    const r = await xero.runPending(req.db, { retryErrors: true, pull: true });
+    if (r.stopped) return back(res, 'notice', `Sync stopped: ${r.stopped}`);
+    const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+    const fromXero = [
+      r.paymentsAdded ? `${plural(r.paymentsAdded, 'payment')} added from Xero` : '',
+      r.paymentsRemoved ? `${plural(r.paymentsRemoved, 'payment')} removed in Xero taken off` : '',
+    ].filter(Boolean);
+    back(res, 'notice', [`Sent ${r.synced} to Xero${r.failed ? `, ${r.failed} failed` : ''}`, ...fromXero].join('; ') + '.');
   });
 
   app.post('/xero/disconnect', requireOwner, async (req, res) => {
     await xero.disconnect(req.db);
     back(res, 'notice', 'Disconnected from Xero.');
+  });
+
+  // "Send to Xero now" on a received parts order.
+  app.post('/purchase-orders/:id/xero', async (req, res) => {
+    await xero.queueBill(req.db, Number(req.params.id));
+    await xero.runPending(req.db, { retryErrors: true });
+    res.redirect(`/purchase-orders/${req.params.id}`);
   });
 
   // "Send to Xero now" on an invoice.

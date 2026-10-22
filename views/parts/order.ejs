@@ -28,6 +28,15 @@
   </div>
 </div>
 <% if (notice) { %><p class="flash"><%= notice %></p><% } %>
+<% if (xeroBill) { %>
+  <div class="xero-status">
+    Xero bill: <% if (xeroBill.status === 'synced') { %><strong>sent</strong><% } else if (xeroBill.status === 'error') { %><strong class="error">failed</strong><% } else if (xeroBill.status === 'skipped') { %>nothing received to bill<% } else { %><%= xeroBill.status === 'pending' ? 'sending…' : 'not sent' %><% } %>
+    <% if (xeroBill.error) { %><span class="error"><%= xeroBill.error %></span><% } %>
+    <% if (xeroBill.status !== 'synced') { %>
+      <form method="post" action="/purchase-orders/<%= order.id %>/xero"><button class="btn small">Send to Xero now</button></form>
+    <% } %>
+  </div>
+<% } %>
 
 <% if (draft) { %>
 <form method="post" action="/purchase-orders/<%= order.id %>" class="card form">

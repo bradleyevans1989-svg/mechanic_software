@@ -23,7 +23,7 @@ Bay Boss is workshop software for mechanics, built to be sold to many workshops 
 - **Clocking and roster**: staff start their shift, take breaks and finish from the Today screen or the Clocking page; owners see who's in now and shift hours on the timesheets. A weekly roster with shifts, days off, RDOs and leave, with "my next shift" on the Today screen.
 - **Team**: a to-do chat for the team, step-by-step procedures (how we do things, with a print button), and training modules worth points with a points board.
 - **Staff logins**: each person has their own email and password. Owners see reports and settings and manage staff; staff do everything else.
-- **Xero sync**: customers, invoices and payments are sent to the workshop's own Xero automatically. Edits, removed payments and voids follow.
+- **Xero sync**: customers, invoices and payments are sent to the workshop's own Xero automatically. Edits, removed payments and voids follow. Payments made in Xero (entered there or reconciled from the bank feed) come back and mark the invoice paid. Received parts orders go to Xero as supplier bills.
 - **Many workshops**: self-serve sign-up, per-workshop settings, numbering and timezone.
 - **Subscriptions**: 14-day free trial, then a monthly plan paid through Stripe. Workshops that stop paying are locked (never deleted) until they subscribe again.
 
@@ -91,14 +91,18 @@ To give a workshop free use (your own, or a mate's), set its `status` to `comped
 
 One Xero app serves every workshop; each workshop connects its own Xero organisation.
 
-1. Sign in at [developer.xero.com](https://developer.xero.com/app/manage) and create a **Web app** (free).
+1. Sign in at [developer.xero.com](https://developer.xero.com/app/manage) and create a **Web app** (free) named **Bay Boss**. Workshops see this name when they connect.
 2. Set the redirect URI to `<APP_URL>/xero/callback`.
 3. Put the Client ID and a client secret in the server settings as `XERO_CLIENT_ID` and `XERO_CLIENT_SECRET`.
-4. In the app, a workshop owner goes to **Settings → Xero and add-ons → Connect to Xero** and sets the account codes.
+4. In the app, a workshop owner goes to **Settings → Xero and add-ons → Connect to Xero** and sets the account codes, the bank account for payments, and (if their accountant uses different ones) the GST tax types.
 
 Xero limits an uncertified app to 25 connected organisations. Before more than 25 workshops use Xero, apply to the [Xero App Partner program](https://developer.xero.com/documentation/xero-app-store/app-partner-guides/app-partner-steps/).
 
-Sync is one way: the app sends to Xero and never reads back. Invoices made before connecting are only sent if the owner chooses "Send older invoices", so invoices already in Xero aren't duplicated.
+The app sends customers, invoices and payments to Xero. The only thing it reads back is payments: every five minutes (or on "Sync now") it asks Xero for receive payments changed since it last looked. A payment on an invoice the app sent is added to that invoice here, and one deleted in Xero is taken off here. Payments on invoices the app didn't send are ignored. The owner can turn this off on the Xero settings page. Other changes, like editing or voiding an invoice, should be made in the app; it overwrites them in Xero on the next save.
+
+When every part on a purchase order has arrived, the order goes to Xero as a supplier bill (Accounts Payable): the supplier as the contact, their invoice number, the PO number and rego as the reference, and each line received at cost into the purchases account (300 by default) with GST on Expenses. Bills go as drafts by default so they can be matched against the supplier's invoice before approving; the owner can have them sent approved instead. A bill is sent once and never changed from the app.
+
+Invoices made before connecting are only sent if the owner chooses "Send older invoices", so invoices already in Xero aren't duplicated.
 
 ## Parts suppliers (Burson, Repco)
 
