@@ -259,7 +259,7 @@ test('calendar: month view with leave, holidays and multi-day jobs; other worksh
   await owner.post('/customers', { name: 'Cal Endar', v_rego: 'CAL001', v_make: 'Isuzu', v_model: 'D-Max' });
   const vehicle = await owner.db.get(`SELECT id FROM vehicles WHERE rego = 'CAL001'`);
   const j = await owner.post('/jobs', { vehicle_id: vehicle.id, description: 'Gearbox' });
-  await owner.db.run(`UPDATE jobs SET created_at = '2026-10-12 08:00:00', due_date = '2026-10-16' WHERE id = $1`, [idFrom(j)]);
+  await owner.db.run(`UPDATE jobs SET created_at = '2026-10-12 08:00:00', due_date = '2026-10-16', status = 'invoiced', completed_at = '2026-10-16 15:00:00' WHERE id = $1`, [idFrom(j)]);
 
   const page = await owner.get('/calendar?month=2026-10');
   assert.match(page.text, /Labour Day/);
