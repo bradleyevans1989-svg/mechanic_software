@@ -52,7 +52,7 @@ function createApp(store, { autoSync = true } = {}) {
     res.locals.JOB_STATUSES = JOB_STATUSES;
     res.locals.BOOKING_STATUSES = BOOKING_STATUSES;
     res.locals.QUOTE_STATUSES = QUOTE_STATUSES;
-    res.locals.settings = { business_name: 'Bay Watch' };
+    res.locals.settings = { business_name: 'Bay Boss' };
     res.locals.today = util.today();
     res.locals.path = req.path;
     res.locals.q = '';
