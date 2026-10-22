@@ -1,0 +1,36 @@
+<%- include('../partials/header', { title: 'Text settings' }) %>
+<div class="page-head">
+  <h1>Text messages</h1>
+  <div class="actions"><a class="btn" href="/settings">Back to settings</a></div>
+</div>
+<% if (saved) { %><p class="flash">Saved.</p><% } %>
+
+<section class="card">
+  <h2>How texts are sent</h2>
+  <% if (!configured) { %>
+    <p class="banner warn">Texting isn't set up on this server yet, so Text buttons open your own phone with the message filled in.</p>
+    <p>To text straight from Bay Boss, the server needs an SMS account. <a href="https://www.clicksend.com/au/" target="_blank" rel="noopener">ClickSend</a> is Australian and costs about 5 to 8c a text. Set <code>SMS_PROVIDER=clicksend</code>, <code>CLICKSEND_USERNAME</code> and <code>CLICKSEND_API_KEY</code>, then restart. Twilio works too (see the README).</p>
+  <% } else if (testMode) { %>
+    <p class="banner warn">Test mode: texts are saved in Bay Boss but never reach a phone. Use the "Add test reply" box on a customer's texts to try replies.</p>
+  <% } else { %>
+    <p>Texts go through <strong><%= provider %></strong>.</p>
+  <% } %>
+  <% if (configured && !testMode) { %>
+    <p>For customer replies to come back here, add an inbound rule in your SMS account that posts replies to:</p>
+    <p><input value="<%= inboundUrl %>" readonly onclick="this.select()" aria-label="Inbound address"></p>
+  <% } %>
+</section>
+
+<form method="post" action="/settings/messages" class="card form">
+  <h2>Your texts</h2>
+  <label>Sender name <span class="muted">(up to 11 letters, shown instead of a number where the provider allows it)</span>
+    <input name="sms_sender" value="<%= settings.sms_sender %>" maxlength="11" placeholder="<%= sms.senderId(settings.business_name) %>"></label>
+  <label class="check"><input type="checkbox" name="sms_booking_reminders" value="1" <%= settings.sms_booking_reminders ? 'checked' : '' %>> Text customers the day before their booking (sent from 8am)</label>
+  <label>Booking reminder
+    <textarea name="sms_booking_template" rows="3" maxlength="640" placeholder="<%= sms.DEFAULT_BOOKING_TEMPLATE %>"><%= settings.sms_booking_template %></textarea></label>
+  <label>Car is ready
+    <textarea name="sms_ready_template" rows="2" maxlength="640" placeholder="<%= sms.DEFAULT_READY_TEMPLATE %>"><%= settings.sms_ready_template %></textarea></label>
+  <p class="hint">Leave a box empty to use the wording shown. You can use {first} (first name), {car}, {business}, {date} and {time}.</p>
+  <div class="form-actions"><button class="btn primary">Save</button></div>
+</form>
+<%- include('../partials/footer') %>
