@@ -7,7 +7,7 @@
     <p>
       <% if (job.vehicle_id) { %><a href="/vehicles/<%= job.vehicle_id %>"><%= u.vehicleLabel(job) %></a> · <% } %>
       <a href="/customers/<%= job.customer_id %>"><%= job.customer_name %></a>
-      <% if (job.customer_phone) { %> · <a href="tel:<%= job.customer_phone %>"><%= job.customer_phone %></a><% } %>
+      <% if (job.customer_phone) { %> · <a href="tel:<%= job.customer_phone %>"><%= job.customer_phone %></a><% if (smsReady) { %> · <a href="/customers/<%= job.customer_id %>/messages">Texts</a><% } %><% } %>
       <% if (job.due_date) { %> · Promised <%= u.fmtDate(job.due_date) %> <%= job.due_time %><% } %>
     </p>
   </div>
@@ -27,6 +27,14 @@
   </div>
 </div>
 <% if (saved) { %><p class="flash">Saved.</p><% } %>
+<% if (typeof texted !== 'undefined' && texted) { %><p class="flash">Text sent.</p><% } %>
+<% if (job.status === 'ready' && job.customer_phone && smsReady) { %>
+  <form method="post" action="/customers/<%= job.customer_id %>/messages" class="banner warn inline-form">
+    <input type="hidden" name="kind" value="ready"><input type="hidden" name="job_id" value="<%= job.id %>"><input type="hidden" name="back" value="/jobs/<%= job.id %>">
+    <input name="body" value="<%= readyText(settings, job) %>" aria-label="Message" style="flex:1;min-width:14rem">
+    <button class="btn small primary">Text: car's ready</button>
+  </form>
+<% } %>
 <% if (myOpenEntry) { %><p class="banner warn">You're on the clock for this job since <%= u.fmtTime(myOpenEntry.started_at, settings.timezone) %>.</p><% } %>
 
 <form method="post" action="/jobs/<%= job.id %>" class="card form" data-dirty-check>
