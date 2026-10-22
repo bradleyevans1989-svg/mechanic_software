@@ -337,6 +337,44 @@ test('tax types can be changed per workshop', async () => {
   assert.equal(inv.LineItems[0].TaxType, 'OUTPUT2');
 });
 
+test('a fully received parts order goes to Xero as a draft supplier bill, once', async () => {
+  const xero = app.locals.xero;
+  await post('/xero/settings', { labour_account: '200', parts_account: '200', other_account: '200', payment_account: '090', send_bills: '1', bills_account: '310', bill_status: 'DRAFT' });
+  let res = await post('/suppliers', { name: 'Burson Penrith', email: 'penrith@burson.example' });
+  const supplierId = Number(res.headers.get('location').split('/').pop());
+  await post('/purchase-orders/add', { supplier_id: supplierId, code: 'DB1234', description: 'Brake pads front', cost_cents: '5500', qty: '2', gst: '1' });
+  await post('/purchase-orders/add', { supplier_id: supplierId, code: 'FREE1', description: 'Freight', cost_cents: '1000', qty: '1', gst: '0' });
+  const po = await db.get('SELECT * FROM purchase_orders ORDER BY id DESC LIMIT 1');
+  await post(`/purchase-orders/${po.id}/send`, {});
+  const [pads, freight] = await db.all('SELECT * FROM purchase_order_lines WHERE order_id = $1 ORDER BY sort, id', [po.id]);
+  const bills = () => Object.values(xeroState.invoices).filter((i) => i.Type === 'ACCPAY');
+
+  // Part received: no bill yet.
+  await post(`/purchase-orders/${po.id}/receive`, { [`received[l${pads.id}]`]: '1' });
+  await xero.runPending(db);
+  assert.equal(bills().length, 0);
+
+  await post(`/purchase-orders/${po.id}/receive`, { [`received[l${pads.id}]`]: '1', [`received[l${freight.id}]`]: '1', supplier_invoice: 'BUR-99812' });
+  await xero.runPending(db);
+  assert.equal(bills().length, 1);
+  const bill = bills()[0];
+  const supplierContact = xeroState.contacts.find((c) => c.ContactID === bill.Contact.ContactID);
+  assert.equal(supplierContact.Name, 'Burson Penrith');
+  assert.equal(bill.InvoiceNumber, 'BUR-99812');
+  assert.equal(bill.Status, 'DRAFT');
+  assert.match(bill.Reference, new RegExp(`PO-${po.number}`));
+  assert.deepEqual(
+    bill.LineItems.map((l) => [l.Description, l.Quantity, l.UnitAmount, l.AccountCode, l.TaxType, l.TaxAmount]),
+    [['DB1234 Brake pads front', 2, 55, '310', 'INPUT', 11], ['FREE1 Freight', 1, 10, '310', 'EXEMPTEXPENSES', 0]]
+  );
+  assert.match(bill.DueDate, /^\d{4}-\d{2}-\d{2}$/);
+  assert.match((await get(`/purchase-orders/${po.id}`)).text, /Xero bill: <strong>sent/);
+
+  // Asking again doesn't send a second bill.
+  await post(`/purchase-orders/${po.id}/xero`, {});
+  assert.equal(bills().length, 1);
+});
+
 test('Xero dates are read in either format', () => {
   const { xeroDate } = require('../lib/xero');
   assert.equal(xeroDate('/Date(1760918400000+0000)/'), '2025-10-20');

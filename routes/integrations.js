@@ -71,6 +71,11 @@ module.exports = function (app, { xero }) {
       gst_tax_type: taxType('gst_tax_type') || 'OUTPUT',
       free_tax_type: taxType('free_tax_type') || 'EXEMPTOUTPUT',
       pull_payments: req.body.pull_payments === '1',
+      send_bills: req.body.send_bills === '1',
+      bills_account: code('bills_account') || '300',
+      bill_gst_tax_type: taxType('bill_gst_tax_type') || 'INPUT',
+      bill_free_tax_type: taxType('bill_free_tax_type') || 'EXEMPTEXPENSES',
+      bill_status: req.body.bill_status === 'AUTHORISED' ? 'AUTHORISED' : 'DRAFT',
     });
     back(res, 'notice', 'Xero settings saved.');
   });
@@ -95,6 +100,13 @@ module.exports = function (app, { xero }) {
   app.post('/xero/disconnect', requireOwner, async (req, res) => {
     await xero.disconnect(req.db);
     back(res, 'notice', 'Disconnected from Xero.');
+  });
+
+  // "Send to Xero now" on a received parts order.
+  app.post('/purchase-orders/:id/xero', async (req, res) => {
+    await xero.queueBill(req.db, Number(req.params.id));
+    await xero.runPending(req.db, { retryErrors: true });
+    res.redirect(`/purchase-orders/${req.params.id}`);
   });
 
   // "Send to Xero now" on an invoice.

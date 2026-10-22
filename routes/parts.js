@@ -70,7 +70,7 @@ function orderTotals(lines) {
   return { subtotal, gst, total: subtotal + gst };
 }
 
-module.exports = function (app) {
+module.exports = function (app, { xero }) {
   const getSupplier = (db, id) => db.get('SELECT * FROM suppliers WHERE id = $1', [parseIntOrNull(id)]);
   const getOrder = (db, id) => db.get(`${PO_SELECT} WHERE o.id = $1`, [parseIntOrNull(id)]);
   const getOrderLines = (db, id) => db.all('SELECT * FROM purchase_order_lines WHERE order_id = $1 ORDER BY sort, id', [id]);
@@ -402,6 +402,7 @@ module.exports = function (app) {
       lines,
       totals: orderTotals(lines),
       supplier,
+      xeroBill: order.status === 'received' && (await xero.isConnected(req.db)) ? (await xero.billStatus(req.db, order.id)) || { status: 'not sent' } : null,
       connector: connectorFor(supplier),
       suppliers: await activeSuppliers(req.db),
       PO_STATUSES,
@@ -532,6 +533,7 @@ module.exports = function (app) {
       }
       return next;
     });
+    if (status === 'received') await xero.queueBill(req.db, order.id);
     const msg = status ? (status === 'received' ? 'All parts received.' : 'Received. Some parts are still to come.') : 'Nothing was ticked as received.';
     res.redirect(`/purchase-orders/${order.id}?notice=${encodeURIComponent(msg)}`);
   });
