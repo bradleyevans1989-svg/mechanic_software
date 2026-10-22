@@ -9,17 +9,6 @@
   </div>
 </div>
 
-<% const diff = stats.lastMonthTotal ? Math.round((stats.monthTotal - stats.lastMonthTotal) / stats.lastMonthTotal * 100) : null; %>
-<div class="stats">
-  <div class="stat dark"><span>Invoiced this month</span><strong><%= u.money(stats.monthTotal) %></strong>
-    <small><%= stats.monthCount %> invoice<%= stats.monthCount === 1 ? '' : 's' %>
-      <% if (diff !== null) { %><b class="badge <%= diff < 0 ? 'down' : diff === 0 ? 'flat' : '' %>"><%= diff > 0 ? '+' : '' %><%= diff %>% vs last month</b>
-      <% } else if (stats.monthTotal) { %><b class="badge flat">first month</b><% } %></small></div>
-  <div class="stat"><span>Owing to you</span><strong><%= u.money(stats.owing) %></strong><small><%= unpaid.length %> unpaid<% if (stats.overdue) { %><b class="badge down"><%= stats.overdue %> overdue</b><% } else if (unpaid.length) { %><b class="badge">none overdue</b><% } %></small></div>
-  <div class="stat"><span>Booked today</span><strong><%= bookings.length %></strong><small><%= stats.bookedToday %> hrs of work<% if (bookings.length) { %><b class="badge"><%= bookings.filter(b => b.job_id).length %> started</b><% } %></small></div>
-  <div class="stat"><span>In the workshop</span><strong><%= jobs.length %></strong><small>open jobs<% const urgent = jobs.filter(j => j.priority === 'urgent').length; if (urgent) { %><b class="badge down"><%= urgent %> urgent</b><% } %></small></div>
-</div>
-
 <div class="me-strip <%= clock.entry ? (clock.onBreak ? 'on-break' : 'on-shift') : '' %>">
   <span class="dot" aria-hidden="true"></span>
   <% if (clock.entry) { %>
@@ -36,7 +25,137 @@
   <a class="btn small" href="/roster">Roster</a>
 </div>
 
-<div class="dash">
+<% const diff = stats.lastMonthTotal ? Math.round((stats.monthTotal - stats.lastMonthTotal) / stats.lastMonthTotal * 100) : null; %>
+<div class="dash-top">
+  <section class="card hero">
+    <% for (const tab of dash.tabs) { %><input type="radio" name="hero-range" id="range-<%= tab.key %>" class="range-radio" <%= tab.key === 'monthly' ? 'checked' : '' %>><% } %>
+    <div class="hero-head">
+      <div>
+        <h2>Workshop takings</h2>
+        <p class="muted small">Invoiced and money received</p>
+      </div>
+      <div class="range-tabs">
+        <% for (const tab of dash.tabs) { %><label for="range-<%= tab.key %>" class="range-<%= tab.key %>"><%= tab.label %></label><% } %>
+      </div>
+      <div class="legend"><span class="key accent">Invoiced</span><span class="key ink">Received</span></div>
+    </div>
+    <div class="hero-body">
+      <div class="hero-figures">
+        <div>
+          <strong class="big"><%= u.money(stats.monthTotal) %></strong>
+          <span class="muted">Invoiced this month</span>
+          <% if (diff !== null) { %><b class="badge <%= diff < 0 ? 'down' : diff === 0 ? 'flat' : '' %>"><%= diff > 0 ? '+' : '' %><%= diff %>% vs last month</b>
+          <% } else if (stats.monthTotal) { %><b class="badge flat">first month</b><% } %>
+        </div>
+        <div>
+          <strong class="big"><%= dash.jobsFinishedMonth %></strong>
+          <span class="muted">Job<%= dash.jobsFinishedMonth === 1 ? '' : 's' %> finished this month · <%= stats.monthCount %> invoice<%= stats.monthCount === 1 ? '' : 's' %></span>
+        </div>
+        <a class="btn accent" href="<%= user.role === 'owner' ? '/reports' : '/invoices' %>"><%= user.role === 'owner' ? 'Month by month report' : 'All invoices' %></a>
+      </div>
+      <div class="charts">
+        <% for (const tab of dash.tabs) { %><div class="chart chart-<%= tab.key %>"><%- tab.svg %></div><% } %>
+      </div>
+    </div>
+    <div class="hero-stats">
+      <a href="/invoices?show=unpaid"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 3.5h13v17l-2.6-1.6-2.6 1.6-2.6-1.6-2.6 1.6-2.6-1.6z"/><path d="M9 8.5h6M9 12.5h6"/></svg></span><span><small>Owing to you</small><strong><%= u.money(stats.owing) %></strong></span></a>
+      <a href="/bookings"><span class="ico ink"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg></span><span><small>Booked today</small><strong><%= bookings.length %> <em><%= stats.bookedToday %> hrs</em></strong></span></a>
+      <a href="/jobs"><span class="ico amber"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.9 4.2a4.6 4.6 0 0 0-5.6 6l-5 5a2 2 0 0 0 2.8 2.8l5-5a4.6 4.6 0 0 0 6-5.6l-2.3 2.3-2.6-.5-.5-2.6z"/></svg></span><span><small>In the workshop</small><strong><%= jobs.length %> <em>open jobs</em></strong></span></a>
+      <a href="/invoices"><span class="ico rust"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5h16M7 15.5l4-4.5 3 2.5 5-6"/></svg></span><span><small>Average invoice</small><strong><%= stats.monthCount ? u.money(Math.round(stats.monthTotal / stats.monthCount)) : '—' %></strong></span></a>
+    </div>
+  </section>
+
+  <section class="card split">
+    <h2>Where the money comes from</h2>
+    <p class="muted small">This month's invoices, ex GST</p>
+    <div class="donut-wrap">
+      <%- dash.donut.svg %>
+      <div class="donut-mid"><strong><%= dash.donut.total ? u.money(dash.donut.total).replace(/\.\d\d$/, '') : '$0' %></strong><span class="muted small">ex GST</span></div>
+    </div>
+    <ul class="split-keys">
+      <% for (const p of dash.donut.parts) { %>
+        <li><strong><%= p.pct %><sup>%</sup></strong><span class="key <%= p.cls %>"><%= p.name %></span></li>
+      <% } %>
+    </ul>
+  </section>
+</div>
+
+<% const t = dash.tiles; %>
+<div class="tiles">
+  <a class="gtile g-orange" href="/invoices">
+    <span class="gtile-label">Received this month</span>
+    <div class="gtile-row"><%- t.received.bars %><span class="gtile-fig"><strong><%= u.money(t.received.cents).replace(/\.\d\d$/, '') %></strong><small><%= t.received.from %> – <%= t.received.to %></small></span></div>
+  </a>
+  <a class="gtile g-ink" href="/jobs">
+    <span class="gtile-label">Jobs in progress</span>
+    <strong class="gtile-big"><%= t.floor.inProgress %></strong>
+    <small class="gtile-sub"><%= t.floor.waiting %> waiting on parts · <%= t.floor.ready %> ready for pickup</small>
+    <%- t.floor.wave %>
+  </a>
+  <a class="gtile g-amber" href="/jobs">
+    <span class="gtile-label">Job time vs estimate</span>
+    <strong class="gtile-big"><%= t.pace.pct === null ? '—' : t.pace.pct + '%' %></strong>
+    <small class="gtile-sub"><% if (t.pace.pct === null) { %>No timed jobs finished in the last 30 days<% } else { %><%= t.pace.pct <= 100 ? 'On or under' : 'Over' %> the estimate, <%= t.pace.jobs %> job<%= t.pace.jobs === 1 ? '' : 's' %> in 30 days<% } %></small>
+    <%- t.pace.wave %>
+  </a>
+  <a class="gtile g-rust" href="/invoices?show=unpaid">
+    <span class="gtile-label">Outstanding invoices</span>
+    <div class="gtile-row"><%- t.owing.bars %><span class="gtile-fig"><strong><%= u.money(stats.owing).replace(/\.\d\d$/, '') %></strong><small><%= unpaid.length %> unpaid · <%= stats.overdue %> overdue</small></span></div>
+  </a>
+</div>
+
+<div class="dash-mid">
+  <section class="card activity">
+    <h2>Recent activity</h2>
+    <% if (!dash.events.length) { %><p class="muted">Nothing yet. Job cards log what happens to them here.</p><% } %>
+    <% const EV = { created: ['Job opened', 'accent', '<path d="M12 7v10M7 12h10"/>'], status: ['Status changed', 'ink', '<path d="M5 12.5l4.5 4.5L19 7.5"/>'], mechanic: ['Mechanic assigned', 'amber', '<circle cx="12" cy="9" r="3.5"/><path d="M5.5 19a6.5 6.5 0 0 1 13 0"/>'], note: ['Note added', 'rust', '<path d="M6 6h12M6 11h12M6 16h7"/>'], checklist: ['Inspection started', 'ink', '<path d="M5 7h3M5 12h3M5 17h3M11 7h8M11 12h8M11 17h8"/>'], quote: ['Estimate accepted', 'ok', '<path d="M5 12.5l4.5 4.5L19 7.5"/>'] }; %>
+    <ol class="feed">
+      <% for (const e of dash.events) { const [title, cls, icon] = EV[e.kind] || ['Job updated', 'ink', '<circle cx="12" cy="12" r="3"/>']; %>
+        <li>
+          <span class="feed-when"><%= timeAgo(e.at) %></span>
+          <span class="feed-dot <%= cls %>"><svg viewBox="0 0 24 24" aria-hidden="true"><%- icon %></svg></span>
+          <div>
+            <a href="/jobs/<%= e.job_id %>"><strong><%= title %></strong></a>
+            <div class="muted small"><%= e.user_name || 'Customer' %> · J<%= e.job_number %><%= e.rego ? ' · ' + e.rego : '' %><% if (e.text && e.kind !== 'created') { %> — <%= e.text.length > 70 ? e.text.slice(0, 70) + '…' : e.text %><% } %></div>
+          </div>
+        </li>
+      <% } %>
+    </ol>
+  </section>
+
+  <div class="dash-stack">
+  <section class="card jobs-table">
+    <div class="card-head">
+      <div>
+        <h2>Jobs in the workshop</h2>
+        <p class="muted small"><%= jobs.length %> open job<%= jobs.length === 1 ? '' : 's' %>, urgent and promised first</p>
+      </div>
+      <div class="row-actions">
+        <a class="btn small accent" href="/jobs/new">+ New job</a>
+        <a class="btn small" href="/jobs">All jobs</a>
+      </div>
+    </div>
+    <% if (!jobs.length) { %><p class="muted">No open jobs.</p><% } else { %>
+    <div class="table-wrap">
+      <table class="table dark-head">
+        <thead><tr><th>Job</th><th>Customer</th><th>Vehicle</th><th>Mechanic</th><th>Promised</th><th>Status</th></tr></thead>
+        <tbody>
+          <% for (const j of jobs.slice(0, 10)) { %>
+            <tr class="<%= j.priority === 'urgent' ? 'urgent' : '' %>">
+              <td><a href="/jobs/<%= j.id %>"><strong>J<%= j.number %></strong></a></td>
+              <td><%= j.customer_name %><div class="muted small"><%= j.description %></div></td>
+              <td><%= j.rego || '' %> <span class="muted"><%= j.make %> <%= j.model %></span></td>
+              <td><%= j.mechanic_name || '—' %></td>
+              <td><% if (j.due_date) { %><span class="<%= j.due_date < today ? 'late' : '' %>"><%= j.due_date === today ? 'Today' : u.fmtDate(j.due_date) %> <%= j.due_time %></span><% } else { %><span class="muted">—</span><% } %></td>
+              <td><%- include('partials/pill', { state: j.status, label: JOB_STATUSES[j.status] }) %><% if (j.priority === 'urgent') { %> <span class="late small">Urgent</span><% } %></td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+    <% if (jobs.length > 10) { %><p class="table-foot"><a href="/jobs">See all <%= jobs.length %> open jobs</a></p><% } %>
+    <% } %>
+  </section>
   <section class="card">
     <h2>Today's bookings</h2>
     <% if (!bookings.length) { %><p class="muted">Nothing booked today. <a href="/bookings/new">Add a booking</a></p><% } %>
@@ -58,38 +177,25 @@
       <% } %>
     </ul>
   </section>
+  </div>
+</div>
 
-  <section class="card">
-    <h2>Jobs in the workshop</h2>
-    <% if (!jobs.length) { %><p class="muted">No open jobs.</p><% } %>
-    <ul class="list">
-      <% for (const j of jobs) { %>
-        <li>
-          <a href="/jobs/<%= j.id %>"><strong>J<%= j.number %></strong> · <%= j.rego || '' %> <%= j.make %> <%= j.model %></a>
-          <%- include('partials/pill', { state: j.status, label: JOB_STATUSES[j.status] }) %>
-          <% if (j.priority === 'urgent') { %><span class="late small">Urgent</span><% } %>
-          <% if (j.due_date) { %><span class="small <%= j.due_date < today ? 'late' : 'muted' %>">Promised <%= j.due_date === today ? 'today' : u.fmtDate(j.due_date) %> <%= j.due_time %></span><% } %>
-          <div class="muted full"><%= j.customer_name %> — <%= j.description %><%= j.mechanic_name ? ' · ' + j.mechanic_name : '' %></div>
-        </li>
-      <% } %>
-    </ul>
-  </section>
+<div class="dash">
 
   <section class="card">
     <h2>Unpaid invoices</h2>
     <% if (!unpaid.length) { %><p class="muted">Everything's paid.</p><% } %>
     <table class="table">
-      <% for (const d of unpaid.slice(0, 15)) { %>
+      <% for (const d of unpaid.slice(0, 8)) { %>
         <tr>
           <td><a href="/documents/<%= d.id %>"><%= u.docNumber(d) %></a></td>
-          <td><%= d.customer_name %></td>
-          <td>Due <%= u.fmtDate(d.due_date) %></td>
+          <td><%= d.customer_name %><div class="muted small">Due <%= u.fmtDate(d.due_date) %></div></td>
           <td class="num"><%= u.money(d.balance) %></td>
           <td><%- include('partials/pill', { state: d.state, label: d.state }) %></td>
         </tr>
       <% } %>
     </table>
-    <% if (unpaid.length > 15) { %><p><a href="/invoices">See all <%= unpaid.length %></a></p><% } %>
+    <% if (unpaid.length > 8) { %><p><a href="/invoices">See all <%= unpaid.length %></a></p><% } %>
   </section>
 
   <section class="card">
@@ -99,8 +205,7 @@
     <table class="table">
       <% for (const v of due) { %>
         <tr>
-          <td><a href="/vehicles/<%= v.id %>"><%= u.vehicleLabel(v) %></a></td>
-          <td><%= v.customer_name %><% if (v.customer_phone) { %> · <a href="tel:<%= v.customer_phone %>"><%= v.customer_phone %></a><% } %></td>
+          <td><a href="/vehicles/<%= v.id %>"><%= u.vehicleLabel(v) %></a><div class="muted small"><%= v.customer_name %><% if (v.customer_phone) { %> · <a href="tel:<%= v.customer_phone %>"><%= v.customer_phone %></a><% } %></div></td>
           <td>
             <% if (v.next_service_date) { %>Service <%= u.fmtDate(v.next_service_date) %><br><% } %>
             <% if (v.rego_due) { %>Rego <%= u.fmtDate(v.rego_due) %><% } %>

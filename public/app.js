@@ -251,6 +251,27 @@ document.addEventListener('click', (e) => {
   sync();
 })();
 
+// The menu button folds the sidebar to icons on a wide screen, and slides it in over the page on a phone.
+document.addEventListener('click', (e) => {
+  const root = document.documentElement;
+  if (e.target.closest('[data-side-toggle]')) {
+    if (window.matchMedia('(max-width: 900px)').matches) {
+      root.classList.toggle('side-open');
+    } else {
+      const mini = root.classList.toggle('side-mini');
+      try { localStorage.setItem('side-mini', mini ? '1' : '0'); } catch (err) { /* private mode: just this page */ }
+    }
+  } else if (e.target.closest('[data-side-close]')) {
+    root.classList.remove('side-open');
+  }
+  // Close the notifications menu when clicking anywhere else.
+  for (const d of document.querySelectorAll('details.bell[open]')) if (!d.contains(e.target)) d.open = false;
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') document.documentElement.classList.remove('side-open');
+});
+
 // A CSV file picked on the price file import fills the textarea, so the form posts as plain text.
 document.querySelectorAll('[data-csv-into]').forEach((input) => {
   input.addEventListener('change', () => {
