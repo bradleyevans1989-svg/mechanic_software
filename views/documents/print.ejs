@@ -59,10 +59,10 @@
       </div>
       <% if (vehicle) { %>
         <div class="party">
-          <h3>Vehicle</h3>
+          <h3><%= vt.asset %></h3>
           <strong><%= u.vehicleLabel(vehicle) %></strong>
-          <% if (vehicle.vin) { %><div>VIN <%= vehicle.vin %></div><% } %>
-          <% if (doc.odometer) { %><div>Odometer <%= doc.odometer.toLocaleString('en-AU') %> km</div><% } %>
+          <% if (vehicle.vin) { %><div><%= vt.vin %> <%= vehicle.vin %></div><% } %>
+          <% if (doc.odometer) { %><div><%= vt.meter %> <%= doc.odometer.toLocaleString('en-AU') %> <%= vt.unit %></div><% } %>
         </div>
       <% } %>
     </section>

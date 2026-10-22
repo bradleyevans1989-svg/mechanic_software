@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const util = require('./lib/util');
+const { termsFor } = require('./lib/verticals');
 const auth = require('./lib/auth');
 const { createXero } = require('./lib/xero');
 const { createBilling } = require('./lib/stripe');
@@ -50,6 +51,7 @@ function createApp(store, { autoSync = true } = {}) {
     res.locals.BOOKING_STATUSES = BOOKING_STATUSES;
     res.locals.QUOTE_STATUSES = QUOTE_STATUSES;
     res.locals.settings = { business_name: 'Workshop' };
+    res.locals.vt = termsFor();
     res.locals.today = util.today();
     res.locals.path = req.path;
     res.locals.q = '';
@@ -71,6 +73,7 @@ function createApp(store, { autoSync = true } = {}) {
 
   billingRoutes.webhook(app, ctx);
   shareRoutes.public(app, ctx);
+  require('./routes/marketing')(app, ctx);
   auth.setup(app, store);
   billingRoutes.gate(app, ctx);
   billingRoutes.pages(app, ctx);

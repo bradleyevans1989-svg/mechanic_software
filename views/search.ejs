@@ -4,7 +4,7 @@
   <p class="muted">Nothing found. <a href="/customers/new">Add a new customer</a></p>
 <% } %>
 <% if (vehicles.length) { %>
-  <section class="card"><h2>Vehicles</h2><ul class="list">
+  <section class="card"><h2><%= vt.assets %></h2><ul class="list">
     <% for (const v of vehicles) { %><li><a href="/vehicles/<%= v.id %>"><%= u.vehicleLabel(v) %></a> <span class="muted"><%= v.customer_name %></span></li><% } %>
   </ul></section>
 <% } %>

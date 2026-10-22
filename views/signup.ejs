@@ -16,6 +16,12 @@
     <label>Your name <input name="name" value="<%= form.name || '' %>" autocomplete="name" required></label>
     <label>Email <input type="email" name="email" value="<%= form.email || '' %>" autocomplete="username" required></label>
     <label>Password <input type="password" name="password" minlength="8" autocomplete="new-password" required></label>
+    <label>Type of workshop
+      <select name="workshop_type">
+        <% for (const k of TYPE_KEYS) { %><option value="<%= k %>" <%= (form.workshop_type || 'mechanical') === k ? 'selected' : '' %>><%= TYPES[k].label %></option><% } %>
+      </select>
+    </label>
+    <p class="hint">We'll set you up with the right checklist, price list and words for your work. You can change it later.</p>
     <% if (codeRequired) { %>
       <label>Sign-up code <input name="code" autocomplete="off" required></label>
     <% } %>

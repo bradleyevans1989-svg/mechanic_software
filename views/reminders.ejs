@@ -2,12 +2,12 @@
 <div class="page-head">
   <div>
     <h1>Service and rego reminders</h1>
-    <p class="muted">Vehicles due in the next <%= ahead %> days, plus anything overdue. Ring, text or email the owner, then mark it done.</p>
+    <p class="muted"><%= vt.assets %> due in the next <%= ahead %> days, plus anything overdue. Ring, text or email the owner, then mark it done.</p>
   </div>
 </div>
 <% if (done) { %><p class="flash">Logged.</p><% } %>
 <nav class="tabs">
-  <% for (const k of [['all', 'All'], ['service', 'Service'], ['rego', 'Rego']]) { %>
+  <% for (const k of [['all', 'All'], ['service', 'Service'], ['rego', vt.rego]]) { %>
     <a href="/reminders?kind=<%= k[0] %>&days=<%= ahead %>" class="<%= kind === k[0] ? 'active' : '' %>"><%= k[1] %></a>
   <% } %>
   <span class="muted" style="margin-left:auto">Look ahead:</span>
@@ -15,14 +15,14 @@
     <a href="/reminders?kind=<%= kind %>&days=<%= d %>" class="<%= ahead === d ? 'active' : '' %>"><%= d %> days</a>
   <% } %>
 </nav>
-<% if (!items.length) { %><p class="card muted">Nothing due. Vehicles get here from their next service date, service intervals, or rego due date.</p><% } %>
+<% if (!items.length) { %><p class="card muted">Nothing due. <%= vt.assets %> get here from their next service date, service intervals, or rego due date.</p><% } %>
 <% for (const it of items) { const v = it.vehicle; %>
   <section class="card reminder <%= it.done ? 'done' : '' %> <%= it.overdue ? 'overdue' : '' %>">
     <div class="reminder-head">
       <div>
         <strong><a href="/vehicles/<%= v.id %>"><%= u.vehicleLabel(v) %></a></strong>
-        <%- include('partials/pill', { state: it.overdue ? 'overdue' : 'unpaid', label: (it.kind === 'rego' ? 'Rego ' : 'Service ') + (it.overdue ? 'overdue ' : 'due ') + u.fmtDate(it.date) }) %>
-        <% if (it.kind === 'service' && v.next_service_km) { %><span class="muted small">or at <%= v.next_service_km.toLocaleString('en-AU') %> km</span><% } %>
+        <%- include('partials/pill', { state: it.overdue ? 'overdue' : 'unpaid', label: (it.kind === 'rego' ? vt.rego + ' ' : 'Service ') + (it.overdue ? 'overdue ' : 'due ') + u.fmtDate(it.date) }) %>
+        <% if (it.kind === 'service' && v.next_service_km) { %><span class="muted small">or at <%= v.next_service_km.toLocaleString('en-AU') %> <%= vt.unit %></span><% } %>
         <div class="muted">
           <a href="/customers/<%= v.customer_id %>"><%= v.customer_name %></a>
           <% if (v.customer_phone) { %> · <a href="tel:<%= v.customer_phone %>"><%= v.customer_phone %></a> · <a href="sms:<%= v.customer_phone %>?&body=<%= encodeURIComponent(message(it)) %>">Text</a><% } %>

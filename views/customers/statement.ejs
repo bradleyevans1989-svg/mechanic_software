@@ -23,7 +23,7 @@
     <div><h3>To</h3><strong><%= customer.name %></strong><div class="pre"><%= customer.address %></div><div><%= customer.phone %></div><div><%= customer.email %></div></div>
   </section>
   <table class="items">
-    <thead><tr><th>Invoice</th><th>Date</th><th>Due</th><th>Vehicle</th><th class="num">Total</th><th class="num">Paid</th><th class="num">Balance</th></tr></thead>
+    <thead><tr><th>Invoice</th><th>Date</th><th>Due</th><th><%= vt.asset %></th><th class="num">Total</th><th class="num">Paid</th><th class="num">Balance</th></tr></thead>
     <tbody>
       <% for (const d of docs) { %>
         <tr><td><%= u.docNumber(d) %></td><td><%= u.fmtDate(d.issue_date) %></td><td class="<%= d.state === 'overdue' ? 'urgent' : '' %>"><%= u.fmtDate(d.due_date) %></td><td><%= u.vehicleLabel(d) %></td><td class="num"><%= u.money(d.total) %></td><td class="num"><%= u.money(d.paid) %></td><td class="num"><%= u.money(d.balance) %></td></tr>

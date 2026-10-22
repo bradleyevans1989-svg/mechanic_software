@@ -4,7 +4,7 @@
 <form method="post" action="/jobs" class="card form">
   <%- include('../partials/party', { record: job }) %>
   <div class="grid-2">
-    <label>Odometer (km) <input name="odometer" inputmode="numeric" placeholder="Leave blank to use last reading"></label>
+    <label><%= vt.meter %> (<%= vt.unit %>) <input name="odometer" inputmode="numeric" placeholder="Leave blank to use last reading"></label>
   </div>
   <label>Work requested <textarea name="description" rows="3"><%= job.description || '' %></textarea></label>
   <div class="form-actions">

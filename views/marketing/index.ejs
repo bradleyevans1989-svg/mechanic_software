@@ -1,0 +1,27 @@
+<%- include('head', { title: PRODUCT + ': workshop software for every kind of workshop', description: 'Bookings, job cards, inspections, reminders and GST invoices for mechanics, auto electricians, motorcycle, truck, farm machinery and marine workshops.' }) %>
+<section class="mk-hero">
+  <p class="mk-kicker">Garage management</p>
+  <h1>The complete workshop system, set up for the work you actually do</h1>
+  <p class="mk-lede">Bookings, job cards, inspections, time on the clock, reminders and GST invoices. Pick your kind of workshop and <%= PRODUCT %> speaks your language: bikes or boats, km or engine hours, rego or serial numbers.</p>
+  <div class="mk-cta"><a class="btn primary" href="/signup">Start your 14-day free trial</a></div>
+</section>
+<section class="mk-grid" aria-label="Workshop types">
+  <% for (const t of types) { %>
+    <a class="mk-type card" href="/workshops/<%= t.slug %>">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><%- t.icon %></svg>
+      <span><strong><%= t.short %></strong><span class="muted"><%= t.page.headline %></span></span>
+    </a>
+  <% } %>
+</section>
+<section class="card mk-all">
+  <h2>In every plan, for every workshop</h2>
+  <ul class="mk-points">
+    <li><strong>Diary and calendar</strong><span>Bookings, jobs in the workshop, leave and public holidays on one calendar.</span></li>
+    <li><strong>Job cards and the time clock</strong><span>Clock on and off jobs, and unbilled time becomes labour in quarter hours.</span></li>
+    <li><strong>Inspection reports</strong><span>A checklist for your kind of work, printed as a customer-friendly report.</span></li>
+    <li><strong>Estimates and invoices</strong><span>Send a link, get estimates accepted online, track payments and what's overdue.</span></li>
+    <li><strong>Reminders</strong><span>Service and rego due lists with call, text and email buttons.</span></li>
+    <li><strong>Reports and Xero</strong><span>Monthly sales, BAS figures, aged debtors, and invoices synced to Xero.</span></li>
+  </ul>
+</section>
+<%- include('foot') %>

@@ -1,9 +1,9 @@
 <%# Vehicle picker (sets the customer) with a customer picker for jobs with no car. %>
-<label>Vehicle
+<label><%= vt.asset %>
   <select name="vehicle_id" data-party-vehicle>
-    <option value="">— No vehicle —</option>
+    <option value="">— No <%= vt.assetLower %> —</option>
     <% for (const v of vehicles) { %>
-      <option value="<%= v.id %>" <%= Number(record.vehicle_id) === v.id ? 'selected' : '' %>><%= u.vehicleLabel(v) || 'Unnamed vehicle' %> — <%= v.customer_name %></option>
+      <option value="<%= v.id %>" <%= Number(record.vehicle_id) === v.id ? 'selected' : '' %>><%= u.vehicleLabel(v) || 'Unnamed ' + vt.assetLower %> — <%= v.customer_name %></option>
     <% } %>
   </select>
 </label>
@@ -15,4 +15,4 @@
     <% } %>
   </select>
 </label>
-<p class="hint">Not in the list? <a href="/customers/new">Add a new customer and vehicle</a> first.</p>
+<p class="hint">Not in the list? <a href="/customers/new">Add a new customer and <%= vt.assetLower %></a> first.</p>

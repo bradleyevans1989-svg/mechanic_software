@@ -19,15 +19,16 @@
   <label>Notes <textarea name="notes" rows="2"><%= customer.notes || '' %></textarea></label>
 
   <% if (withVehicle) { %>
-    <h2>Vehicle <span class="muted">(optional)</span></h2>
+    <h2><%= vt.asset %> <span class="muted">(optional)</span></h2>
     <div class="grid-3">
-      <label>Rego <input name="v_rego" class="upper"></label>
-      <label>Make <input name="v_make" placeholder="Toyota"></label>
-      <label>Model <input name="v_model" placeholder="Hilux"></label>
+      <label><%= vt.rego %> <input name="v_rego" class="upper"></label>
+      <label>Make <input name="v_make" placeholder="<%= vt.makes[0] %>" list="makes"></label>
+      <label>Model <input name="v_model"></label>
       <label>Year <input name="v_year" inputmode="numeric"></label>
-      <label>Odometer (km) <input name="v_odometer" inputmode="numeric"></label>
-      <label>VIN <input name="v_vin" class="upper"></label>
+      <label><%= vt.meter %> (<%= vt.unit %>) <input name="v_odometer" inputmode="numeric"></label>
+      <label><%= vt.vin %> <input name="v_vin" class="upper"></label>
     </div>
+    <datalist id="makes"><% for (const m of vt.makes) { %><option value="<%= m %>"><% } %></datalist>
   <% } %>
   <div class="form-actions">
     <button class="btn primary">Save</button>

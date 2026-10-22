@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %></title>
+  <meta name="description" content="<%= description %>">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="mk">
+<header class="mk-top">
+  <a class="brand" href="/workshops"><i><%= PRODUCT.charAt(0) %></i><%= PRODUCT %></a>
+  <nav class="mk-nav">
+    <a href="/workshops">Who it's for</a>
+    <a href="/login">Log in</a>
+    <a class="btn primary" href="/signup<%= typeof type !== 'undefined' ? '?type=' + type.key : '' %>">Start free trial</a>
+  </nav>
+</header>
+<main class="mk-main">

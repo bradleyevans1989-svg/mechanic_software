@@ -3,19 +3,19 @@
    const query = qs.toString() ? '?' + qs.toString() : '';
    const flag = (k) => filters.f.includes(k);
    const due = (d) => d && d <= soon; %>
-<%- include('../partials/header', { title: 'Vehicles' }) %>
+<%- include('../partials/header', { title: vt.assets }) %>
 <div class="page-head">
-  <h1>Vehicles <span class="muted"><%= vehicles.length %> shown</span></h1>
+  <h1><%= vt.assets %> <span class="muted"><%= vehicles.length %> shown</span></h1>
   <div class="actions">
     <a class="btn" href="/vehicles.csv<%= query %>">Download</a>
     <a class="btn" href="/reminders">Reminders</a>
-    <a class="btn primary" href="/customers/new">New customer and vehicle</a>
+    <a class="btn primary" href="/customers/new">New customer and <%= vt.assetLower %></a>
   </div>
 </div>
 <%- include('../partials/people-tabs', { tab: 'vehicles' }) %>
 <form class="toolbar card" method="get" action="/vehicles">
   <div class="toolbar-row">
-    <input type="search" name="q" value="<%= filters.q %>" placeholder="Search rego, make, model, VIN, owner" aria-label="Search" class="toolbar-search">
+    <input type="search" name="q" value="<%= filters.q %>" placeholder="Search <%= vt.rego.toLowerCase() %>, make, model, <%= vt.vin %>, owner" aria-label="Search" class="toolbar-search">
     <label class="inline">Sort
       <select name="sort"><% for (const [k, s] of Object.entries(sorts)) { %><option value="<%= k %>" <%= filters.sort === k ? 'selected' : '' %>><%= s.label %></option><% } %></select>
     </label>
@@ -24,27 +24,27 @@
   </div>
   <div class="toolbar-row checks-row">
     <span class="muted small">Show</span>
-    <label class="check small"><input type="checkbox" name="f" value="rego_due" <%= flag('rego_due') ? 'checked' : '' %>><span class="pill pill-overdue">Rego due within 30 days</span></label>
+    <label class="check small"><input type="checkbox" name="f" value="rego_due" <%= flag('rego_due') ? 'checked' : '' %>><span class="pill pill-overdue"><%= vt.rego %> due within 30 days</span></label>
     <label class="check small"><input type="checkbox" name="f" value="service_due" <%= flag('service_due') ? 'checked' : '' %>><span class="pill pill-unpaid">Service due</span></label>
     <label class="check small"><input type="checkbox" name="f" value="no_visit" <%= flag('no_visit') ? 'checked' : '' %>><span class="pill plain">Never invoiced</span></label>
     <label class="check small"><input type="checkbox" name="f" value="deleted" <%= flag('deleted') ? 'checked' : '' %>><span class="pill pill-void">Include deleted customers</span></label>
   </div>
 </form>
 <table class="table card">
-  <thead><tr><th>Rego</th><th>Vehicle</th><th>Owner</th><th>Odometer</th><th>Rego due</th><th>Next service</th><th>Last visit</th></tr></thead>
+  <thead><tr><th><%= vt.rego %></th><th><%= vt.asset %></th><th>Owner</th><th><%= vt.meter %></th><th><%= vt.rego %> due</th><th>Next service</th><th>Last visit</th></tr></thead>
   <tbody>
     <% for (const v of vehicles) { %>
       <tr class="rowlink" data-href="/vehicles/<%= v.id %>">
         <td><a href="/vehicles/<%= v.id %>"><%= v.rego || '—' %></a></td>
         <td><%= [v.year, v.make, v.model].filter(Boolean).join(' ') %><% if (v.colour) { %> <span class="muted"><%= v.colour %></span><% } %></td>
         <td><a href="/customers/<%= v.customer_id %>"><%= v.customer_name %></a><% if (v.customer_archived) { %> <span class="pill pill-void">deleted</span><% } %><% if (v.customer_phone) { %> <span class="muted small"><%= v.customer_phone %></span><% } %></td>
-        <td><%= v.odometer != null ? v.odometer.toLocaleString('en-AU') + ' km' : '' %></td>
+        <td><%= v.odometer != null ? v.odometer.toLocaleString('en-AU') + ' ' + vt.unit : '' %></td>
         <td class="<%= due(v.rego_due) ? 'due' : '' %>"><%= u.fmtDate(v.rego_due) || '' %></td>
-        <td class="<%= due(v.next_service_date) ? 'due' : '' %>"><%= u.fmtDate(v.next_service_date) || '' %><%= v.next_service_km ? ' · ' + v.next_service_km.toLocaleString('en-AU') + ' km' : '' %></td>
+        <td class="<%= due(v.next_service_date) ? 'due' : '' %>"><%= u.fmtDate(v.next_service_date) || '' %><%= v.next_service_km ? ' · ' + v.next_service_km.toLocaleString('en-AU') + ' ' + vt.unit : '' %></td>
         <td><%= v.last_visit ? u.fmtDate(v.last_visit) : '' %></td>
       </tr>
     <% } %>
-    <% if (!vehicles.length) { %><tr><td colspan="7" class="muted"><%= query ? 'No vehicles match.' : 'No vehicles yet.' %></td></tr><% } %>
+    <% if (!vehicles.length) { %><tr><td colspan="7" class="muted"><%= query ? 'No ' + vt.assetsLower + ' match.' : 'No ' + vt.assetsLower + ' yet.' %></td></tr><% } %>
   </tbody>
 </table>
 <%- include('../partials/footer') %>

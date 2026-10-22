@@ -186,11 +186,11 @@ module.exports = function (app, { store, xero, JOB_STATUSES }) {
   app.post('/jobs/:id/checklist', async (req, res, next) => {
     const job = await req.db.get('SELECT id FROM jobs WHERE id = $1', [req.params.id]);
     if (!job) return next();
-    const settings = await req.db.get('SELECT checklist FROM settings');
+    const settings = await req.db.get('SELECT checklist, workshop_type FROM settings');
     await req.db.tx(async (db) => {
       const existing = await db.get('SELECT COUNT(*) AS n FROM job_checks WHERE job_id = $1', [job.id]);
       if (existing.n) return;
-      for (const [i, c] of checklistItems(settings.checklist).entries()) {
+      for (const [i, c] of checklistItems(settings.checklist, settings.workshop_type).entries()) {
         await db.run('INSERT INTO job_checks (job_id, item, heading, sort) VALUES ($1, $2, $3, $4)', [job.id, c.item, c.heading, i]);
       }
       await logEvent(db, job.id, req.user.id, 'checklist', 'Inspection checklist added');

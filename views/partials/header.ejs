@@ -19,7 +19,7 @@
     <% } %>
   </nav>
   <form class="search" action="/search">
-    <input type="search" name="q" value="<%= q %>" placeholder="Search rego, name, phone…" aria-label="Search">
+    <input type="search" name="q" value="<%= q %>" placeholder="Search <%= vt.rego.toLowerCase() %>, name, phone…" aria-label="Search">
   </form>
   <% if (user) { %>
     <div class="who">

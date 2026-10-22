@@ -23,6 +23,7 @@ Workshop software for mechanics, built to be sold to many workshops on one share
 - **Team**: a to-do chat for the team, step-by-step procedures (how we do things, with a print button), and training modules worth points with a points board.
 - **Staff logins**: each person has their own email and password. Owners see reports and settings and manage staff; staff do everything else.
 - **Xero sync**: customers, invoices and payments are sent to the workshop's own Xero automatically. Edits, removed payments and voids follow.
+- **Workshop types**: car mechanics, auto electricians, motorcycle and scooter, truck and heavy vehicle, farm machinery, and boat and marine workshops. The type (picked at sign-up, changeable under Settings) sets what the app calls the things being repaired (vehicles, bikes, trucks, machines, boats), km or engine hours, VIN, serial/PIN or HIN, make suggestions, the inspection checklist, and a starter price list and procedures. Public pages for each type are at `/workshops`.
 - **Many workshops**: self-serve sign-up, per-workshop settings, numbering and timezone.
 - **Subscriptions**: 14-day free trial, then a monthly plan paid through Stripe. Workshops that stop paying are locked (never deleted) until they subscribe again.
 
@@ -42,7 +43,8 @@ Needs Node.js 20+ and Postgres 15+.
 npm install
 createdb workshop
 export DATABASE_URL=postgres://localhost/workshop
-npm run seed     # optional: a demo workshop, log in as demo@example.com / demo-password
+npm run seed     # optional: demo workshops, log in as demo@example.com / demo-password
+                 # (or demo-electrical@, demo-motorcycle@, demo-truck@, demo-farm@, demo-marine@example.com)
 npm start        # http://localhost:3000
 ```
 

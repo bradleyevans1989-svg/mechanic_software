@@ -11,7 +11,7 @@
   </div>
   <div class="actions">
     <a class="btn" href="/customers/<%= customer.id %>/edit">Edit</a>
-    <a class="btn primary" href="/customers/<%= customer.id %>/vehicles/new">Add vehicle</a>
+    <a class="btn primary" href="/customers/<%= customer.id %>/vehicles/new">Add <%= vt.assetLower %></a>
   </div>
 </div>
 <% if (customer.archived_at) { %>
@@ -20,12 +20,12 @@
 <% if (owing > 0) { %><p class="banner warn">Owes <%= u.money(owing) %> · <a href="/customers/<%= customer.id %>/statement" target="_blank">Print statement</a></p><% } %>
 
 <section class="card">
-  <h2>Vehicles</h2>
-  <% if (!vehicles.length) { %><p class="muted">No vehicles. <a href="/customers/<%= customer.id %>/vehicles/new">Add one</a></p><% } %>
+  <h2><%= vt.assets %></h2>
+  <% if (!vehicles.length) { %><p class="muted">No <%= vt.assetsLower %>. <a href="/customers/<%= customer.id %>/vehicles/new">Add one</a></p><% } %>
   <ul class="list">
     <% for (const v of vehicles) { %>
       <li>
-        <a href="/vehicles/<%= v.id %>"><strong><%= u.vehicleLabel(v) || 'Unnamed vehicle' %></strong></a>
+        <a href="/vehicles/<%= v.id %>"><strong><%= u.vehicleLabel(v) || 'Unnamed ' + vt.assetLower %></strong></a>
         <div class="row-actions">
           <a class="btn small" href="/bookings/new?vehicle_id=<%= v.id %>">Book in</a>
           <a class="btn small" href="/jobs/new?vehicle_id=<%= v.id %>">New job</a>
