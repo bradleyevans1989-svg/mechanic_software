@@ -38,7 +38,12 @@ module.exports = function (app) {
       `Hi ${it.vehicle.customer_name.split(' ')[0]}, your ${vehicleLabel(it.vehicle)} is due for ${
         it.kind === 'rego' ? 'rego' : 'a service'
       } on ${fmtDate(it.date)}. Give ${settings.business_name} a call on ${settings.phone || 'the workshop'} to book it in. Thanks!`;
-    res.render('reminders', { items, ahead, kind, message, METHODS, done: req.query.done === '1' });
+    res.render('reminders', {
+      items, ahead, kind, message, METHODS,
+      done: req.query.done === '1',
+      texted: req.query.texted === '1',
+      error: String(req.query.error || '').slice(0, 300),
+    });
   });
 
   app.post('/reminders/:id', async (req, res, next) => {

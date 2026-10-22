@@ -664,3 +664,12 @@ label .hint { display: block; font-weight: 400; }
 form.banner.warn { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
 .pre { white-space: pre-wrap; }
 .scroll-x { overflow-x: auto; }
+
+/* Text messages */
+.chat { display: flex; flex-direction: column; gap: .6rem; margin-bottom: 1rem; }
+.bubble { max-width: min(36rem, 85%); padding: .55rem .8rem; border-radius: 1rem; background: var(--accent-soft); align-self: flex-end; }
+.bubble.in { background: #eef0f3; align-self: flex-start; }
+.bubble.failed { outline: 2px solid var(--warn); }
+.bubble-body { white-space: pre-wrap; }
+.bubble-meta { font-size: .78rem; color: var(--muted, #666); margin-top: .2rem; }
+.list li.unread strong { color: var(--accent-deep); }

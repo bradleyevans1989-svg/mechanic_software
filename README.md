@@ -18,6 +18,7 @@ Bay Boss is workshop software for mechanics, built to be sold to many workshops 
 - **Your look**: upload your logo, set a brand colour, tagline, website and licence number, then pick one of ten invoice designs and ten job card designs under Settings. Previews show your own details.
 - **Tax invoices with GST**: ABN, GST breakdown, payments, balance owing, overdue tracking. Print or save as PDF.
 - **Today screen**: today's bookings, cars in the workshop, unpaid invoices, and services or rego coming due.
+- **Text messages**: text customers from their page, a job, an invoice or the Reminders page, see their replies under Messages, and send day-before booking reminders automatically (ClickSend or Twilio, with a test mode).
 - **Send to customer**: every estimate and invoice has a private link the customer can open without logging in; estimates can be accepted online. Email and text buttons open your own apps with the message filled in, or set up Resend (below) to email straight from the app.
 - **Reports**: monthly sales, GST collected and payments received; who owes you by how overdue; BAS quarter figures (G1 and 1A); sales and hours by mechanic; top customers; printable customer statements; and a CSV export for the accountant.
 - **Clocking and roster**: staff start their shift, take breaks and finish from the Today screen or the Clocking page; owners see who's in now and shift hours on the timesheets. A weekly roster with shifts, days off, RDOs and leave, with "my next shift" on the Today screen.
@@ -71,6 +72,10 @@ That comfortably runs dozens of workshops. As you grow, move the database to a b
 | `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, `STRIPE_WEBHOOK_SECRET` | Turn on subscription billing (see below). Without them every workshop is free. | none |
 | `PLAN_PRICE_LABEL` | Shown on the Subscribe button, e.g. `$49/month`. | none |
 | `RESEND_API_KEY`, `EMAIL_FROM` | Send estimates and invoices by email through [Resend](https://resend.com). `EMAIL_FROM` is the sender, e.g. `Bay Boss <invoices@yourdomain.com.au>`, on a domain verified in Resend. Replies go to each workshop's own email. | email buttons open the user's own mail app |
+| `SMS_PROVIDER` | `clicksend`, `twilio` or `log` (test mode: texts are saved but never sent). See "Text messages" below. | `log` on test sites and in development, otherwise off (Text buttons open the user's phone) |
+| `CLICKSEND_USERNAME`, `CLICKSEND_API_KEY`, `CLICKSEND_FROM` | ClickSend login and API key. `CLICKSEND_FROM` is an optional dedicated number for replies. | none |
+| `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM` | Twilio account and the number texts come from. | none |
+| `SMS_INBOUND_SECRET` | The secret part of the address replies are posted to. | made from `SESSION_SECRET` |
 | `PGSSL` | Set to `require` if your database needs SSL from outside its network. | off |
 | `PORT` | Port to listen on. | `3000` |
 
@@ -99,6 +104,18 @@ One Xero app serves every workshop; each workshop connects its own Xero organisa
 Xero limits an uncertified app to 25 connected organisations. Before more than 25 workshops use Xero, apply to the [Xero App Partner program](https://developer.xero.com/documentation/xero-app-store/app-partner-guides/app-partner-steps/).
 
 Sync is one way: the app sends to Xero and never reads back. Invoices made before connecting are only sent if the owner chooses "Send older invoices", so invoices already in Xero aren't duplicated.
+
+## Text messages (ClickSend or Twilio)
+
+One SMS account serves every workshop, like email through Resend. Workshops text customers from the customer's page, a job ("car's ready"), an invoice or estimate, or the Reminders page, and replies land under **Messages**. Owners can turn on day-before booking texts under **Settings → Text messages** (sent from 8am in the workshop's timezone, once per booking).
+
+1. Sign up at [ClickSend](https://www.clicksend.com/au/) (Australian, about 5 to 8c a text). Buy a dedicated number if you want customers to be able to reply (a sender name can't take replies).
+2. Set `SMS_PROVIDER=clicksend`, `CLICKSEND_USERNAME`, `CLICKSEND_API_KEY`, and `CLICKSEND_FROM` (the dedicated number).
+3. In ClickSend, add an inbound SMS rule that posts to the URL shown under **Settings → Text messages** (`<APP_URL>/sms/inbound/<secret>`).
+
+For Twilio, set `SMS_PROVIDER=twilio`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` and `TWILIO_FROM`, and set the number's "A message comes in" webhook to the same URL.
+
+Replies are filed with whichever workshop last texted that number. Texts are kept per customer; in test mode they are marked as test and an "Add test reply" box stands in for the customer.
 
 ## Parts suppliers (Burson, Repco)
 

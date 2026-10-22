@@ -6,7 +6,9 @@ const { createXero } = require('./lib/xero');
 const { createBilling } = require('./lib/stripe');
 const billingRoutes = require('./routes/billing');
 const shareRoutes = require('./routes/share');
+const messageRoutes = require('./routes/messages');
 const { INVOICE_TOTAL } = require('./lib/dashboard');
+const sms = require('./lib/sms');
 
 const JOB_STATUSES = {
   open: 'Booked in',
@@ -58,6 +60,7 @@ function createApp(store, { autoSync = true } = {}) {
     res.locals.path = req.path;
     res.locals.q = '';
     res.locals.user = null;
+    res.locals.smsReady = sms.configured();
     next();
   });
 
@@ -75,17 +78,19 @@ function createApp(store, { autoSync = true } = {}) {
 
   billingRoutes.webhook(app, ctx);
   shareRoutes.public(app, ctx);
+  messageRoutes.public(app, ctx);
   auth.setup(app, store);
   billingRoutes.gate(app, ctx);
   billingRoutes.pages(app, ctx);
 
-  // What the bell in the top bar counts: open to-dos and overdue invoices.
+  // What the bell in the top bar counts: open to-dos, overdue invoices and unread texts.
   app.use(async (req, res, next) => {
     if (req.method !== 'GET' || !req.db) return next();
     res.locals.notices = await req.db.get(
       `SELECT (SELECT COUNT(*) FROM team_posts WHERE kind = 'todo' AND done_at IS NULL)::int AS todos,
          (SELECT COUNT(*) FROM documents d WHERE d.type = 'invoice' AND d.status != 'void' AND d.due_date < $1
-            AND ${INVOICE_TOTAL} > COALESCE((SELECT SUM(amount_cents) FROM payments WHERE document_id = d.id), 0))::int AS overdue`,
+            AND ${INVOICE_TOTAL} > COALESCE((SELECT SUM(amount_cents) FROM payments WHERE document_id = d.id), 0))::int AS overdue,
+         (SELECT COUNT(*) FROM sms_messages WHERE direction = 'in' AND read_at IS NULL)::int AS texts`,
       [res.locals.today]
     );
     next();
@@ -106,6 +111,7 @@ function createApp(store, { autoSync = true } = {}) {
   require('./routes/clocking')(app, ctx);
   require('./routes/team')(app, ctx);
   require('./routes/templates')(app, ctx);
+  messageRoutes.pages(app, ctx);
   shareRoutes.pages(app, ctx);
 
   app.use((req, res) => res.status(404).render('message', { title: 'Not found', message: 'That page does not exist.' }));

@@ -6,6 +6,8 @@
   </div>
 </div>
 <% if (done) { %><p class="flash">Logged.</p><% } %>
+<% if (texted) { %><p class="flash">Texted and logged.</p><% } %>
+<% if (error) { %><p class="error"><%= error %></p><% } %>
 <nav class="tabs">
   <% for (const k of [['all', 'All'], ['service', 'Service'], ['rego', 'Rego']]) { %>
     <a href="/reminders?kind=<%= k[0] %>&days=<%= ahead %>" class="<%= kind === k[0] ? 'active' : '' %>"><%= k[1] %></a>
@@ -25,13 +27,21 @@
         <% if (it.kind === 'service' && v.next_service_km) { %><span class="muted small">or at <%= v.next_service_km.toLocaleString('en-AU') %> km</span><% } %>
         <div class="muted">
           <a href="/customers/<%= v.customer_id %>"><%= v.customer_name %></a>
-          <% if (v.customer_phone) { %> · <a href="tel:<%= v.customer_phone %>"><%= v.customer_phone %></a> · <a href="sms:<%= v.customer_phone %>?&body=<%= encodeURIComponent(message(it)) %>">Text</a><% } %>
+          <% if (v.customer_phone) { %> · <a href="tel:<%= v.customer_phone %>"><%= v.customer_phone %></a><% if (!smsReady) { %> · <a href="sms:<%= v.customer_phone %>?&body=<%= encodeURIComponent(message(it)) %>">Text</a><% } %><% } %>
           <% if (v.customer_email) { %> · <a href="mailto:<%= v.customer_email %>?subject=<%= encodeURIComponent((it.kind === 'rego' ? 'Rego' : 'Service') + ' due: ' + u.vehicleLabel(v)) %>&body=<%= encodeURIComponent(message(it)) %>">Email</a><% } %>
         </div>
         <% if (it.reminded) { %><div class="small <%= it.done ? 'ok' : 'muted' %>">Last reminded <%= u.fmtDateTime(it.reminded, settings.timezone) %></div><% } %>
       </div>
       <div class="row-actions">
         <a class="btn small" href="/bookings/new?vehicle_id=<%= v.id %>">Book in</a>
+        <% if (smsReady && v.customer_phone) { %>
+          <form method="post" action="/customers/<%= v.customer_id %>/messages" class="inline-form">
+            <input type="hidden" name="kind" value="reminder"><input type="hidden" name="body" value="<%= message(it) %>">
+            <input type="hidden" name="reminder_vehicle_id" value="<%= v.id %>"><input type="hidden" name="reminder_kind" value="<%= it.kind %>">
+            <input type="hidden" name="back" value="/reminders?kind=<%= kind %>&days=<%= ahead %>">
+            <button class="btn small primary">Text now</button>
+          </form>
+        <% } %>
         <form method="post" action="/reminders/<%= v.id %>" class="inline-form">
           <input type="hidden" name="kind" value="<%= it.kind %>">
           <input type="hidden" name="days" value="<%= ahead %>">
