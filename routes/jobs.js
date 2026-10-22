@@ -140,6 +140,7 @@ module.exports = function (app, { store, xero, JOB_STATUSES }) {
       CHECK_RESULTS,
       PRIORITIES,
       saved: req.query.saved === '1',
+      texted: req.query.texted === '1',
     });
   });
 

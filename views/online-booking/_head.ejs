@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> · <%= settings.business_name %></title>
+  <link rel="stylesheet" href="/static/style.css">
+  <style>:root { --book-brand: <%= /^#[0-9a-f]{6}$/i.test(settings.brand_colour || '') && settings.brand_colour !== '#111111' ? settings.brand_colour : '#e8590c' %>; }</style>
+</head>
+<body class="book-page">
+<main class="book">
+  <header class="book-head">
+    <% if (hasLogo) { %><img src="/book/<%= slug %>/logo" alt="<%= settings.business_name %>" class="book-logo"><% } %>
+    <div>
+      <h1><%= settings.business_name %></h1>
+      <p class="muted"><%= [settings.address && settings.address.split('\n').join(', '), settings.phone].filter(Boolean).join(' · ') %></p>
+    </div>
+  </header>
