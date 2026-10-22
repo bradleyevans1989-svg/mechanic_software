@@ -664,3 +664,36 @@ label .hint { display: block; font-weight: 400; }
 form.banner.warn { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
 .pre { white-space: pre-wrap; }
 .scroll-x { overflow-x: auto; }
+
+/* Import from other software */
+.import-steps { list-style: none; display: flex; gap: .4rem; flex-wrap: wrap; margin: 0 0 1rem; padding: 0; }
+.import-steps li { display: flex; align-items: center; gap: .45rem; padding: .38rem .9rem .38rem .4rem; border-radius: 999px; background: var(--card); color: var(--muted); font-size: .88rem; font-weight: 600; }
+.import-steps b { width: 1.55rem; height: 1.55rem; border-radius: 999px; display: grid; place-items: center; background: var(--tile); color: var(--ink); font-size: .78rem; }
+.import-steps li.now { background: var(--ink); color: #fff; }
+.import-steps li.now b { background: var(--accent); color: var(--ink); }
+.import-steps li.done b { background: var(--ok-bg); color: var(--ok); }
+.import-kinds { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: .75rem; margin-bottom: 1.25rem; }
+.import-kind { display: flex; gap: .7rem; align-items: flex-start; padding: 1rem; border: 2px solid var(--line); border-radius: var(--r-lg); cursor: pointer; font-weight: 400; }
+.import-kind:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.import-kind input { width: 1.2rem; height: 1.2rem; min-height: 0; margin: .15rem 0 0; flex: none; }
+.import-kind strong { display: block; margin-bottom: .2rem; }
+.import-kind small { color: var(--muted); }
+.import-files { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: .75rem 1rem; margin-bottom: 1rem; }
+.import-files small { display: block; font-weight: 400; margin-top: .25rem; }
+.howto { margin: .5rem 0 1rem; }
+.howto summary { cursor: pointer; font-weight: 600; }
+.howto dt { font-weight: 700; margin-top: .6rem; }
+.howto dd { margin: .15rem 0 0; color: var(--muted); }
+.map-table td { vertical-align: middle; }
+.map-table select { min-width: 12rem; }
+.map-table tr.unmapped td:first-child strong { color: var(--muted); font-weight: 600; }
+.map-table .sample { max-width: 22rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.warn-text { color: var(--warn); }
+.import-filter { margin: 0; }
+.import-filter a { background: var(--tile); }
+.import-actions { display: flex; gap: .6rem; justify-content: space-between; flex-wrap: wrap; }
+.import-rows td { vertical-align: top; }
+.import-files[hidden], .import-rows tr[hidden] { display: none; }
+.nowrap { white-space: nowrap; }
+.map-more { margin-top: .75rem; }
+.map-more summary { cursor: pointer; font-weight: 600; padding: .4rem 0; }

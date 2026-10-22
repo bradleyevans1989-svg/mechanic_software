@@ -12,7 +12,8 @@ Bay Boss is workshop software for mechanics, built to be sold to many workshops 
 - **Time clock**: staff clock on and off jobs or add time by hand; unbilled time becomes a labour line in quarter hours at the workshop rate. Owners see weekly timesheets.
 - **Activity log**: every status change, assignment, clock on/off, invoice and note on a job, with who and when.
 - **Price list**: saved parts and services with codes and prices, dropped onto any job, estimate or invoice from a search box in the line editor.
-- **Parts ordering**: suppliers (Burson, Repco, Capricorn or your local shop) with their trade price files imported from CSV, a parts search, purchase orders started from the parts on a job card, and receiving that puts parts onto the job or into stock. Low stock makes reorder drafts. The job goes to "Waiting on parts" when ordered and back to "In progress" when everything has arrived.
+- **Parts ordering**: suppliers (Burson, Repco, Capricorn or your local shop) with their trade price files imported from CSV or Excel, a parts search, purchase orders started from the parts on a job card, and receiving that puts parts onto the job or into stock. Low stock makes reorder drafts. The job goes to "Waiting on parts" when ordered and back to "In progress" when everything has arrived.
+- **Import from other software**: bring customers, their vehicles, and parts with stock levels across from MechanicDesk, Workshop Software, Auxo or any spreadsheet (CSV or Excel). Columns are matched automatically, then checked row by row before anything is saved, with duplicates found by phone, email or rego.
 - **Reminders**: service intervals per vehicle (months and km) set the next service due when a service is invoiced. A Reminders page lists service and rego due or overdue with call, text and email links and a log of who was contacted.
 - **Estimates**: convert to a job or straight to an invoice.
 - **Your look**: upload your logo, set a brand colour, tagline, website and licence number, then pick one of ten invoice designs and ten job card designs under Settings. Previews show your own details.
@@ -99,6 +100,18 @@ One Xero app serves every workshop; each workshop connects its own Xero organisa
 Xero limits an uncertified app to 25 connected organisations. Before more than 25 workshops use Xero, apply to the [Xero App Partner program](https://developer.xero.com/documentation/xero-app-store/app-partner-guides/app-partner-steps/).
 
 Sync is one way: the app sends to Xero and never reads back. Invoices made before connecting are only sent if the owner chooses "Send older invoices", so invoices already in Xero aren't duplicated.
+
+## Importing from other workshop software
+
+Settings → **Import from other software** (or Import on the Customers and Price list pages). Four steps: upload, match columns, check, import. Nothing is saved until the last step, and each step re-reads the uploaded file rather than storing it.
+
+- **Files**: CSV (comma, tab or semicolon), Excel `.xlsx`, and the HTML-table or Excel-XML files some systems save as `.xls`. Old binary `.xls` files need saving as `.xlsx` or CSV first. A title row above the column names is skipped.
+- **Customers and vehicles** come from one spreadsheet (a row per customer or per car), from two linked files (customers and vehicles sharing a customer ID, the way Workshop Software and Auxo export them), or from one workbook with a sheet for each.
+- **Duplicates**: a row matches an existing customer on mobile/phone (ignoring spaces and +61), email, or a rego already on file. Matches keep their details; only blanks are filled in, and cars already on file aren't added again. Repeats inside the file are merged. Running the same file twice adds nothing.
+- **Parts** go into the price list, matched on part number then description, with cost, sell (taking GST off when the file includes it), stock on hand, reorder level and supplier (new suppliers are created by name). Supplier price files share the same reader and part saving.
+- **Known layouts** live in `lib/importer.js` (`SOURCES`). Workshop Software and Auxo columns come from their published import templates. MechanicDesk doesn't publish its export columns, so its preset is a best guess until we see a real export; anything not recognised is mapped by hand on the columns step.
+
+Sample files for trying it are in `docs/samples/import/`.
 
 ## Parts suppliers (Burson, Repco)
 

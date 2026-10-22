@@ -1,0 +1,59 @@
+<%- include('../partials/header', { title: 'Import from other software' }) %>
+<div class="page-head">
+  <div>
+    <h1>Import from other software</h1>
+    <p class="muted">Bring your customers, their vehicles and your parts across from the system you used before.</p>
+  </div>
+</div>
+<%- include('steps', { step: 1 }) %>
+<% if (error) { %><p class="error"><%= error %></p><% } %>
+
+<form method="post" action="/import/columns" class="card form" data-import-upload>
+  <h2>What are you bringing across?</h2>
+  <div class="import-kinds">
+    <label class="import-kind"><input type="radio" name="kind" value="customers" <%= kind === 'customers' ? 'checked' : '' %>>
+      <span><strong>Customers and vehicles</strong><small>Names, phone numbers, emails, addresses, and each customer's cars with rego, VIN, odometer and due dates.</small></span></label>
+    <label class="import-kind"><input type="radio" name="kind" value="parts" <%= kind === 'parts' ? 'checked' : '' %>>
+      <span><strong>Parts and stock</strong><small>Part numbers, descriptions, cost and sell prices, stock on hand and reorder levels. Goes into your price list.</small></span></label>
+  </div>
+
+  <h2>Your files</h2>
+  <p class="hint">CSV or Excel (.xlsx). The first row should name the columns; you'll check which is which on the next step.</p>
+  <div class="import-files" data-kind-show="customers">
+    <label>Customers file
+      <input type="file" accept=".csv,.txt,.xlsx,.xls,text/csv" data-file-into="customers">
+      <small class="muted">If customers and their cars are in one spreadsheet, this is the only file you need.</small>
+    </label>
+    <label>Vehicles file <span class="muted">(only if your old system exports them separately)</span>
+      <input type="file" accept=".csv,.txt,.xlsx,.xls,text/csv" data-file-into="vehicles">
+      <small class="muted">Linked to customers by the customer ID both files share.</small>
+    </label>
+  </div>
+  <div class="import-files" data-kind-show="parts">
+    <label>Parts or stock file
+      <input type="file" accept=".csv,.txt,.xlsx,.xls,text/csv" data-file-into="parts">
+    </label>
+  </div>
+  <% for (const slot of ['customers', 'vehicles', 'parts']) { %>
+    <input type="hidden" name="files[<%= slot %>][name]" data-file-name="<%= slot %>">
+    <input type="hidden" name="files[<%= slot %>][data]" data-file-data="<%= slot %>">
+  <% } %>
+
+  <h2>Where is it from?</h2>
+  <label>Old software
+    <select name="source">
+      <option value="">Work it out from the file</option>
+      <% for (const [k, s] of Object.entries(SOURCES)) { %><option value="<%= k %>" <%= source === k ? 'selected' : '' %>><%= s.name %></option><% } %>
+    </select>
+  </label>
+  <details class="howto">
+    <summary>How to export from your old software</summary>
+    <dl>
+      <% for (const s of Object.values(SOURCES)) { %><dt><%= s.name %></dt><dd><%= s.howto %></dd><% } %>
+    </dl>
+  </details>
+
+  <div class="form-actions"><button class="btn primary">Next: match columns</button></div>
+</form>
+<p class="hint">Nothing is saved until you press Import on the check step. Customers already in Bay Boss are matched on phone, email or rego and aren't doubled up.</p>
+<%- include('../partials/footer') %>

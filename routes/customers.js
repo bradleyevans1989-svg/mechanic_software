@@ -1,5 +1,5 @@
 const { now, addDays, parseIntOrNull, csvCell, dollars } = require('../lib/util');
-const { getCustomer, getVehicle, customerOptions } = require('../lib/records');
+const { getCustomer, getVehicle, customerOptions, insertVehicle, VEHICLE_COLS } = require('../lib/records');
 const { listDocs } = require('../lib/docs');
 
 const clip = (s, n = 500) => String(s ?? '').trim().slice(0, n);
@@ -51,19 +51,6 @@ function vehicleFrom(body, prefix = '') {
 
 function hasVehicle(v) {
   return Boolean(v.rego || v.make || v.model || v.vin);
-}
-
-const VEHICLE_COLS = ['rego', 'make', 'model', 'year', 'vin', 'colour', 'odometer', 'rego_due', 'next_service_date', 'next_service_km', 'service_interval_months', 'service_interval_km', 'notes'];
-
-async function insertVehicle(db, customerId, v, tz) {
-  const at = now(tz);
-  const row = await db.get(
-    `INSERT INTO vehicles (customer_id, ${VEHICLE_COLS.join(', ')}, created_at)
-     VALUES ($1, ${VEHICLE_COLS.map((_, i) => `$${i + 2}`).join(', ')}, $${VEHICLE_COLS.length + 2}) RETURNING id`,
-    [customerId, ...VEHICLE_COLS.map((c) => v[c]), at]
-  );
-  await db.run('INSERT INTO vehicle_owners (vehicle_id, customer_id, from_at) VALUES ($1, $2, $3)', [row.id, customerId, at]);
-  return row;
 }
 
 const CUSTOMER_SORTS = {

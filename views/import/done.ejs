@@ -1,0 +1,15 @@
+<%- include('../partials/header', { title: 'Import finished' }) %>
+<div class="page-head"><h1>Import finished</h1></div>
+<%- include('steps', { step: 4 }) %>
+<section class="card">
+  <% if (kind === 'parts') { %>
+    <p class="flash"><%= result.added %> parts added and <%= result.updated %> updated<%= result.suppliers ? `, with ${result.suppliers} new supplier${result.suppliers === 1 ? '' : 's'}` : '' %>.</p>
+    <p class="hint">Parts are in your price list, ready to add to jobs and to order from suppliers. Anything at or under its reorder level shows on the Parts page.</p>
+    <div class="form-actions"><a class="btn primary" href="/price-list">Open the price list</a> <a class="btn" href="/suppliers">Suppliers</a> <a class="btn" href="/import?kind=customers">Import customers too</a></div>
+  <% } else { %>
+    <p class="flash"><%= result.customers %> customers and <%= result.vehicles %> vehicles added<%= result.updated ? `; ${result.updated} existing customer${result.updated === 1 ? '' : 's'} had blank details filled in` : '' %>.</p>
+    <p class="hint">Service and rego due dates came across with the vehicles, so reminders pick them up from today.</p>
+    <div class="form-actions"><a class="btn primary" href="/customers<%= options.tag ? '?tag=' + encodeURIComponent(options.tag) : '' %>">See imported customers</a> <a class="btn" href="/import?kind=parts">Import parts too</a></div>
+  <% } %>
+</section>
+<%- include('../partials/footer') %>
