@@ -1,0 +1,91 @@
+<%- include('../partials/header', { title: 'Find parts' }) %>
+<div class="page-head">
+  <div>
+    <h1>Parts</h1>
+    <p class="muted">Search your suppliers' parts and order them<%= job ? ' for job J' + job.number : '' %>. Prices are ex GST.</p>
+  </div>
+  <% if (job) { %><div class="actions"><a class="btn" href="/jobs/<%= job.id %>#parts">Back to job J<%= job.number %></a></div><% } %>
+</div>
+<%- include('tabs', { tab: 'catalogue' }) %>
+<% if (notice) { %><p class="flash"><%= notice %></p><% } %>
+<% for (const p of problems) { %><p class="error"><%= p %></p><% } %>
+
+<form class="filter" action="/parts" style="max-width:none">
+  <% if (job) { %><input type="hidden" name="job_id" value="<%= job.id %>"><% } %>
+  <input type="search" name="q" value="<%= q %>" placeholder="Part number or description, e.g. Z386 or oil filter" autofocus>
+  <select name="supplier">
+    <option value="">All suppliers</option>
+    <% for (const s of suppliers) { %><option value="<%= s.id %>" <%= supplierId === s.id ? 'selected' : '' %>><%= s.name %></option><% } %>
+  </select>
+  <button class="btn">Search</button>
+</form>
+
+<% if (!suppliers.length) { %>
+  <p class="card muted">Add your suppliers first under <a href="/suppliers">Suppliers</a>, then import their price files to search them here.</p>
+<% } %>
+
+<% const orderForm = (fields, supplierIdFixed) => { %>
+  <form method="post" action="/purchase-orders/add" class="inline-form">
+    <% for (const [k, v] of Object.entries(fields)) { %><input type="hidden" name="<%= k %>" value="<%= v %>"><% } %>
+    <% if (job) { %><input type="hidden" name="job_id" value="<%= job.id %>"><% } %>
+    <% if (!supplierIdFixed) { %>
+      <select name="supplier_id" aria-label="Supplier" required>
+        <option value="">Supplier…</option>
+        <% for (const s of suppliers) { %><option value="<%= s.id %>"><%= s.name %></option><% } %>
+      </select>
+    <% } %>
+    <input name="qty" value="1" inputmode="decimal" aria-label="Quantity" style="width:4rem">
+    <button class="btn small primary">Order</button>
+  </form>
+<% } %>
+
+<% if (q) { %>
+  <% if (live.length) { %>
+  <section class="card">
+    <h2>From suppliers online</h2>
+    <div class="scroll-x"><table class="table">
+      <thead><tr><th>Supplier</th><th>Code</th><th>Description</th><th class="num">Their stock</th><th class="num">Cost</th><th class="num">Sell</th><th></th></tr></thead>
+      <% for (const r of live) { %>
+        <tr>
+          <td><%= r.supplier_name %></td><td><%= r.code %></td><td><%= r.description %></td>
+          <td class="num"><%= r.stock ?? '' %></td>
+          <td class="num"><%= u.money(r.cost_cents || 0) %></td><td class="num"><%= r.sell_cents ? u.money(r.sell_cents) : '' %></td>
+          <td><% orderForm({ supplier_id: r.supplier_id, code: r.code, description: r.description, cost_cents: r.cost_cents || 0, sell_cents: r.sell_cents || 0, gst: r.gst === false ? '0' : '1' }, true) %></td>
+        </tr>
+      <% } %>
+    </table></div>
+  </section>
+  <% } %>
+
+  <section class="card">
+    <h2>Your price list and supplier price files</h2>
+    <% if (!items.length) { %><p class="muted">No parts match "<%= q %>".</p><% } else { %>
+    <div class="scroll-x"><table class="table">
+      <thead><tr><th>Supplier</th><th>Code</th><th>Description</th><th class="num">In stock</th><th class="num">Cost</th><th class="num">Sell</th><th></th></tr></thead>
+      <% for (const i of items) { %>
+        <tr>
+          <td><%= i.supplier_name || '' %></td><td><%= i.code %></td><td><a href="/price-list/<%= i.id %>/edit"><%= i.description %></a></td>
+          <td class="num"><%= i.stock_qty || '' %></td>
+          <td class="num"><%= i.cost_cents ? u.money(i.cost_cents) : '' %></td><td class="num"><%= u.money(i.unit_cents) %></td>
+          <td><% orderForm({ price_item_id: i.id }, Boolean(i.supplier_id)) %></td>
+        </tr>
+      <% } %>
+    </table></div>
+    <% } %>
+  </section>
+<% } %>
+
+<% if (low.length) { %>
+<section class="card">
+  <h2>Low stock</h2>
+  <div class="scroll-x"><table class="table">
+    <thead><tr><th>Part</th><th>Supplier</th><th class="num">In stock</th><th class="num">Reorder at</th></tr></thead>
+    <% for (const i of low) { %>
+      <tr><td><a href="/price-list/<%= i.id %>/edit"><%= i.code ? i.code + ' · ' : '' %><%= i.description %></a></td><td><%= i.supplier_name || 'No supplier set' %></td><td class="num late"><%= i.stock_qty %></td><td class="num"><%= i.reorder_level %></td></tr>
+    <% } %>
+  </table></div>
+  <form method="post" action="/purchase-orders/reorder"><button class="btn primary small">Make reorder drafts</button></form>
+  <p class="hint">One draft order per supplier, enough to bring each part back to twice its reorder level. Check them before sending.</p>
+</section>
+<% } %>
+<%- include('../partials/footer') %>

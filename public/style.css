@@ -59,7 +59,7 @@ h3 { font-size: .95rem; font-weight: 700; margin: 1rem 0 .5rem; }
 .brand-ws { color: var(--muted); font-weight: 600; font-size: .85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 12rem; padding-left: .75rem; border-left: 1px solid var(--line); }
 .nav { display: flex; gap: .2rem; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
 .nav::-webkit-scrollbar { display: none; }
-.nav a { color: var(--ink); padding: .5rem .72rem; border-radius: 999px; font-weight: 600; font-size: .88rem; white-space: nowrap; }
+.nav a { color: var(--ink); padding: .5rem .6rem; border-radius: 999px; font-weight: 600; font-size: .88rem; white-space: nowrap; }
 .nav a:hover { background: var(--tile); text-decoration: none; }
 .nav a.active { background: var(--ink); color: #fff; }
 .search { margin-left: auto; flex: 0 1 12rem; min-width: 7rem; }
@@ -172,9 +172,9 @@ tr.urgent td:first-child { box-shadow: inset 3px 0 0 var(--danger); }
 /* Status pills */
 .pill { display: inline-block; padding: .15rem .65rem; border-radius: 999px; font-size: .76rem; font-weight: 700; background: var(--tile); color: var(--ink); vertical-align: middle; white-space: nowrap; }
 .pill::first-letter { text-transform: uppercase; }
-.pill-paid, .pill-accepted, .pill-ready { background: var(--ok-bg); color: var(--ok); }
+.pill-paid, .pill-accepted, .pill-ready, .pill-received { background: var(--ok-bg); color: var(--ok); }
 .pill-overdue, .pill-declined, .pill-void, .pill-cancelled, .pill-no_show { background: var(--danger-bg); color: var(--danger); }
-.pill-unpaid, .pill-part-paid, .pill-waiting_parts, .pill-sent { background: var(--warn-bg); color: var(--warn); }
+.pill-unpaid, .pill-part-paid, .pill-waiting_parts, .pill-sent, .pill-ordered, .pill-part_received { background: var(--warn-bg); color: var(--warn); }
 .pill-in_progress, .pill-arrived { background: var(--ink); color: #fff; }
 .late { color: var(--danger); font-weight: 600; }
 .ok { color: var(--ok); }
@@ -481,3 +481,5 @@ label .hint { display: block; font-weight: 400; }
 .transfer summary::-webkit-details-marker { display: none; }
 .transfer form { margin-top: .75rem; }
 form.banner.warn { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
+.pre { white-space: pre-wrap; }
+.scroll-x { overflow-x: auto; }
