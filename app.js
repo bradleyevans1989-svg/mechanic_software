@@ -7,6 +7,7 @@ const { createBilling } = require('./lib/stripe');
 const billingRoutes = require('./routes/billing');
 const shareRoutes = require('./routes/share');
 const { INVOICE_TOTAL } = require('./lib/dashboard');
+const vehicleLookup = require('./lib/vehicle-lookup');
 
 const JOB_STATUSES = {
   open: 'Booked in',
@@ -58,6 +59,9 @@ function createApp(store, { autoSync = true } = {}) {
     res.locals.path = req.path;
     res.locals.q = '';
     res.locals.user = null;
+    res.locals.regoLookup = vehicleLookup.configured();
+    res.locals.REGO_STATES = vehicleLookup.STATES;
+    res.locals.stateFor = vehicleLookup.stateFor;
     next();
   });
 
@@ -94,6 +98,7 @@ function createApp(store, { autoSync = true } = {}) {
   require('./routes/main')(app, ctx);
   require('./routes/staff')(app, ctx);
   require('./routes/customers')(app, ctx);
+  require('./routes/lookup')(app, ctx);
   require('./routes/bookings')(app, ctx);
   require('./routes/jobs')(app, ctx);
   require('./routes/documents')(app, ctx);

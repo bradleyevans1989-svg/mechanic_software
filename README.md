@@ -4,6 +4,7 @@ Bay Boss is workshop software for mechanics, built to be sold to many workshops 
 
 ## What it does
 
+- **Rego and VIN lookup**: "Look up rego" on the vehicle forms fills in make, model, year, colour and VIN (through a paid provider, see below). "Decode VIN" works without one: it reads the maker and model year from the VIN.
 - **Customers and vehicles**: rego, VIN, odometer, rego due date and next service, with full service history per car. Vehicles can change hands, keeping who owned them when. Both lists have search, filters (owing, companies, individuals, deleted; rego or service due), tags, sort and CSV download. Deleting a customer archives them and they can be restored.
 - **Invoices and estimates lists**: search, date range, status filters, sort, CSV download and bulk actions (mark sent, void, download).
 - **Diary and calendar**: week view of bookings, and a month calendar showing bookings, jobs spanning the days they're in the workshop, staff leave, public holidays, toolbox talks and notes, colour coded. Press "Car's here: start job" to turn a booking into a job card.
@@ -71,6 +72,8 @@ That comfortably runs dozens of workshops. As you grow, move the database to a b
 | `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, `STRIPE_WEBHOOK_SECRET` | Turn on subscription billing (see below). Without them every workshop is free. | none |
 | `PLAN_PRICE_LABEL` | Shown on the Subscribe button, e.g. `$49/month`. | none |
 | `RESEND_API_KEY`, `EMAIL_FROM` | Send estimates and invoices by email through [Resend](https://resend.com). `EMAIL_FROM` is the sender, e.g. `Bay Boss <invoices@yourdomain.com.au>`, on a domain verified in Resend. Replies go to each workshop's own email. | email buttons open the user's own mail app |
+| `REGO_PROVIDER` | `regcheck` for Car Registration API Australia, or `demo` (test mode: made-up details). | `demo` on test sites and in development, otherwise off |
+| `REGCHECK_USERNAME` | Your [Car Registration API](https://www.carregistrationapi.com.au/) username. Lookups are charged per plate; the Xero and add-ons page shows each workshop's count this month. | none |
 | `PGSSL` | Set to `require` if your database needs SSL from outside its network. | off |
 | `PORT` | Port to listen on. | `3000` |
 
