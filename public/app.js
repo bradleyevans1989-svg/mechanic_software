@@ -250,3 +250,15 @@ document.addEventListener('click', (e) => {
   bar.closest('form').addEventListener('submit', (e) => { if (!bar.querySelector('select').value) { e.preventDefault(); window.alert('Choose an action first.'); } });
   sync();
 })();
+
+// A CSV file picked on the price file import fills the textarea, so the form posts as plain text.
+document.querySelectorAll('[data-csv-into]').forEach((input) => {
+  input.addEventListener('change', () => {
+    const file = input.files && input.files[0];
+    const target = document.getElementById(input.dataset.csvInto);
+    if (!file || !target) return;
+    const reader = new FileReader();
+    reader.onload = () => { target.value = reader.result; };
+    reader.readAsText(file);
+  });
+});

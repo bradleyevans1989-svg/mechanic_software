@@ -89,6 +89,46 @@
   </div>
 </form>
 
+<section class="card" id="parts">
+  <h2>Parts orders</h2>
+  <% if (orders.length) { %>
+    <div class="scroll-x"><table class="table compact">
+      <% for (const o of orders) { %>
+        <tr>
+          <td><a href="/purchase-orders/<%= o.id %>">PO-<%= o.number %></a></td>
+          <td><%= o.supplier_name %></td>
+          <td><%- include('../partials/pill', { state: o.status, label: PO_STATUSES[o.status] }) %></td>
+          <td><%= o.supplier_invoice ? 'Inv ' + o.supplier_invoice : '' %></td>
+          <td class="num"><%= u.money(o.cost_cents) %> cost</td>
+        </tr>
+      <% } %>
+    </table></div>
+  <% } %>
+  <% if (!suppliers.length) { %>
+    <p class="muted">Add your parts suppliers under <a href="/suppliers">Parts</a> to order straight from the job.</p>
+  <% } else if (job.status !== 'invoiced' && job.status !== 'cancelled') { %>
+    <% const partLines = lines.map((l, i) => ({ ...l, i })).filter((l) => l.kind === 'part'); %>
+    <form method="post" action="/purchase-orders" class="form mt">
+      <input type="hidden" name="job_id" value="<%= job.id %>">
+      <% if (partLines.length) { %>
+        <p class="hint">Tick the parts on this job to order. Save the job first if you've just added them.</p>
+        <ul class="list compact">
+          <% for (const l of partLines) { %>
+            <li><label class="check"><input type="checkbox" name="job_lines" value="<%= l.i %>" checked> <%= l.qty %> × <%= l.description %></label></li>
+          <% } %>
+        </ul>
+      <% } %>
+      <div class="inline-form">
+        <label>Supplier
+          <select name="supplier_id"><% for (const s of suppliers) { %><option value="<%= s.id %>"><%= s.name %></option><% } %></select>
+        </label>
+        <button class="btn primary small"><%= partLines.length ? 'Order ticked parts' : 'Start an order' %></button>
+        <a class="btn small" href="/parts?job_id=<%= job.id %>">Find parts</a>
+      </div>
+    </form>
+  <% } %>
+</section>
+
 <div class="grid-2">
   <section class="card" id="time">
     <h2>Time on the job <span class="muted small"><%= u.fmtMinutes(totalMinutes) %> total</span></h2>

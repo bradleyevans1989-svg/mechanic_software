@@ -18,6 +18,22 @@
       <select name="gst"><option value="1">Yes</option><option value="0" <%= item.gst ? '' : 'selected' %>>No</option></select>
     </label>
   </div>
+  <% if (item.kind === 'part') { %>
+  <div class="grid-3">
+    <label>Supplier
+      <select name="supplier_id">
+        <option value="">None</option>
+        <% for (const s of suppliers) { %><option value="<%= s.id %>" <%= item.supplier_id === s.id ? 'selected' : '' %>><%= s.name %></option><% } %>
+      </select>
+    </label>
+    <label>In stock <input name="stock_qty" inputmode="decimal" value="<%= item.stock_qty || 0 %>"></label>
+    <label>Reorder when stock is down to <input name="reorder_level" inputmode="decimal" value="<%= item.reorder_level || 0 %>"><span class="hint">0 means don't track it.</span></label>
+  </div>
+  <% } else { %>
+    <input type="hidden" name="supplier_id" value="<%= item.supplier_id || '' %>">
+    <input type="hidden" name="stock_qty" value="<%= item.stock_qty || 0 %>">
+    <input type="hidden" name="reorder_level" value="<%= item.reorder_level || 0 %>">
+  <% } %>
   <label>Shown in the picker
     <select name="active"><option value="1">Yes</option><option value="0" <%= item.active === false ? 'selected' : '' %>>No, hide it</option></select>
   </label>
