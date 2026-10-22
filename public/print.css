@@ -247,3 +247,7 @@ td.urgent { color: #b3261e; font-weight: 700; }
 .tpl-inspection .box.tall { min-height: 5rem; }
 
 .validity { font-size: 9.5pt; color: #444; margin: 0 0 .5rem; }
+
+/* Small Bay Watch credit under every printed document. */
+.made-with { display: flex; align-items: center; justify-content: center; gap: .35rem; margin: 1.5rem 0 0; font-size: 7.5pt; color: #999; letter-spacing: .02em; }
+.made-with svg { width: 16px; height: auto; color: #999; }

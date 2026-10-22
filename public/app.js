@@ -272,7 +272,7 @@ document.addEventListener('click', (e) => {
       bay.querySelector('[data-elapsed]').textContent = hms(secs);
       const est = Number(bay.dataset.est);
       if (!est) return;
-      const mins = secs / 60;
+      const mins = Math.floor(secs / 60);
       const pace = mins > est ? 'over' : mins >= est * 0.8 ? 'nearing' : 'ok';
       const left = bay.querySelector('[data-left]');
       if (left) left.textContent = mins > est ? `${hm(mins - est)} over` : `${hm(est - mins)} left`;
