@@ -113,6 +113,28 @@
       </form>
     <% } %>
   </section>
+
+  <section class="card" id="review">
+    <h2>Google review</h2>
+    <% if (!settings.review_url) { %>
+      <p class="muted">Add your Google review link under <a href="/settings/reviews">Settings → Google reviews</a> to ask happy customers for a review from here.</p>
+    <% } else { const reviewText = reviewMessage; %>
+      <% if (doc.review_requested_at) { %><p class="muted">Asked by <%= doc.review_via === 'sms' ? 'text' : 'email' %> on <%= u.fmtDateTime(doc.review_requested_at, settings.timezone) %>.</p><% } %>
+      <% if (doc.state !== 'paid' && !doc.review_requested_at) { %><p class="muted">Best asked once the invoice is paid<%= settings.review_auto && canEmail ? '. It will go by email on its own then.' : '.' %></p><% } %>
+      <div class="actions">
+        <% if (canEmail && doc.customer_email) { %>
+          <form method="post" action="/documents/<%= doc.id %>/review"><input type="hidden" name="via" value="email"><button class="btn<%= doc.review_requested_at ? '' : ' primary' %>">Ask for a review by email</button></form>
+        <% } %>
+        <% if (doc.customer_phone) { %>
+          <form method="post" action="/documents/<%= doc.id %>/review" class="inline-form">
+            <input type="hidden" name="via" value="sms">
+            <a class="btn" href="<%= reviewSms %>" data-then-submit>Ask by text</a>
+          </form>
+        <% } %>
+      </div>
+      <p class="hint">"<%= reviewText %>"</p>
+    <% } %>
+  </section>
 <% } %>
 
 <div class="actions">

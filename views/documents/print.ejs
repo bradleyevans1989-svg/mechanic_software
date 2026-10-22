@@ -29,6 +29,9 @@
         <span class="small">Card, Apple Pay or Google Pay<%= settings.pay_provider === 'stripe' ? ', or Afterpay and Zip where offered' : '' %>.</span>
       <% } %>
       <% if (typeof paidOnline !== 'undefined' && paidOnline === 'yes') { %><strong>✓ Payment received. Thank you!</strong><% } else if (typeof paidOnline !== 'undefined' && paidOnline === 'no') { %><strong>The payment didn't go through. You can try again.</strong><% } %>
+      <% if (!isQuote && doc.state === 'paid' && settings.review_url) { %>
+        <a class="review-link" href="<%= settings.review_url %>" target="_blank" rel="noopener">Happy with the job? Leave us a Google review ★</a>
+      <% } %>
       <% if (settings.phone) { %><span>Questions? Call <%= settings.business_name %> on <%= settings.phone %>.</span><% } %>
     </div>
   <% } else { %>

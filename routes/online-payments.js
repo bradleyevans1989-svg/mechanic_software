@@ -3,6 +3,13 @@ const { requireOwner } = require('../lib/auth');
 const { getDoc } = require('../lib/docs');
 const { today, docNumber } = require('../lib/util');
 const { appUrl } = require('./share');
+const reviews = require('../lib/reviews');
+
+// A payment landed: send it to Xero, and ask for a review if that's switched on.
+async function afterPaid(xero, db, settings, docId) {
+  await xero.queueInvoice(db, docId);
+  await reviews.afterPayment(db, settings, docId, today(settings.timezone));
+}
 
 const KEY_RE = /^(sk|rk)_(live|test)_[A-Za-z0-9]{10,}$/;
 
@@ -35,7 +42,7 @@ module.exports = {
       }
       try {
         const r = await payments.settle(found.db, found.settings, req.query.session);
-        if (r && r.status === 'paid') await xero.queueInvoice(found.db, found.doc.id);
+        if (r && r.status === 'paid') await afterPaid(xero, found.db, found.settings, found.doc.id);
         return res.redirect(`/share/${found.token}?paid=${r && r.status === 'paid' ? '1' : '0'}`);
       } catch (err) {
         console.error(`Online payment return: ${err.message}`);
@@ -77,7 +84,7 @@ module.exports = {
       ]);
       if (!row) return gone(res);
       const r = await payments.settle(found.db, found.settings, row.session_id, { testPaid: req.body.outcome === 'paid' });
-      if (r.status === 'paid') await xero.queueInvoice(found.db, found.doc.id);
+      if (r.status === 'paid') await afterPaid(xero, found.db, found.settings, found.doc.id);
       res.redirect(`/share/${found.token}?paid=${r.status === 'paid' ? '1' : '0'}`);
     });
   },
@@ -114,7 +121,7 @@ module.exports = {
     app.get('/documents/:id', async (req, res, next) => {
       if (payments.providerFor(res.locals.settings) === 'stripe') {
         try {
-          if (await payments.settlePending(req.db, res.locals.settings, Number(req.params.id))) await xero.queueInvoice(req.db, Number(req.params.id));
+          if (await payments.settlePending(req.db, res.locals.settings, Number(req.params.id))) await afterPaid(xero, req.db, res.locals.settings, Number(req.params.id));
         } catch (err) {
           console.error(`Checking online payments: ${err.message}`);
         }

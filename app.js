@@ -129,6 +129,7 @@ function createApp(store, { autoSync = true } = {}) {
   require('./routes/team')(app, ctx);
   require('./routes/templates')(app, ctx);
   messageRoutes.pages(app, ctx);
+  require('./routes/reviews')(app, ctx);
   shareRoutes.pages(app, ctx);
 
   app.use((req, res) => res.status(404).render('message', { title: 'Not found', message: 'That page does not exist.' }));
