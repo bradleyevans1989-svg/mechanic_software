@@ -22,6 +22,10 @@ module.exports = function (app, { xero }) {
       counts: connected ? await xero.counts(req.db) : {},
       problems: connected ? await xero.problems(req.db) : [],
       redirectUri: redirectUri(req),
+      regoLookups: await req.db.get(
+        `SELECT COUNT(*)::int AS month, COUNT(*) FILTER (WHERE found)::int AS found FROM rego_lookups WHERE at >= date_trunc('month', now())`
+      ),
+      regoProvider: require('../lib/vehicle-lookup').providerLabel(),
       notice: String(req.query.notice || '').slice(0, 300),
       error: String(req.query.error || '').slice(0, 300),
     });

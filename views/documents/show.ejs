@@ -57,7 +57,7 @@
 <section class="card" id="send">
   <h2>Send to customer</h2>
   <% if (doc.sent_at) { %><p class="muted">Last sent by <%= doc.sent_via === 'sms' ? 'text' : doc.sent_via === 'link' ? 'link' : 'email' %><%= doc.sent_to ? ' to ' + doc.sent_to : '' %> on <%= u.fmtDateTime(doc.sent_at, settings.timezone) %>.</p><% } %>
-  <p>The customer can open this link to see the <%= label.toLowerCase() %><%= isQuote ? ' and accept it' : '' %>, no login needed:</p>
+  <p>The customer can open this link to see the <%= label.toLowerCase() %><%= isQuote ? ' and accept it' : (typeof payOnline !== 'undefined' && payOnline ? ' and pay it online' : '') %>, no login needed:</p>
   <p><input value="<%= shareUrl %>" readonly onclick="this.select()" aria-label="Link for the customer"></p>
   <div class="actions">
     <% if (canEmail) { %>
@@ -72,7 +72,14 @@
         <a class="btn" href="mailto:<%= doc.customer_email %>?subject=<%= encodeURIComponent(label + ' ' + u.docNumber(doc) + ' from ' + settings.business_name) %>&body=<%= encodeURIComponent(body) %>" data-then-submit>Email</a>
       </form>
     <% } %>
-    <% if (doc.customer_phone) { %>
+    <% if (doc.customer_phone && smsReady) { %>
+      <form method="post" action="/customers/<%= doc.customer_id %>/messages" class="inline-form">
+        <input type="hidden" name="kind" value="document"><input type="hidden" name="document_id" value="<%= doc.id %>">
+        <input type="hidden" name="back" value="/documents/<%= doc.id %>#send"><input type="hidden" name="body" value="<%= body %>">
+        <label>Text to <input name="phone" value="<%= doc.customer_phone %>" style="width:10rem"></label>
+        <button class="btn">Text it</button>
+      </form>
+    <% } else if (doc.customer_phone) { %>
       <form method="post" action="/documents/<%= doc.id %>/send" class="inline-form">
         <input type="hidden" name="via" value="sms"><input type="hidden" name="to" value="<%= doc.customer_phone %>">
         <a class="btn" href="sms:<%= doc.customer_phone %>?&body=<%= encodeURIComponent(body) %>" data-then-submit>Text</a>

@@ -114,3 +114,17 @@ test('paid in full: one email on its own when switched on, not twice, and not fo
   await owner.post(`/documents/${third}/payments`, { amount: '110', method: 'Card' });
   assert.equal(sent.length, before + 1);
 });
+
+test('paid online through the invoice link: the review email goes too', async () => {
+  await owner.post('/settings/reviews', { review_url: 'https://g.page/r/star/review', review_auto: '1' });
+  await owner.post('/settings/payments', { pay_provider: 'test' });
+  await owner.post('/customers', { name: 'Olive Online', email: 'olive@example.com', v_rego: 'STAR04', v_make: 'Honda', v_model: 'Jazz' });
+  const inv = await invoiceFor('STAR04', 100);
+  const token = (await owner.get(`/documents/${inv}`)).text.match(/\/share\/([a-f0-9]{32})/)[1];
+  const anon = t.client();
+  const session = decodeURIComponent((await anon.post(`/share/${token}/pay`)).headers.get('location').split('session=')[1]);
+  const before = sent.length;
+  await anon.post(`/share/${token}/pay/test`, { session, outcome: 'paid' });
+  assert.equal(sent.length, before + 1);
+  assert.equal(sent.at(-1).to[0], 'olive@example.com');
+});

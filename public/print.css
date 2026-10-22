@@ -252,3 +252,4 @@ td.urgent { color: #b3261e; font-weight: 700; }
 /* Small Bay Boss credit under every printed document. */
 .made-with { display: flex; align-items: center; justify-content: center; gap: .35rem; margin: 1.5rem 0 0; font-size: 7.5pt; color: #999; letter-spacing: .02em; }
 .made-with img { width: 12px; height: 12px; opacity: .6; }
+.noprint button.pay-now { background: #1a7f37; color: #fff; border: 0; border-radius: 6px; padding: .55rem 1rem; }

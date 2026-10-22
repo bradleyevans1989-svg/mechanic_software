@@ -1,0 +1,16 @@
+<%- include('../partials/header', { title: car.id ? 'Edit loan car' : 'New loan car' }) %>
+<h1><%= car.id ? 'Edit ' + car.rego : 'New loan car' %></h1>
+<% if (error) { %><p class="error"><%= error %></p><% } %>
+<form method="post" action="<%= car.id ? '/loan-cars/' + car.id : '/loan-cars' %>" class="card form">
+  <div class="grid-3">
+    <label>Rego <input name="rego" class="upper" value="<%= car.rego || '' %>" required autofocus maxlength="12"></label>
+    <label>Make <input name="make" value="<%= car.make || '' %>" placeholder="Toyota"></label>
+    <label>Model <input name="model" value="<%= car.model || '' %>" placeholder="Corolla"></label>
+    <label>Colour <input name="colour" value="<%= car.colour || '' %>"></label>
+    <label>Odometer (km) <input name="odometer" inputmode="numeric" value="<%= car.odometer ?? '' %>"></label>
+  </div>
+  <label>Notes <textarea name="notes" rows="2" placeholder="e.g. Rego due March, e-tag in the glovebox"><%= car.notes || '' %></textarea></label>
+  <% if (car.id) { %><label class="check"><input type="checkbox" name="active" value="0" <%= car.active === false ? 'checked' : '' %>> Retired: hide it from bookings</label><% } %>
+  <div class="form-actions"><button class="btn primary">Save</button> <a class="btn" href="/loan-cars">Cancel</a></div>
+</form>
+<%- include('../partials/footer') %>
