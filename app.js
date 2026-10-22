@@ -96,6 +96,7 @@ function createApp(store, { autoSync = true } = {}) {
     next();
   });
 
+  require('./routes/kpi')(app, ctx);
   require('./routes/main')(app, ctx);
   require('./routes/staff')(app, ctx);
   require('./routes/customers')(app, ctx);
