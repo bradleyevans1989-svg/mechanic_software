@@ -12,14 +12,14 @@
     <% if (!entry) { %>
       <p class="clock-big">Not clocked in</p>
       <% if (shift) { %><p class="muted">Next shift: <%= shift.date === today ? 'today' : u.fmtDate(shift.date) %> <%= shift.start_time %>–<%= shift.end_time %></p><% } %>
-      <form method="post" action="/clocking/start"><button class="btn lime">Start shift</button></form>
+      <form method="post" action="/clocking/start"><button class="btn accent">Start shift</button></form>
     <% } else { %>
       <% const m = u.minutesBetween(entry.started_at, null); %>
       <p class="clock-big"><%= onBreak ? 'On a break' : 'On shift' %> <span class="muted">since <%= u.fmtTime(entry.started_at, settings.timezone) %> · <%= u.fmtMinutes(m) %></span></p>
       <% if (onBreak) { %><p class="muted">Break started <%= u.fmtTime(onBreak.started_at, settings.timezone) %>.</p><% } %>
       <div class="actions">
         <% if (onBreak) { %>
-          <form method="post" action="/clocking/resume"><button class="btn lime">Back from break</button></form>
+          <form method="post" action="/clocking/resume"><button class="btn accent">Back from break</button></form>
         <% } else { %>
           <form method="post" action="/clocking/break"><button class="btn">Start break</button></form>
         <% } %>
