@@ -1,8 +1,8 @@
-// Bay Watch: the live board of jobs on the floor against their estimates.
+// Live board: jobs on the floor against their estimates.
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { startApp, idFrom } = require('./helpers');
-const { paceOf, curve } = require('../routes/baywatch');
+const { paceOf, curve } = require('../routes/liveboard');
 
 let t;
 let owner;
@@ -40,13 +40,13 @@ test('board shows jobs being worked on, their estimate, techs, and stays in its 
   const c = await owner.db.get(`INSERT INTO customers (name, created_at) VALUES ('Pat Driver', '2026-10-22 08:00') RETURNING id`);
   const v = await owner.db.get(`INSERT INTO vehicles (customer_id, rego, make, model, created_at) VALUES ($1, 'BW123', 'Toyota', 'Hilux', '2026-10-22 08:00') RETURNING id`, [c.id]);
 
-  let page = await owner.get('/baywatch');
+  let page = await owner.get('/live-board');
   assert.equal(page.status, 200);
   assert.match(page.text, /All quiet in the bays/);
 
   // Booked in only: not on the board yet.
   const jobId = idFrom(await owner.post('/jobs', { vehicle_id: v.id, description: 'Timing belt' }));
-  assert.doesNotMatch((await owner.get('/baywatch')).text, /BW123/);
+  assert.doesNotMatch((await owner.get('/live-board')).text, /BW123/);
 
   // An estimate with 2 hours of labour linked to the job sets the target.
   const q = await owner.db.get(
@@ -60,7 +60,7 @@ test('board shows jobs being worked on, their estimate, techs, and stays in its 
   await owner.db.run(`INSERT INTO time_entries (job_id, user_id, started_at, ended_at) VALUES ($1, $2, now() - interval '3 hours', now() - interval '75 minutes')`, [jobId, me.id]);
   await owner.post(`/jobs/${jobId}/clock-on`);
 
-  page = await owner.get('/baywatch');
+  page = await owner.get('/live-board');
   assert.match(page.text, /BW123/);
   assert.match(page.text, /class="bay pace-nearing"/);
   assert.match(page.text, /of 2h 00m estimated/);
@@ -71,15 +71,15 @@ test('board shows jobs being worked on, their estimate, techs, and stays in its 
   assert.match(page.text, /<polyline class="logged"/);
 
   // The polled fragment is just the board, and the workshop screen has no app header.
-  const part = await owner.get('/baywatch?part=board');
+  const part = await owner.get('/live-board?part=board');
   assert.match(part.text, /BW123/);
   assert.doesNotMatch(part.text, /<html/);
-  const tv = await owner.get('/baywatch?tv=1');
+  const tv = await owner.get('/live-board?tv=1');
   assert.match(tv.text, /class="bw-tv"/);
   assert.doesNotMatch(tv.text, /class="topbar"/);
 
   // Another workshop sees nothing of it.
-  assert.doesNotMatch((await other.get('/baywatch')).text, /BW123/);
+  assert.doesNotMatch((await other.get('/live-board')).text, /BW123/);
   // And it needs a login.
-  assert.equal((await t.client().get('/baywatch')).status, 302);
+  assert.equal((await t.client().get('/live-board')).status, 302);
 });

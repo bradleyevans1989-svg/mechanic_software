@@ -251,9 +251,9 @@ document.addEventListener('click', (e) => {
   sync();
 })();
 
-// Bay Watch: tick the clocks every second, and fetch a fresh board every 20 seconds.
+// Live board: tick the clocks every second, and fetch a fresh board every 20 seconds.
 (() => {
-  const root = document.querySelector('[data-baywatch]');
+  const root = document.querySelector('[data-liveboard]');
   if (!root) return;
   const clock = document.querySelector('[data-bw-clock]');
   const fmtNow = new Intl.DateTimeFormat('en-AU', { timeZone: root.dataset.tz || undefined, hour: 'numeric', minute: '2-digit' });
@@ -286,7 +286,7 @@ document.addEventListener('click', (e) => {
 
   async function refresh() {
     try {
-      const res = await fetch('/baywatch?part=board', { headers: { accept: 'text/html' } });
+      const res = await fetch('/live-board?part=board', { headers: { accept: 'text/html' } });
       // A redirect to the login page means the session ended; reload so it shows.
       if (res.redirected || !res.ok) return res.status === 401 || res.redirected ? location.reload() : undefined;
       root.innerHTML = await res.text();

@@ -39,8 +39,8 @@
   ['/roster', 'Roster', '', '<rect x="3.5" y="4" width="17" height="16.5" rx="3.5"/><path d="M3.5 9.5h17M9.2 9.5v11M14.8 9.5v11"/><path class="acc" d="M11.2 14.2h1.6"/>'],
   ['/price-list', 'Price list', '', '<path d="M3.5 12.3V5a1.5 1.5 0 0 1 1.5-1.5h7.3a1.5 1.5 0 0 1 1.06.44l7.2 7.2a1.5 1.5 0 0 1 0 2.12l-7.3 7.3a1.5 1.5 0 0 1-2.12 0l-7.2-7.2a1.5 1.5 0 0 1-.44-1.06z"/><path class="acc" d="M8.5 6.3l1.9 1.1v2.2L8.5 10.7 6.6 9.6V7.4z"/>'],
 ]; %>
-<%# Bay Watch sits after New job card; added on its own line so redrawn icons above merge cleanly. %>
-<% quick.splice(2, 0, ['/baywatch', 'Bay Watch', path.startsWith('/baywatch') ? 'active' : '', '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3.2"/>']); %>
+<%# The live board sits after New job card; added on its own line so redrawn icons above merge cleanly. %>
+<% quick.splice(2, 0, ['/live-board', 'Live board', path.startsWith('/live-board') ? 'active' : '', '<rect x="3" y="4" width="18" height="13.5" rx="3.5"/><path d="M8.5 21h7M12 17.5V21"/><path class="acc" d="M7 13.5l3-3 2.5 2L17 8"/>']); %>
 <nav class="rail" aria-label="Quick actions">
   <% for (const [href, label, cls, icon] of quick) { %>
     <a href="<%= href %>" class="<%= cls %>" data-label="<%= label %>" aria-label="<%= label %>"><svg viewBox="0 0 24 24" aria-hidden="true"><%- icon %></svg></a>

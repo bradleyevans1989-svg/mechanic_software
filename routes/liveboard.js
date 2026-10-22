@@ -105,14 +105,14 @@ async function bayBoard(req, store) {
 }
 
 module.exports = function (app, { store }) {
-  app.get('/baywatch', async (req, res) => {
+  app.get('/live-board', async (req, res) => {
     const board = await bayBoard(req, store);
     const counts = { live: board.filter((j) => j.running).length, ok: 0, nearing: 0, over: 0, none: 0 };
     for (const j of board) counts[j.pace]++;
     const locals = { board, counts, renderedAt: Date.now(), tv: req.query.tv === '1' };
     // The page polls this for a fresh board without reloading.
-    if (req.query.part === 'board') return res.render('baywatch/board', locals);
-    res.render('baywatch/index', locals);
+    if (req.query.part === 'board') return res.render('liveboard/board', locals);
+    res.render('liveboard/index', locals);
   });
 };
 

@@ -482,7 +482,7 @@ label .hint { display: block; font-weight: 400; }
 .transfer form { margin-top: .75rem; }
 form.banner.warn { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
 
-/* Bay Watch: live board of jobs on the floor, built to be left up on a workshop screen */
+/* Live board: every job on the floor, built to be left up on a workshop screen */
 .bw-head p { margin: .1rem 0 0; }
 .bw-now { font-weight: 800; font-size: 1.4rem; letter-spacing: -.02em; font-variant-numeric: tabular-nums; margin-right: .5rem; }
 /* Light in the app; the workshop screen (body.bw-tv) swaps in the dark set below. */
