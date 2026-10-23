@@ -1,0 +1,5 @@
+<ol class="import-steps" aria-label="Import steps">
+  <% ['Upload', 'Match columns', 'Check', 'Done'].forEach((label, i) => { %>
+    <li class="<%= i + 1 === step ? 'now' : i + 1 < step ? 'done' : '' %>"<%- i + 1 === step ? ' aria-current="step"' : '' %>><b><%= i + 1 %></b> <%= label %></li>
+  <% }) %>
+</ol>
