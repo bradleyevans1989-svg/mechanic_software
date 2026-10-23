@@ -1,0 +1,11 @@
+<% /* Look up a car's details by rego, or decode its VIN, and fill in the form. prefix is '' or 'v_'. */ %>
+<div class="lookup-bar" data-lookup="<%= prefix %>">
+  <% if (regoLookup) { %>
+    <select data-lookup-state aria-label="Rego state">
+      <% for (const s of REGO_STATES) { %><option <%= s === stateFor(settings.timezone) ? 'selected' : '' %>><%= s %></option><% } %>
+    </select>
+    <button type="button" class="btn small" data-lookup-rego>Look up rego</button>
+  <% } %>
+  <button type="button" class="btn small" data-lookup-vin>Decode VIN</button>
+  <span class="small muted" data-lookup-msg role="status"></span>
+</div>

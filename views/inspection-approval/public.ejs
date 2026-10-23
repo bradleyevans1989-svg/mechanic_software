@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vehicle inspection · <%= settings.business_name %></title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="book-page">
+<main class="book">
+  <header class="book-head">
+    <% if (hasLogo) { %><img src="/inspection/<%= token %>/logo" alt="<%= settings.business_name %>" class="book-logo"><% } %>
+    <div>
+      <h1><%= settings.business_name %></h1>
+      <p class="muted"><%= [settings.phone].filter(Boolean).join(' · ') %></p>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2>Your vehicle inspection</h2>
+    <p><strong><%= vehicle ? u.vehicleLabel(vehicle) : 'Your vehicle' %></strong><% if (job.odometer != null) { %> · <%= job.odometer.toLocaleString('en-AU') %> km<% } %><br>
+      <span class="muted">For <%= customer.name %> · job J<%= job.number %><%= job.mechanic_name ? ' · checked by ' + job.mechanic_name : '' %></span></p>
+    <% if (thanks) { %><p class="flash">Thanks, we've got your answers and will get onto it.</p><% } %>
+  </section>
+
+  <% if (!flagged.length) { %>
+    <section class="card"><p><strong>Good news: nothing needs attention.</strong> Everything we checked is in good order.</p></section>
+  <% } else { %>
+    <form method="post" action="/inspection/<%= token %>" class="card form approve-form">
+      <h2>What needs attention</h2>
+      <p class="muted">Approve the work you'd like us to do. Prices include GST.<% if (locked) { %> This job has been invoiced, so changes need a call to the workshop.<% } %></p>
+      <% for (const c of flagged) { const answer = c.decision === 'approved' ? 'approve' : c.decision === 'declined' ? 'decline' : ''; %>
+        <div class="approve-item <%= c.result %>">
+          <div class="approve-text">
+            <span class="pill pill-<%= c.result === 'urgent' ? 'overdue' : 'unpaid' %>"><%= CHECK_RESULTS[c.result] %></span>
+            <strong><%= c.item %></strong>
+            <% if (c.note) { %><div><%= c.note %></div><% } %>
+            <div class="approve-price"><%= c.price_cents != null ? u.money(withGst(c.price_cents)) : 'Price on request' %></div>
+          </div>
+          <% if (c.added_to_job || locked) { %>
+            <div class="muted small"><%= c.decision === 'approved' ? 'Approved' : c.decision === 'declined' ? 'Declined' : 'Not answered' %></div>
+          <% } else { %>
+            <div class="approve-choice" role="radiogroup" aria-label="<%= c.item %>">
+              <label class="res"><input type="radio" name="decisions[c<%= c.id %>]" value="approve" <%= answer === 'approve' ? 'checked' : '' %>> Approve</label>
+              <label class="res"><input type="radio" name="decisions[c<%= c.id %>]" value="decline" <%= answer === 'decline' ? 'checked' : '' %>> Not now</label>
+            </div>
+          <% } %>
+        </div>
+      <% } %>
+      <% if (!locked && flagged.some(c => !c.added_to_job)) { %>
+        <button class="btn primary book-submit">Send my answers</button>
+        <p class="hint">Questions? Call us<%= settings.phone ? ' on ' + settings.phone : '' %>.</p>
+      <% } %>
+    </form>
+  <% } %>
+
+  <section class="card">
+    <h2>Everything we checked</h2>
+    <table class="table">
+      <% for (const c of checks) { %>
+        <% if (c.heading) { %><tr><th colspan="2"><%= c.item %></th></tr><% } else { %>
+          <tr><td><%= c.item %><% if (c.note) { %> <span class="muted">· <%= c.note %></span><% } %></td><td class="num"><%= c.result ? CHECK_RESULTS[c.result] : 'Not checked' %></td></tr>
+        <% } %>
+      <% } %>
+    </table>
+    <% if (job.tech_notes) { %><h3>Mechanic's notes</h3><p class="note"><%= job.tech_notes %></p><% } %>
+  </section>
+  <p class="book-foot muted small">Inspection by <a href="/">Bay Boss</a></p>
+</main>
+</body>
+</html>

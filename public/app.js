@@ -326,3 +326,53 @@ document.querySelectorAll('form[data-busy]').forEach((form) => {
     if (b) { b.disabled = true; b.textContent = form.dataset.busy; }
   });
 });
+
+// Look up rego / Decode VIN on the vehicle forms: fills in make, model, year, colour and VIN.
+document.addEventListener('click', async (e) => {
+  const btn = e.target.closest('[data-lookup-rego], [data-lookup-vin]');
+  if (!btn) return;
+  const bar = btn.closest('[data-lookup]');
+  const form = bar.closest('form');
+  const prefix = bar.dataset.lookup;
+  const field = (n) => form.querySelector(`[name="${prefix}${n}"]`);
+  const msg = bar.querySelector('[data-lookup-msg]');
+  const state = bar.querySelector('[data-lookup-state]');
+  const byRego = btn.hasAttribute('data-lookup-rego');
+  const value = (byRego ? field('rego') : field('vin'))?.value.trim();
+  if (!value) {
+    msg.textContent = byRego ? 'Enter the rego first.' : 'Enter the VIN first.';
+    return;
+  }
+  if (state) try { localStorage.setItem('rego-state', state.value); } catch (err) {}
+  btn.disabled = true;
+  msg.textContent = 'Looking up…';
+  try {
+    const url = byRego ? `/lookup/rego?rego=${encodeURIComponent(value)}&state=${state ? state.value : ''}` : `/lookup/vin?vin=${encodeURIComponent(value)}`;
+    const r = await (await fetch(url, { headers: { accept: 'application/json' } })).json();
+    if (!r.ok) {
+      msg.textContent = r.error;
+      return;
+    }
+    const filled = [];
+    for (const k of ['make', 'model', 'year', 'colour', 'vin']) {
+      const input = field(k);
+      if (input && r.vehicle[k] && input.value !== r.vehicle[k] && !(k === 'vin' && !byRego)) {
+        input.value = r.vehicle[k];
+        filled.push(k === 'vin' ? 'VIN' : k);
+      }
+    }
+    msg.textContent = (r.vehicle.description ? r.vehicle.description + '. ' : '') + (filled.length ? `Filled in ${filled.join(', ')}.` : 'Nothing new to fill in.') + (r.note ? ' ' + r.note : '') + (r.checkDigit === false ? ' The check digit looks wrong; check the VIN.' : '');
+  } catch (err) {
+    msg.textContent = 'The lookup failed. Try again.';
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+// Remember the state picked for rego lookups.
+document.querySelectorAll('[data-lookup-state]').forEach((s) => {
+  try {
+    const saved = localStorage.getItem('rego-state');
+    if (saved && [...s.options].some((o) => o.value === saved)) s.value = saved;
+  } catch (err) {}
+});

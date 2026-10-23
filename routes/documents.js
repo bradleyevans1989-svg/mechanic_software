@@ -5,6 +5,7 @@ const { dollars, csvCell } = require('../lib/util');
 const { getCustomer, getVehicle, vehicleOptions, customerOptions, resolveParty, logEvent } = require('../lib/records');
 const { shareToken, appUrl } = require('./share');
 const mail = require('../lib/mail');
+const reviews = require('../lib/reviews');
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -166,6 +167,8 @@ module.exports = function (app, { store, xero, QUOTE_STATUSES }) {
     res.render('documents/show', {
       doc, lines, payments, converted, xeroStatus, shareUrl,
       canEmail: mail.configured(),
+      reviewMessage: res.locals.settings.review_url ? reviews.message(res.locals.settings, doc) : '',
+      reviewSms: res.locals.settings.review_url && doc.customer_phone ? reviews.smsHref(doc.customer_phone, reviews.message(res.locals.settings, doc)) : '',
       saved: req.query.saved === '1',
       sent: req.query.sent === '1',
       error: String(req.query.error || '').slice(0, 300),
@@ -217,6 +220,7 @@ module.exports = function (app, { store, xero, QUOTE_STATUSES }) {
         now(req.tz),
       ]);
       await xero.queueInvoice(req.db, doc.id);
+      if (amount > 0) await reviews.afterPayment(req.db, res.locals.settings, doc.id, res.locals.today);
     }
     res.redirect(`/documents/${doc.id}`);
   });
