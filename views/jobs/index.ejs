@@ -31,17 +31,19 @@
       <div class="col">
         <h3><%= label %> <span class="muted"><%= col.length %></span></h3>
         <% for (const j of col) { %>
-          <a class="tile <%= j.priority === 'urgent' ? 'urgent' : '' %>" href="/jobs/<%= j.id %>">
+          <div class="tile <%= j.priority === 'urgent' ? 'urgent' : '' %>">
+            <a class="tile-link" href="/jobs/<%= j.id %>">
             <strong>J<%= j.number %></strong> <%= j.rego ? j.rego.toUpperCase() : '' %> <%= j.make %> <%= j.model %>
             <div class="muted"><%= j.customer_name %></div>
             <div class="desc"><%= j.description %></div>
+            </a>
             <div class="meta">
-              <% if (j.mechanic_name) { %><span><%= j.mechanic_name %></span><% } %>
+              <% if (j.status === 'invoiced' || j.status === 'cancelled') { %><% if (j.mechanic_name) { %><span><%= j.mechanic_name %></span><% } %><% } else { %><%- include('../partials/assign', { job: j, back: '/jobs?status=' + filter + '&view=board' }) %><% } %>
               <% if (j.clocked_on) { %><span title="Someone is clocked on">⏱</span><% } %>
               <% if (j.flagged) { %><span class="late">⚠ <%= j.flagged %></span><% } %>
               <%- due(j) %>
             </div>
-          </a>
+          </div>
         <% } %>
         <% if (!col.length) { %><p class="muted small">None</p><% } %>
       </div>
@@ -57,7 +59,7 @@
         <td><%= j.rego || '' %> <%= j.make %> <%= j.model %></td>
         <td><%= j.customer_name %></td>
         <td><%= j.description %><% if (j.flagged) { %> <span class="late">⚠ <%= j.flagged %></span><% } %></td>
-        <td><%= j.mechanic_name || '' %><%= j.clocked_on ? ' ⏱' : '' %></td>
+        <td><% if (j.status === 'invoiced' || j.status === 'cancelled') { %><%= j.mechanic_name || '' %><% } else { %><%- include('../partials/assign', { job: j, back: '/jobs?status=' + filter }) %><% } %><%= j.clocked_on ? ' ⏱' : '' %></td>
         <td><%- due(j) || '<span class="muted">' + u.fmtDate(j.created_at) + '</span>' %></td>
         <td>
           <% if (j.status === 'invoiced' || j.status === 'cancelled') { %>

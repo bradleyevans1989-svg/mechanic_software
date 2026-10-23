@@ -62,7 +62,7 @@ async function loadEvents(req, from, to) {
       [from, to]
     ),
     db.all(
-      `SELECT j.id, j.number, j.status, j.description, j.due_date, j.priority, substr(j.created_at, 1, 10) AS start_day,
+      `SELECT j.id, j.number, j.status, j.description, j.due_date, j.priority, j.mechanic_id, substr(j.created_at, 1, 10) AS start_day,
          substr(j.completed_at, 1, 10) AS done_day, c.name AS customer_name, v.rego, v.make, v.model, m.name AS mechanic_name
        FROM jobs j JOIN customers c ON c.id = j.customer_id LEFT JOIN vehicles v ON v.id = j.vehicle_id
        LEFT JOIN users m ON m.id = j.mechanic_id

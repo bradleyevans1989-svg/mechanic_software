@@ -172,6 +172,57 @@
 </section>
 
 <div class="grid-2">
+  <section class="card" id="tasks">
+    <h2>Tasks for the technician <% if (tasks.length) { %><span class="muted small"><%= tasks.filter((t) => t.done_at).length %> of <%= tasks.length %> done</span><% } %></h2>
+    <% if (!tasks.length) { %><p class="muted">Break the job into steps and whoever's on it ticks them off from My jobs on their phone.</p><% } %>
+    <ul class="tasks">
+      <% for (const t of tasks) { %>
+        <li class="<%= t.done_at ? 'done' : '' %>">
+          <form method="post" action="/jobs/<%= job.id %>/tasks/<%= t.id %>/toggle">
+            <button class="tick" aria-label="<%= t.done_at ? 'Mark not done' : 'Mark done' %>: <%= t.text %>"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button>
+          </form>
+          <div>
+            <span class="task-text"><%= t.text %></span>
+            <% if (t.procedure_id) { %><a class="small how" href="/procedures/<%= t.procedure_id %>">How to: <%= t.procedure_title %></a><% } %>
+            <% if (t.done_at) { %><span class="muted small"><%= t.done_by_name || 'Done' %> · <%= u.fmtDateTime(t.done_at, settings.timezone) %></span><% } %>
+          </div>
+          <form method="post" action="/jobs/<%= job.id %>/tasks/<%= t.id %>/delete" class="push-right"><button class="icon" title="Remove task">×</button></form>
+        </li>
+      <% } %>
+    </ul>
+    <form method="post" action="/jobs/<%= job.id %>/tasks" class="inline-form mt">
+      <label class="grow">Task <input name="text" maxlength="300" placeholder="e.g. Replace front pads and rotors" required></label>
+      <% if (procedures.length) { %>
+        <label>Procedure
+          <select name="procedure_id"><option value="">None</option><% for (const p of procedures) { %><option value="<%= p.id %>"><%= p.title %></option><% } %></select>
+        </label>
+      <% } %>
+      <button class="btn small">Add task</button>
+    </form>
+  </section>
+
+  <section class="card" id="photos">
+    <h2>Photos <% if (photos.length) { %><span class="muted small"><%= photos.length %></span><% } %></h2>
+    <% if (!photos.length) { %><p class="muted">Photos the technicians take on the floor show up here.</p><% } %>
+    <div class="photo-grid">
+      <% for (const p of photos) { %>
+        <figure>
+          <a href="/jobs/<%= job.id %>/photos/<%= p.id %>" target="_blank"><img src="/jobs/<%= job.id %>/photos/<%= p.id %>" alt="<%= p.caption || 'Job photo' %>" loading="lazy"></a>
+          <figcaption><%= p.caption || '' %> <span class="muted"><%= p.user_name || '' %> · <%= u.fmtDateTime(p.created_at, settings.timezone) %></span>
+            <form method="post" action="/jobs/<%= job.id %>/photos/<%= p.id %>/delete" data-confirm="Delete this photo?" class="inline"><button class="link small">delete</button></form>
+          </figcaption>
+        </figure>
+      <% } %>
+    </div>
+    <form method="post" action="/jobs/<%= job.id %>/photos" class="inline-form mt" data-photo-form>
+      <input type="hidden" name="photo_data" data-photo-data>
+      <label class="grow">Caption <input name="caption" maxlength="200" placeholder="Optional"></label>
+      <label class="btn photo-btn">📷 Add photo<input type="file" accept="image/*" data-photo-file hidden></label>
+    </form>
+  </section>
+</div>
+
+<div class="grid-2">
   <section class="card" id="time">
     <h2>Time on the job <span class="muted small"><%= u.fmtMinutes(totalMinutes) %> total</span></h2>
     <% if (!time.length) { %><p class="muted">Nobody has clocked on yet. Use "Clock on" at the top, or add time below.</p><% } %>

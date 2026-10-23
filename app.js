@@ -44,8 +44,9 @@ function createApp(store, { autoSync = true } = {}) {
   app.set('trust proxy', 1);
   app.disable('x-powered-by');
 
-  // Price files and imports from other software can be a few megabytes; everything else stays small.
+  // Price files, imports from other software and job photos can be a few megabytes; everything else stays small.
   app.use(/^\/(suppliers\/\d+\/import|import\/\w+)$/, express.urlencoded({ extended: true, limit: '30mb', parameterLimit: 5000 }));
+  app.use(/^\/jobs\/\d+\/photos$/, express.urlencoded({ extended: true, limit: '8mb' }));
   app.use(express.urlencoded({ extended: true, limit: '1mb' }));
   app.use('/static', express.static(path.join(__dirname, 'public'), { maxAge: '1h' }));
   app.get('/healthz', async (req, res) => {
@@ -91,11 +92,14 @@ function createApp(store, { autoSync = true } = {}) {
   inspectionApproval.public(app, ctx);
   auth.setup(app, store);
   billingRoutes.gate(app, ctx);
+  app.use(auth.techGate);
   billingRoutes.pages(app, ctx);
 
   // What the bell in the top bar counts: open to-dos, overdue invoices, unread texts and online booking requests.
+  // Also who can be put on a job, for the quick-assign dropdowns.
   app.use(async (req, res, next) => {
     if (req.method !== 'GET' || !req.db) return next();
+    res.locals.mechanics = req.user.role === 'tech' ? [] : await require('./lib/records').mechanics(store, req.user.workshop_id);
     res.locals.notices = await req.db.get(
       `SELECT (SELECT COUNT(*) FROM team_posts WHERE kind = 'todo' AND done_at IS NULL)::int AS todos,
          (SELECT COUNT(*) FROM documents d WHERE d.type = 'invoice' AND d.status != 'void' AND d.due_date < $1
@@ -116,6 +120,7 @@ function createApp(store, { autoSync = true } = {}) {
   require('./routes/bookings')(app, ctx);
   inspectionApproval.pages(app, ctx);
   require('./routes/loan-cars')(app, ctx);
+  require('./routes/myjobs')(app, ctx);
   require('./routes/jobs')(app, ctx);
   onlinePayments.pages(app, ctx);
   require('./routes/documents')(app, ctx);

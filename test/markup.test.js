@@ -67,3 +67,23 @@ test('the price list picker brings the cost along', async () => {
   const items = JSON.parse((await owner.get('/price-list.json?q=OF1')).text);
   assert.equal(items[0].cost_cents, 1250);
 });
+
+test('a technician login never sees cost or markup', async () => {
+  await owner.post('/staff', { name: 'Tess Tech', email: 'tess@markup.example', role: 'tech', password: 'spanner-123' });
+  const techId = (await t.store.system.get(`SELECT id FROM users WHERE email = 'tess@markup.example'`)).id;
+  const tech = t.client();
+  const res = await tech.post('/login', { email: 'tess@markup.example', password: 'spanner-123' });
+  tech.cookie = res.headers.get('set-cookie').split(';')[0];
+
+  const vehicle = await owner.db.get(`SELECT id FROM vehicles WHERE rego = 'MK1'`);
+  const job = idFrom(await owner.post('/jobs', { vehicle_id: vehicle.id, description: 'Shocks' }));
+  await owner.post(`/jobs/${job}`, {
+    status: 'open', mechanic_id: techId, description: 'Shocks', priority: 'normal',
+    'lines[0][kind]': 'part', 'lines[0][description]': 'Rear shocks', 'lines[0][qty]': '2',
+    'lines[0][cost]': '76.54', 'lines[0][markup]': '40', 'lines[0][price]': '', 'lines[0][gst]': '1',
+  });
+  for (const path of [`/jobs/${job}`, `/my-jobs/${job}`]) {
+    const page = await tech.get(path);
+    assert.doesNotMatch(page.text, /Cost ex GST|Markup %|Profit ex GST|76\.54|data-cost/, path);
+  }
+});
