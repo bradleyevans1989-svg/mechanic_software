@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <title>Loan car agreement · <%= loan.car_rego %></title>
+  <link rel="stylesheet" href="/static/print.css">
+  <%- include('../partials/brand-head') %>
+</head>
+<body>
+  <div class="noprint"><button onclick="window.print()">Print</button> <a href="/loans/<%= loan.id %>">Back</a></div>
+  <header class="doc-head">
+    <div><h1><%= settings.business_name %></h1><div class="pre"><%= settings.address %></div><div><%= settings.phone %></div><% if (settings.abn) { %><div>ABN <%= settings.abn %></div><% } %></div>
+    <div class="doc-title"><h2>LOAN CAR AGREEMENT</h2><div><%= u.fmtDate(loan.start_date) %> to <%= u.fmtDate(loan.due_date) %></div><% if (loan.job_number) { %><div>Job J<%= loan.job_number %></div><% } %></div>
+  </header>
+  <section class="parties">
+    <div><h3>Driver</h3><strong><%= loan.customer_name %></strong><div class="pre"><%= loan.customer_address %></div><div><%= loan.customer_phone %></div>
+      <div>Licence: <%= loan.licence_no || '______________________' %><%= loan.licence_expiry ? ', expires ' + u.fmtDate(loan.licence_expiry) : '' %></div></div>
+    <div><h3>Vehicle</h3><strong><%= carLabel({ rego: loan.car_rego, make: loan.car_make, model: loan.car_model }) %></strong><div><%= loan.car_colour %></div></div>
+  </section>
+  <table class="items">
+    <thead><tr><th></th><th>Odometer</th><th>Fuel</th><th>Date and time</th><th>Condition</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Out</strong></td><td><%= loan.out_odometer != null ? loan.out_odometer.toLocaleString('en-AU') : '' %></td><td><%= loan.out_fuel %></td><td><%= loan.out_at ? u.fmtDateTime(loan.out_at, settings.timezone) : '' %></td><td><%= loan.out_notes %></td></tr>
+      <tr><td><strong>Back</strong></td><td><%= loan.back_odometer != null ? loan.back_odometer.toLocaleString('en-AU') : '' %></td><td><%= loan.back_fuel %></td><td><%= loan.back_at ? u.fmtDateTime(loan.back_at, settings.timezone) : '' %></td><td><%= loan.back_notes %></td></tr>
+    </tbody>
+  </table>
+  <h3>Terms</h3>
+  <div class="box pre"><%= terms %></div>
+  <p style="margin-top:2.5rem">Driver's signature: ______________________________ &nbsp; Date: ____________</p>
+  <p style="margin-top:1.5rem">For <%= settings.business_name %>: ______________________________</p>
+  <%- include('../partials/made-with') %>
+</body>
+</html>

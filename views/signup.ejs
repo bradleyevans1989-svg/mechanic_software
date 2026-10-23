@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sign up · Bay Watch</title>
+  <title>Sign up · Bay Boss</title>
   <link rel="stylesheet" href="/static/style.css">
   <%- include('partials/brand-head') %>
 </head>
 <body class="login-page">
   <form method="post" action="/signup" class="card login">
-    <div class="login-logo"><%- include('partials/mark') %><div class="wordmark">BAY <b>WATCH</b></div><div class="tagline">Workshop software</div></div>
+    <div class="login-logo"><img src="/static/brand/logo.svg" alt="Bay Boss, workshop software" width="300" height="101"></div>
     <h1>Create your workshop</h1>
     <p class="muted">You'll be the owner. Add your staff once you're in.</p>
     <% if (error) { %><p class="error"><%= error %></p><% } %>

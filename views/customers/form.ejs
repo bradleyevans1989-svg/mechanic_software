@@ -28,6 +28,7 @@
       <label><%= vt.meter %> (<%= vt.unit %>) <input name="v_odometer" inputmode="numeric"></label>
       <label><%= vt.vin %> <input name="v_vin" class="upper"></label>
     </div>
+    <% if (vt.vin === 'VIN') { %><%- include('../partials/vehicle-lookup', { prefix: 'v_' }) %><% } %>
     <datalist id="makes"><% for (const m of vt.makes) { %><option value="<%= m %>"><% } %></datalist>
   <% } %>
   <div class="form-actions">

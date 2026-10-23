@@ -17,6 +17,7 @@
     <label>Service every (months) <input name="service_interval_months" inputmode="numeric" value="<%= vehicle.service_interval_months || '' %>" placeholder="<%= vt.interval.months %>"></label>
     <label>Service every (<%= vt.unit %>) <input name="service_interval_km" inputmode="numeric" value="<%= vehicle.service_interval_km || '' %>" placeholder="<%= vt.interval.meter %>"></label>
   </div>
+  <% if (vt.vin === 'VIN') { %><%- include('../partials/vehicle-lookup', { prefix: '' }) %><% } %>
   <datalist id="makes"><% for (const m of vt.makes) { %><option value="<%= m %>"><% } %></datalist>
   <p class="hint">With intervals set, invoicing a job marked "counts as a service" works out the next service due automatically.</p>
   <label>Notes <textarea name="notes" rows="2"><%= vehicle.notes || '' %></textarea></label>

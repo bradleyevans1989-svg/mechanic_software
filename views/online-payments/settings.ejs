@@ -1,0 +1,43 @@
+<%- include('../partials/header', { title: 'Online payments' }) %>
+<div class="page-head">
+  <h1>Online payments</h1>
+  <div class="actions"><a class="btn" href="/settings">Back to settings</a></div>
+</div>
+<% if (saved) { %><p class="flash">Saved.</p><% } %>
+<% if (error) { %><p class="error"><%= error %></p><% } %>
+
+<section class="card">
+  <h2>Let customers pay from the invoice link <% if (provider) { %><%- include('../partials/pill', { state: 'paid', label: provider === 'test' ? 'Test mode' : 'On' }) %><% } %></h2>
+  <p>A <strong>Pay now</strong> button appears on every invoice you send. Customers pay by card, Apple Pay or Google Pay, and with Stripe also <strong>Afterpay</strong> and <strong>Zip</strong>. The payment goes straight into your own Stripe account, is recorded against the invoice, and is sent to Xero like any other payment.</p>
+  <ol class="small">
+    <li>Sign up at <a href="https://dashboard.stripe.com/register" target="_blank" rel="noopener">stripe.com</a> with your ABN and bank account (Stripe charges about 1.7% + 30c per domestic card).</li>
+    <li>For Afterpay and Zip, open <strong>Settings → Payment methods</strong> in Stripe and switch them on.</li>
+    <li>In Stripe, go to <strong>Developers → API keys</strong>, copy the <strong>Secret key</strong> (starts with <code>sk_live_</code>) and paste it below. A restricted key with Checkout Sessions write access works too.</li>
+  </ol>
+</section>
+
+<form method="post" action="/settings/payments" class="card form">
+  <h2>Settings</h2>
+  <fieldset class="choice">
+    <legend>Take payments online</legend>
+    <label class="check"><input type="radio" name="pay_provider" value="" <%= !settings.pay_provider ? 'checked' : '' %>> Off</label>
+    <label class="check"><input type="radio" name="pay_provider" value="stripe" <%= settings.pay_provider === 'stripe' ? 'checked' : '' %>> Stripe</label>
+    <% if (testAllowed) { %><label class="check"><input type="radio" name="pay_provider" value="test" <%= settings.pay_provider === 'test' ? 'checked' : '' %>> Test mode (pretend payments, for trying it out)</label><% } %>
+  </fieldset>
+  <label>Stripe secret key <% if (keyHint) { %><span class="muted">(saved: <%= keyHint %>; leave empty to keep it)</span><% } %>
+    <input name="pay_stripe_key" autocomplete="off" placeholder="sk_live_…" spellcheck="false"></label>
+  <% if (keyHint) { %><label class="check"><input type="checkbox" name="forget_key" value="1"> Remove the saved key</label><% } %>
+  <div class="form-actions"><button class="btn primary">Save</button></div>
+</form>
+
+<% if (recent.length) { %>
+  <section class="card">
+    <h2>Recent online payments</h2>
+    <table class="table">
+      <% for (const r of recent) { %>
+        <tr><td><a href="/documents/<%= r.document_id %>">INV-<%= r.number %></a></td><td><%= u.fmtDateTime(r.paid_at, settings.timezone) %></td><td class="num"><%= u.money(r.amount_cents) %></td><td class="muted small"><%= r.provider === 'test' ? 'test' : 'Stripe' %></td></tr>
+      <% } %>
+    </table>
+  </section>
+<% } %>
+<%- include('../partials/footer') %>

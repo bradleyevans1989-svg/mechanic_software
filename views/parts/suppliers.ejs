@@ -1,0 +1,48 @@
+<%- include('../partials/header', { title: 'Suppliers' }) %>
+<div class="page-head">
+  <div>
+    <h1>Parts</h1>
+    <p class="muted">Where you buy parts from. Import a supplier's price file to search their parts here and order them on a job.</p>
+  </div>
+</div>
+<%- include('tabs', { tab: 'suppliers' }) %>
+<% if (error) { %><p class="error"><%= error %></p><% } %>
+
+<% if (!suppliers.length) { %>
+  <p class="card muted">No suppliers yet.<%= user.role === 'owner' ? ' Add Burson, Repco or your local parts shop below.' : ' Ask the owner to add them.' %></p>
+<% } else { %>
+<table class="table card">
+  <thead><tr><th>Supplier</th><th>Ordering</th><th>Account</th><th>Phone</th><th class="num">Parts</th><th class="num">On order</th></tr></thead>
+  <tbody>
+    <% for (const s of suppliers) { %>
+      <tr class="<%= s.active ? '' : 'muted' %>">
+        <td><a href="/suppliers/<%= s.id %>"><%= s.name %></a><%= s.active ? '' : ' (hidden)' %></td>
+        <td><%= (CONNECTORS[s.connector] || CONNECTORS.manual).name %></td>
+        <td><%= s.account_no %></td>
+        <td><% if (s.phone) { %><a href="tel:<%= s.phone %>"><%= s.phone %></a><% } %></td>
+        <td class="num"><%= s.parts || '' %></td>
+        <td class="num"><%= s.on_order || '' %></td>
+      </tr>
+    <% } %>
+  </tbody>
+</table>
+<% } %>
+
+<% if (user.role === 'owner') { %>
+<form method="post" action="/suppliers" class="card form">
+  <h2>Add a supplier</h2>
+  <div class="grid-3">
+    <label>Name <input name="name" value="<%= draft.name || '' %>" required placeholder="Burson Auto Parts Penrith"></label>
+    <label>How you order
+      <select name="connector">
+        <% for (const c of Object.values(CONNECTORS)) { %><option value="<%= c.key %>" <%= draft.connector === c.key ? 'selected' : '' %>><%= c.name %></option><% } %>
+      </select>
+    </label>
+    <label>Account number <input name="account_no" value="<%= draft.account_no || '' %>"></label>
+    <label>Phone <input name="phone" value="<%= draft.phone || '' %>"></label>
+    <label>Email for orders <input name="email" type="email" value="<%= draft.email || '' %>"></label>
+  </div>
+  <div class="form-actions"><button class="btn primary">Add supplier</button></div>
+</form>
+<% } %>
+<%- include('../partials/footer') %>

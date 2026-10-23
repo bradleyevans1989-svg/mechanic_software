@@ -1,0 +1,43 @@
+<%- include('../partials/header', { title: 'Online booking' }) %>
+<div class="page-head">
+  <h1>Online booking</h1>
+  <div class="actions"><a class="btn" href="/bookings/requests">Requests</a><a class="btn" href="/settings">Back to settings</a></div>
+</div>
+<% if (saved) { %><p class="flash">Saved.</p><% } %>
+<% if (error) { %><p class="error"><%= error %></p><% } %>
+
+<section class="card">
+  <h2>Your booking page <% if (settings.online_booking) { %><%- include('../partials/pill', { state: 'paid', label: 'On' }) %><% } else { %><%- include('../partials/pill', { state: 'void', label: 'Off' }) %><% } %></h2>
+  <p>Put this link on your website, Facebook page and Google Business Profile ("Bookings" link). Customers pick a day and you accept or decline each request.</p>
+  <p><input value="<%= pageUrl %>" readonly onclick="this.select()" aria-label="Booking page link"></p>
+  <p><a class="btn" href="<%= pageUrl %>" target="_blank">Open the page</a></p>
+  <details class="small"><summary>A button for your website</summary>
+    <p>Paste this into your website where you want a "Book online" button:</p>
+    <textarea readonly rows="3" onclick="this.select()"><a href="<%= pageUrl %>" style="display:inline-block;padding:12px 22px;border-radius:999px;background:#e8590c;color:#fff;font-weight:600;text-decoration:none">Book online</a></textarea>
+  </details>
+</section>
+
+<form method="post" action="/settings/booking" class="card form">
+  <h2>Settings</h2>
+  <label class="check"><input type="checkbox" name="online_booking" value="1" <%= settings.online_booking ? 'checked' : '' %>> Take online bookings</label>
+  <label>Page address <span class="muted">(letters, numbers and dashes)</span>
+    <span class="inline-form"><span class="muted">/book/</span><input name="slug" value="<%= slug %>" maxlength="40" pattern="[a-z0-9][a-z0-9-]{1,38}[a-z0-9]"></span></label>
+  <label>Message at the top <textarea name="booking_intro" rows="2" maxlength="1000" placeholder="Pick a day that suits and we'll confirm your booking."><%= settings.booking_intro %></textarea></label>
+  <label>Services customers can pick <span class="muted">(one per line)</span>
+    <textarea name="booking_services" rows="7" maxlength="2000" placeholder="<%= DEFAULT_SERVICES %>"><%= settings.booking_services %></textarea></label>
+  <fieldset class="choice">
+    <legend>Days you take bookings</legend>
+    <div class="checks-row">
+      <% for (const i of [1, 2, 3, 4, 5, 6, 0]) { %>
+        <label class="check"><input type="checkbox" name="days" value="<%= i %>" <%= String(settings.booking_days).includes(String(i)) ? 'checked' : '' %>> <%= DAY_NAMES[i].slice(0, 3) %></label>
+      <% } %>
+    </div>
+  </fieldset>
+  <div class="grid-2">
+    <label>Days' notice needed <input type="number" name="booking_notice_days" min="0" max="30" value="<%= settings.booking_notice_days %>"></label>
+    <label>Most bookings a day <span class="muted">(0 for no limit)</span> <input type="number" name="booking_max_per_day" min="0" max="200" value="<%= settings.booking_max_per_day %>"></label>
+  </div>
+  <p class="hint">A day stops showing once the diary and waiting requests reach the limit.</p>
+  <div class="form-actions"><button class="btn primary">Save</button></div>
+</form>
+<%- include('../partials/footer') %>

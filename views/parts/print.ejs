@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Purchase order <%= poNumber(order) %></title>
+  <link rel="stylesheet" href="/static/print.css">
+</head>
+<body class="tpl tpl-classic" style="--brand: <%= settings.brand_colour || '#111111' %>">
+  <div class="noprint"><button onclick="window.print()">Print</button> <a href="/purchase-orders/<%= order.id %>">Back to order</a></div>
+  <div class="sheet">
+    <header class="doc-head">
+      <div class="biz">
+        <% if (settings.has_logo) { %><img class="logo" src="/logo" alt=""><% } %>
+        <div class="biz-text">
+          <h1><%= settings.business_name %></h1>
+          <div class="pre addr"><%= settings.address %></div>
+          <div class="contact"><%= [settings.phone, settings.email].filter(Boolean).join(' · ') %></div>
+          <% if (settings.abn) { %><div>ABN <%= settings.abn %></div><% } %>
+        </div>
+      </div>
+      <div class="doc-title">
+        <h2>PURCHASE ORDER</h2>
+        <div class="jobno"><%= poNumber(order) %></div>
+        <table class="meta">
+          <tr><th>Date</th><td><%= u.fmtDateTime(order.ordered_at || order.created_at, settings.timezone).split(' ')[0] %></td></tr>
+          <% if (order.reference) { %><tr><th>Our ref</th><td><%= order.reference %></td></tr><% } %>
+          <% if (order.supplier_account) { %><tr><th>Account</th><td><%= order.supplier_account %></td></tr><% } %>
+        </table>
+      </div>
+    </header>
+    <div class="party"><h3>Supplier</h3><strong><%= order.supplier_name %></strong><div><%= order.supplier_phone %></div><div><%= order.supplier_email %></div></div>
+    <table class="items">
+      <thead><tr><th>Code</th><th>Description</th><th class="num">Qty</th><th class="num">Cost ex GST</th><th class="num">Amount</th></tr></thead>
+      <tbody>
+        <% for (const l of lines) { %>
+          <tr><td><%= l.code %></td><td><%= l.description %></td><td class="num"><%= l.qty %></td><td class="num"><%= u.money(l.cost_cents) %></td><td class="num"><%= u.money(u.roundCents(l.qty * l.cost_cents)) %></td></tr>
+        <% } %>
+      </tbody>
+    </table>
+    <div class="sum-wrap">
+    <table class="sum">
+      <tr><th>Subtotal ex GST</th><td><%= u.money(totals.subtotal) %></td></tr>
+      <tr><th>GST</th><td><%= u.money(totals.gst) %></td></tr>
+      <tr class="grand"><th>Total inc GST</th><td><%= u.money(totals.total) %></td></tr>
+    </table>
+    </div>
+    <% if (order.notes) { %><p class="pre"><%= order.notes %></p><% } %>
+  </div>
+</body>
+</html>

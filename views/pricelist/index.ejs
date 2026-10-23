@@ -38,7 +38,7 @@
   <p class="card muted">Nothing in the price list yet<%= q ? ' matching that search' : '' %>. Add items above, or click "Add common items" for a starter set.</p>
 <% } else { %>
 <table class="table card">
-  <thead><tr><th>Type</th><th>Code</th><th>Description</th><th class="num">Price ex GST</th><th class="num">Cost</th><th>GST</th><th></th></tr></thead>
+  <thead><tr><th>Type</th><th>Code</th><th>Description</th><th class="num">Price ex GST</th><th class="num">Cost</th><th class="num">In stock</th><th>GST</th><th></th></tr></thead>
   <tbody>
     <% for (const i of items) { %>
       <tr class="<%= i.active ? '' : 'muted' %>">
@@ -47,6 +47,7 @@
         <td><%= i.description %><%= i.active ? '' : ' (hidden)' %></td>
         <td class="num"><%= i.unit_cents ? u.money(i.unit_cents) : (i.kind === 'labour' ? 'Hourly rate' : '—') %></td>
         <td class="num"><%= i.cost_cents ? u.money(i.cost_cents) : '' %></td>
+        <td class="num <%= i.reorder_level > 0 && i.stock_qty <= i.reorder_level ? 'late' : '' %>"><%= i.kind === 'part' && (i.stock_qty || i.reorder_level) ? i.stock_qty : '' %></td>
         <td><%= i.gst ? 'Yes' : 'No' %></td>
         <td><a href="/price-list/<%= i.id %>/edit">Edit</a></td>
       </tr>

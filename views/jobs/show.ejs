@@ -7,9 +7,12 @@
     <p>
       <% if (job.vehicle_id) { %><a href="/vehicles/<%= job.vehicle_id %>"><%= u.vehicleLabel(job) %></a> · <% } %>
       <a href="/customers/<%= job.customer_id %>"><%= job.customer_name %></a>
-      <% if (job.customer_phone) { %> · <a href="tel:<%= job.customer_phone %>"><%= job.customer_phone %></a><% } %>
+      <% if (job.customer_phone) { %> · <a href="tel:<%= job.customer_phone %>"><%= job.customer_phone %></a><% if (smsReady) { %> · <a href="/customers/<%= job.customer_id %>/messages">Texts</a><% } %><% } %>
       <% if (job.due_date) { %> · Promised <%= u.fmtDate(job.due_date) %> <%= job.due_time %><% } %>
     </p>
+    <p class="small">Loan car:
+      <% for (const l of loans) { %><a href="/loans/<%= l.id %>"><%= l.car_rego %></a> <span class="muted">(<%= l.status === 'out' ? 'out, due back ' + u.fmtDate(l.due_date) : l.status === 'returned' ? 'returned' : 'booked ' + u.fmtDate(l.start_date) %>)</span> · <% } %>
+      <a href="/loans/new?job_id=<%= job.id %>"><%= loans.length ? 'Book another' : 'Book one' %></a></p>
   </div>
   <div class="actions">
     <% if (myOpenEntry) { %>
@@ -27,6 +30,14 @@
   </div>
 </div>
 <% if (saved) { %><p class="flash">Saved.</p><% } %>
+<% if (typeof texted !== 'undefined' && texted) { %><p class="flash">Text sent.</p><% } %>
+<% if (job.status === 'ready' && job.customer_phone && smsReady) { %>
+  <form method="post" action="/customers/<%= job.customer_id %>/messages" class="banner warn inline-form">
+    <input type="hidden" name="kind" value="ready"><input type="hidden" name="job_id" value="<%= job.id %>"><input type="hidden" name="back" value="/jobs/<%= job.id %>">
+    <input name="body" value="<%= readyText(settings, job) %>" aria-label="Message" style="flex:1;min-width:14rem">
+    <button class="btn small primary">Text: car's ready</button>
+  </form>
+<% } %>
 <% if (myOpenEntry) { %><p class="banner warn">You're on the clock for this job since <%= u.fmtTime(myOpenEntry.started_at, settings.timezone) %>.</p><% } %>
 
 <form method="post" action="/jobs/<%= job.id %>" class="card form" data-dirty-check>
@@ -65,7 +76,7 @@
     <table class="checks">
       <% for (const c of checks) { %>
         <% if (c.heading) { %>
-          <tr class="heading"><th colspan="3"><%= c.item %></th></tr>
+          <tr class="heading"><th colspan="4"><%= c.item %></th></tr>
         <% } else { %>
           <tr class="r-<%= c.result || 'none' %>">
             <td class="item"><%= c.item %></td>
@@ -75,11 +86,15 @@
               <% } %>
             </td>
             <td class="note"><input name="checks[c<%= c.id %>][note]" value="<%= c.note %>" placeholder="Note"></td>
+            <td class="price">
+              <input name="checks[c<%= c.id %>][price]" value="<%= c.price_cents != null ? u.dollars(c.price_cents) : '' %>" placeholder="$ to fix" inputmode="decimal" aria-label="Price to fix, ex GST">
+              <% if (c.decision) { %><%- include('../partials/pill', { state: c.decision === 'approved' ? 'paid' : 'void', label: c.decision === 'approved' ? (c.added_to_job ? 'Approved, on job' : 'Approved') : 'Declined' }) %><% } %>
+            </td>
           </tr>
         <% } %>
       <% } %>
     </table>
-    <p class="hint">Results save with the job. <button type="submit" class="link small" formaction="/jobs/<%= job.id %>/checklist/remove" formnovalidate data-confirm-btn="Remove the checklist from this job?">Remove checklist</button></p>
+    <p class="hint">Results save with the job. Put a price (ex GST) on anything that needs attention, then send it to the customer below to approve. <button type="submit" class="link small" formaction="/jobs/<%= job.id %>/checklist/remove" formnovalidate data-confirm-btn="Remove the checklist from this job?">Remove checklist</button></p>
   <% } %>
 
   <h2>Labour and parts</h2>
@@ -88,6 +103,73 @@
     <button class="btn primary">Save job</button>
   </div>
 </form>
+<% const flaggedChecks = checks.filter(c => !c.heading && (c.result === 'attention' || c.result === 'urgent')); %>
+<% if (flaggedChecks.length) { const waiting = flaggedChecks.filter(c => c.decision === 'approved' && !c.added_to_job); %>
+  <section class="card" id="approval">
+    <h2>Customer approval</h2>
+    <% if (!approval) { %>
+      <p>Send the customer a link to their inspection. They see what needs attention with your prices and approve or decline each item from their phone.</p>
+      <form method="post" action="/jobs/<%= job.id %>/inspection/share"><button class="btn primary">Make the customer link</button></form>
+    <% } else { %>
+      <% const msg = 'Hi ' + job.customer_name.split(' ')[0] + ', we\'ve inspected your car. Have a look at what we found and approve any work here: ' + approval.url; %>
+      <p><input value="<%= approval.url %>" readonly onclick="this.select()" aria-label="Inspection link for the customer"></p>
+      <div class="actions">
+        <% if (job.customer_phone) { %><a class="btn" href="sms:<%= job.customer_phone %>?&body=<%= encodeURIComponent(msg) %>">Text it</a><% } %>
+        <% if (job.customer_email) { %><a class="btn" href="mailto:<%= job.customer_email %>?subject=<%= encodeURIComponent('Your vehicle inspection from ' + settings.business_name) %>&body=<%= encodeURIComponent(msg) %>">Email it</a><% } %>
+        <a class="btn" href="<%= approval.url %>" target="_blank">See what they see</a>
+      </div>
+      <p class="muted small">
+        <%= approval.viewed_at ? 'Opened ' + u.fmtDateTime(approval.viewed_at, settings.timezone) : 'Not opened yet' %><% if (approval.responded_at) { %> · answered <%= u.fmtDateTime(approval.responded_at, settings.timezone) %><% } %>.
+        <%= flaggedChecks.filter(c => c.decision === 'approved').length %> approved, <%= flaggedChecks.filter(c => c.decision === 'declined').length %> declined, <%= flaggedChecks.filter(c => !c.decision).length %> waiting.
+      </p>
+      <% if (waiting.length) { %>
+        <form method="post" action="/jobs/<%= job.id %>/inspection/add-approved" data-confirm="Add the approved items to this job? Save any changes first.">
+          <button class="btn primary">Add <%= waiting.length %> approved item<%= waiting.length === 1 ? '' : 's' %> to the job (<%= u.money(waiting.reduce((s, c) => s + (c.price_cents || 0), 0)) %> ex GST)</button>
+        </form>
+      <% } %>
+    <% } %>
+  </section>
+<% } %>
+
+<section class="card" id="parts">
+  <h2>Parts orders</h2>
+  <% if (orders.length) { %>
+    <div class="scroll-x"><table class="table compact">
+      <% for (const o of orders) { %>
+        <tr>
+          <td><a href="/purchase-orders/<%= o.id %>">PO-<%= o.number %></a></td>
+          <td><%= o.supplier_name %></td>
+          <td><%- include('../partials/pill', { state: o.status, label: PO_STATUSES[o.status] }) %></td>
+          <td><%= o.supplier_invoice ? 'Inv ' + o.supplier_invoice : '' %></td>
+          <td class="num"><%= u.money(o.cost_cents) %> cost</td>
+        </tr>
+      <% } %>
+    </table></div>
+  <% } %>
+  <% if (!suppliers.length) { %>
+    <p class="muted">Add your parts suppliers under <a href="/suppliers">Parts</a> to order straight from the job.</p>
+  <% } else if (job.status !== 'invoiced' && job.status !== 'cancelled') { %>
+    <% const partLines = lines.map((l, i) => ({ ...l, i })).filter((l) => l.kind === 'part'); %>
+    <form method="post" action="/purchase-orders" class="form mt">
+      <input type="hidden" name="job_id" value="<%= job.id %>">
+      <% if (partLines.length) { %>
+        <p class="hint">Tick the parts on this job to order. Save the job first if you've just added them.</p>
+        <ul class="list compact">
+          <% for (const l of partLines) { %>
+            <li><label class="check"><input type="checkbox" name="job_lines" value="<%= l.i %>" checked> <%= l.qty %> × <%= l.description %></label></li>
+          <% } %>
+        </ul>
+      <% } %>
+      <div class="inline-form">
+        <label>Supplier
+          <select name="supplier_id"><% for (const s of suppliers) { %><option value="<%= s.id %>"><%= s.name %></option><% } %></select>
+        </label>
+        <button class="btn primary small"><%= partLines.length ? 'Order ticked parts' : 'Start an order' %></button>
+        <a class="btn small" href="/parts?job_id=<%= job.id %>">Find parts</a>
+      </div>
+    </form>
+  <% } %>
+</section>
 
 <div class="grid-2">
   <section class="card" id="time">

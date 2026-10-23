@@ -10,6 +10,7 @@
     <% if (customer.notes) { %><p class="note"><%= customer.notes %></p><% } %>
   </div>
   <div class="actions">
+    <% if (customer.phone) { %><a class="btn" href="<%= smsReady ? '/customers/' + customer.id + '/messages' : 'sms:' + customer.phone %>">Text</a><% } %>
     <a class="btn" href="/customers/<%= customer.id %>/edit">Edit</a>
     <a class="btn primary" href="/customers/<%= customer.id %>/vehicles/new">Add <%= vt.assetLower %></a>
   </div>

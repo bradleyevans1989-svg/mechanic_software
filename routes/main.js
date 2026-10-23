@@ -2,6 +2,7 @@ const { addDays, addMonths, csvCell, parseDollars, parseIntOrNull, docNumber, ve
 const { listDocs } = require('../lib/docs');
 const { requireOwner } = require('../lib/auth');
 const { TYPES, TYPE_KEYS, typeKey, typeFor, addStarterItems, addStarterProcedures } = require('../lib/verticals');
+const { dashboardData, timeAgo } = require('../lib/dashboard');
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -51,7 +52,10 @@ module.exports = function (app) {
       nextShift(db, req.user.id, t, res.locals.timeNow),
     ]);
     const unpaid = unpaidAll.filter((d) => d.balance > 0);
+    const dash = await dashboardData(db, t, { unpaid, jobs });
     res.render('dashboard', {
+      dash,
+      timeAgo,
       bookings,
       jobs,
       unpaid,

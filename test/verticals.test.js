@@ -102,7 +102,10 @@ test('demo workshops: one login per type, safe to run twice', async () => {
     const db = t.store.tenant(user.workshop_id);
     assert.equal((await db.get('SELECT workshop_type FROM settings')).workshop_type, key);
     assert.equal((await db.get('SELECT COUNT(*) AS n FROM vehicles')).n, 3);
-    assert.equal((await db.get(`SELECT COUNT(*) AS n FROM documents WHERE type = 'invoice'`)).n, 1);
+    // The car workshop also gets a year of history for the Today charts.
+    const invoices = (await db.get(`SELECT COUNT(*) AS n FROM documents WHERE type = 'invoice'`)).n;
+    if (key === 'mechanical') assert.ok(invoices > 1);
+    else assert.equal(invoices, 1);
   }
   const login = await t.client().post('/login', { email: emailFor('farm'), password: 'demo-password' });
   const farm = t.client(login.headers.get('set-cookie').split(';')[0]);

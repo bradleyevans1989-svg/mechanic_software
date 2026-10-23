@@ -1,8 +1,10 @@
-const { now, addDays, parseLines, parseIntOrNull, totals, minutesBetween, billableHours } = require('../lib/util');
+const { now, addDays, parseLines, parseIntOrNull, totals, minutesBetween, billableHours, parseDollars } = require('../lib/util');
 const { nextNumber, getLines, saveLines } = require('../lib/db');
 const {
   getCustomer, getVehicle, vehicleOptions, customerOptions, resolveParty, mechanics, logEvent, CHECK_RESULTS, checklistItems,
 } = require('../lib/records');
+
+const { PO_STATUSES } = require('./parts');
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const PRIORITIES = { normal: 'Normal', urgent: 'Urgent' };
@@ -87,7 +89,7 @@ module.exports = function (app, { store, xero, JOB_STATUSES }) {
   });
 
   async function jobExtras(req, job) {
-    const [lines, staff, checks, time, events] = await Promise.all([
+    const [lines, staff, checks, time, events, orders, suppliers] = await Promise.all([
       getLines(req.db, 'job', job.id),
       mechanics(store, req.user.workshop_id),
       req.db.all('SELECT * FROM job_checks WHERE job_id = $1 ORDER BY sort, id', [job.id]),
@@ -101,6 +103,13 @@ module.exports = function (app, { store, xero, JOB_STATUSES }) {
          WHERE e.job_id = $1 ORDER BY e.at DESC, e.id DESC LIMIT 200`,
         [job.id]
       ),
+      req.db.all(
+        `SELECT o.*, s.name AS supplier_name,
+           (SELECT COALESCE(SUM(ROUND(l.qty * l.cost_cents)), 0) FROM purchase_order_lines l WHERE l.order_id = o.id) AS cost_cents
+         FROM purchase_orders o JOIN suppliers s ON s.id = o.supplier_id WHERE o.job_id = $1 ORDER BY o.id`,
+        [job.id]
+      ),
+      req.db.all('SELECT id, name FROM suppliers WHERE active ORDER BY lower(name)'),
     ]);
     for (const t of time) t.minutes = minutesBetween(t.started_at, t.ended_at);
     const unbilled = time.filter((t) => t.ended_at && !t.billed).reduce((s, t) => s + t.minutes, 0);
@@ -111,6 +120,9 @@ module.exports = function (app, { store, xero, JOB_STATUSES }) {
       checks,
       time,
       events,
+      orders,
+      suppliers,
+      PO_STATUSES,
       myOpenEntry: time.find((t) => !t.ended_at && t.user_id === req.user.id) || null,
       totalMinutes: time.reduce((s, t) => s + t.minutes, 0),
       unbilledMinutes: unbilled,
@@ -121,7 +133,16 @@ module.exports = function (app, { store, xero, JOB_STATUSES }) {
   app.get('/jobs/:id', async (req, res, next) => {
     const job = await getJob(req.db, req.params.id);
     if (!job) return next();
-    res.render('jobs/show', { job, ...(await jobExtras(req, job)), CHECK_RESULTS, PRIORITIES, saved: req.query.saved === '1' });
+    res.render('jobs/show', {
+      job,
+      ...(await jobExtras(req, job)),
+      approval: await require('./inspection-approval').jobApproval(store, req, job.id),
+      loans: await require('./loan-cars').jobLoans(req.db, job.id),
+      CHECK_RESULTS,
+      PRIORITIES,
+      saved: req.query.saved === '1',
+      texted: req.query.texted === '1',
+    });
   });
 
   app.post('/jobs/:id', async (req, res, next) => {
@@ -157,9 +178,11 @@ module.exports = function (app, { store, xero, JOB_STATUSES }) {
       for (const [key, c] of Object.entries(checks)) {
         if (!/^c\d{1,9}$/.test(key) || !c || typeof c !== 'object') continue;
         const id = key.slice(1);
-        await db.run('UPDATE job_checks SET result = $1, note = $2 WHERE id = $3 AND job_id = $4', [
+        const price = String(c.price ?? '').trim() === '' ? null : Math.max(parseDollars(c.price), 0);
+        await db.run('UPDATE job_checks SET result = $1, note = $2, price_cents = $3 WHERE id = $4 AND job_id = $5', [
           CHECK_RESULTS[c.result] ? c.result : '',
           String(c.note || '').trim().slice(0, 500),
+          price,
           Number(id),
           job.id,
         ]);

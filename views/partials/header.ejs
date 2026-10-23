@@ -7,42 +7,78 @@
   <link rel="stylesheet" href="/static/style.css">
   <%- include('brand-head') %>
   <script src="/static/app.js" defer></script>
+  <script>try { if (localStorage.getItem('side-mini') === '1') document.documentElement.classList.add('side-mini'); } catch (e) {}</script>
 </head>
 <body>
 <div class="shell">
-<header class="topbar">
-  <a class="brand" href="/" title="<%= settings.business_name %>"><%- include('mark') %><span class="wordmark">BAY <b>WATCH</b></span></a>
+<aside class="side" id="side">
+  <a class="brand" href="/" title="<%= settings.business_name %>"><img class="brand-logo" src="/static/brand/logo-small.svg" alt="Bay Boss" width="116" height="34"><img class="brand-tag" src="/static/brand/favicon-square.svg" alt="" width="34" height="34"></a>
   <span class="brand-ws"><%= settings.business_name %></span>
-  <nav class="nav">
-    <% const links = [['/', 'Today'], ['/bookings', 'Diary'], ['/jobs', 'Jobs'], ['/estimates', 'Estimates'], ['/invoices', 'Invoices'], ['/customers', 'Customers'], ['/reminders', 'Reminders'], ['/team', 'Team']];
+<% /* Main menu icons, in the same chunky round strokes as the quick actions, keyed by page so new pages can add theirs. */
+   const icons = {
+  '/': '<rect x="3.5" y="3.5" width="7" height="8.5" rx="2.2"/><rect x="13.5" y="3.5" width="7" height="5" rx="2.2"/><rect x="13.5" y="11.5" width="7" height="9" rx="2.2"/><rect class="acc" x="3.5" y="15" width="7" height="5.5" rx="2.2"/>',
+  '/bookings': '<rect x="3.5" y="5" width="17" height="15.5" rx="3.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/><path class="acc" d="M8 14.2h1.5M12 14.2h1.5M8 17.2h1.5"/>',
+  '/jobs': '<path d="M14.9 4.2a4.6 4.6 0 0 0-5.6 6l-5 5a2 2 0 0 0 2.8 2.8l5-5a4.6 4.6 0 0 0 6-5.6"/><path class="acc" d="M14.9 4.2l-2.3 2.3.5 2.6 2.6.5 2.3-2.3"/>',
+  '/estimates': '<path d="M7.5 3h6.5l5 5v10.5a2.5 2.5 0 0 1-2.5 2.5h-9A2.5 2.5 0 0 1 5 18.5v-13A2.5 2.5 0 0 1 7.5 3z"/><path d="M14 3v5h5"/><path class="acc" d="M9 13h6M9 17h4"/>',
+  '/invoices': '<path d="M5.5 3.5h13v17l-2.6-1.6-2.6 1.6-2.6-1.6-2.6 1.6-2.6-1.6z"/><path class="acc" d="M9 8.5h6M9 12.5h6M9 16.5h3"/>',
+  '/customers': '<circle cx="9.5" cy="8" r="3.8"/><path d="M2.5 20.5a7 7 0 0 1 14 0"/><path class="acc" d="M16 4.6a3.8 3.8 0 0 1 0 6.8M18.6 14.6a7 7 0 0 1 3 5.9"/>',
+  '/parts': '<path d="M12 3.2l7.8 4.4v8.8L12 20.8l-7.8-4.4V7.6z"/><path d="M4.4 7.7 12 12l7.6-4.3"/><path class="acc" d="M12 12v8.6"/>',
+  '/reminders': '<path d="M20.5 3.5 3.5 10.6l6.8 2.6 2.6 6.8z"/><path class="acc" d="M20.5 3.5l-10.2 9.7"/>',
+  '/messages': '<path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7.5a2.5 2.5 0 0 1-2.5 2.5H10l-4.5 3.5V16.5h0A2.5 2.5 0 0 1 4 14z"/><path class="acc" d="M8.5 9.2h7M8.5 12.2h4.5"/>',
+  '/team': '<path d="M3 18h18"/><path d="M5.5 18v-3.5a6.5 6.5 0 0 1 13 0V18"/><path class="acc" d="M10 8.4V5.5h4v2.9"/>',
+  '/reports': '<path d="M3.5 20.5h17"/><path d="M6.5 16.5v-4M11 16.5V7.5M15.5 16.5v-6"/><path class="acc" d="M19.5 16.5V4"/>',
+  '/settings': '<path d="M3.5 7h9.5M18 7h2.5M3.5 17h3M11 17h9.5"/><circle class="acc" cx="15.5" cy="7" r="2.5"/><circle class="acc" cx="8.5" cy="17" r="2.5"/>',
+}; %>
+  <nav class="nav" aria-label="Main menu">
+    <% const links = [['/', 'Today'], ['/bookings', 'Diary'], ['/jobs', 'Jobs'], ['/estimates', 'Estimates'], ['/invoices', 'Invoices'], ['/customers', 'Customers'], ['/parts', 'Parts'], ['/reminders', 'Reminders'], ['/messages', 'Messages'], ['/team', 'Team']];
        if (user && user.role === 'owner') links.push(['/reports', 'Reports'], ['/settings', 'Settings']); %>
-    <% for (const [href, label] of links) { const active = href === '/' ? path === '/' : href === '/team' ? /^\/(team|procedures|training|roster|clocking)/.test(path) : href === '/customers' ? /^\/(customers|vehicles)/.test(path) : path.startsWith(href); %>
-      <a href="<%= href %>" class="<%= active ? 'active' : '' %>"><%= label %></a>
+    <% for (const [href, label] of links) { const active = href === '/' ? path === '/' : href === '/team' ? /^\/(team|procedures|training|roster|clocking)/.test(path) : href === '/customers' ? /^\/(customers|vehicles)/.test(path) : href === '/parts' ? /^\/(parts|purchase-orders|suppliers)/.test(path) : path.startsWith(href); %>
+      <a href="<%= href %>" class="<%= active ? 'active' : '' %>" data-label="<%= label %>"<%- active ? ' aria-current="page"' : '' %>><svg viewBox="0 0 24 24" aria-hidden="true"><%- icons[href] || icons['/parts'] %></svg><span><%= label %></span></a>
     <% } %>
   </nav>
-  <form class="search" action="/search">
+<% /* Chunky round strokes like the logo, with the orange detail picked out in each icon. */
+   const quick = [
+  ['/bookings/new', 'New booking', 'hot', '<rect x="3.5" y="5" width="17" height="15.5" rx="3.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/><path class="acc" d="M12 12.8v5M9.5 15.3h5"/>'],
+  ['/jobs/new', 'New job card', '', '<rect x="4.5" y="4.5" width="15" height="17" rx="3.5"/><path d="M9 4.5V3h6v1.5"/><path class="acc" d="M12 9.5l3.2 1.85v3.7L12 16.9l-3.2-1.85v-3.7z"/>'],
+  ['/documents/new?type=quote', 'New estimate', '', '<path d="M7.5 3h6.5l5 5v10.5a2.5 2.5 0 0 1-2.5 2.5h-9A2.5 2.5 0 0 1 5 18.5v-13A2.5 2.5 0 0 1 7.5 3z"/><path d="M14 3v5h5"/><path class="acc" d="M9 13h6M9 17h4"/>'],
+  ['/customers/new', 'New customer', '', '<circle cx="10" cy="8" r="4"/><path d="M3 20.5a7 7 0 0 1 14 0"/><path class="acc" d="M19.5 8.5v6M16.5 11.5h6"/>'],
+  ['/clocking', 'Clock on and off', '', '<circle cx="12" cy="13.5" r="7.5"/><path d="M9.5 3h5M12 3v3"/><path class="acc" d="M12 10v3.5l2.5 2"/>'],
+  ['/roster', 'Roster', '', '<rect x="3.5" y="4" width="17" height="16.5" rx="3.5"/><path d="M3.5 9.5h17M9.2 9.5v11M14.8 9.5v11"/><path class="acc" d="M11.2 14.2h1.6"/>'],
+  ['/price-list', 'Price list', '', '<path d="M3.5 12.3V5a1.5 1.5 0 0 1 1.5-1.5h7.3a1.5 1.5 0 0 1 1.06.44l7.2 7.2a1.5 1.5 0 0 1 0 2.12l-7.3 7.3a1.5 1.5 0 0 1-2.12 0l-7.2-7.2a1.5 1.5 0 0 1-.44-1.06z"/><path class="acc" d="M8.5 6.3l1.9 1.1v2.2L8.5 10.7 6.6 9.6V7.4z"/>'],
+]; %>
+  <p class="side-label">Quick actions</p>
+  <nav class="rail" aria-label="Quick actions">
+    <% for (const [href, label, cls, icon] of quick) { %>
+      <a href="<%= href %>" class="<%= cls %>" data-label="<%= label %>"><svg viewBox="0 0 24 24" aria-hidden="true"><%- icon %></svg><span><%= label %></span></a>
+    <% } %>
+  </nav>
+</aside>
+<div class="side-backdrop" data-side-close></div>
+<header class="topbar">
+  <button type="button" class="side-toggle" data-side-toggle aria-controls="side" aria-label="Show or hide the menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button>
+  <a class="brand top-brand" href="/" title="<%= settings.business_name %>"><img class="brand-logo" src="/static/brand/logo-small.svg" alt="Bay Boss" width="116" height="34"><img class="brand-tag" src="/static/brand/favicon-square.svg" alt="" width="34" height="34"></a>
+  <form class="search" action="/search" role="search">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
     <input type="search" name="q" value="<%= q %>" placeholder="Search <%= vt.rego.toLowerCase() %>, name, phone…" aria-label="Search">
   </form>
   <% if (user) { %>
-    <div class="who">
-      <a href="/account" title="<%= user.name %> · My account"><%= (user.name || '?').trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase() %></a>
-    </div>
+    <% const n = typeof notices !== 'undefined' && notices ? notices : { todos: 0, overdue: 0, texts: 0, requests: 0 }; const count = n.todos + n.overdue + (n.texts || 0) + (n.requests || 0); %>
+    <details class="bell">
+      <summary aria-label="Notifications<%= count ? ': ' + count : '' %>"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path class="acc" d="M10 21h4"/></svg><% if (count) { %><b class="count"><%= count > 99 ? '99+' : count %></b><% } %></summary>
+      <div class="bell-menu">
+        <a href="/team"><strong><%= n.todos %></strong> open to-do<%= n.todos === 1 ? '' : 's' %> for the team</a>
+        <a href="/invoices?state=overdue"><strong><%= n.overdue %></strong> overdue invoice<%= n.overdue === 1 ? '' : 's' %></a>
+        <% if (n.texts) { %><a href="/messages"><strong><%= n.texts %></strong> new text<%= n.texts === 1 ? '' : 's' %> from customers</a><% } %>
+        <% if (n.requests) { %><a href="/bookings/requests"><strong><%= n.requests %></strong> online booking request<%= n.requests === 1 ? '' : 's' %></a><% } %>
+        <a href="/reminders">Service and rego reminders</a>
+      </div>
+    </details>
+    <a class="top-user" href="/account" title="My account">
+      <span class="avatar"><%= (user.name || '?').trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase() %></span>
+      <span class="who-name"><%= user.name %><small><%= user.role === 'owner' ? 'Owner' : 'Staff' %></small></span>
+    </a>
   <% } %>
 </header>
-<% const quick = [
-  ['/bookings/new', 'New booking', 'hot', '<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18M12 13v5M9.5 15.5h5"/>'],
-  ['/jobs/new', 'New job card', '', '<path d="M14.5 6.5a4 4 0 0 1-5.3 5.3L4 17a1.5 1.5 0 0 0 3 3l5.2-5.2a4 4 0 0 0 5.3-5.3l-2.6 2.6-2.5-2.5z"/>'],
-  ['/documents/new?type=quote', 'New estimate', '', '<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h5M10 17h5"/>'],
-  ['/customers/new', 'New customer', '', '<circle cx="10" cy="8" r="4"/><path d="M3 20a7 7 0 0 1 14 0M19 9v6M16 12h6"/>'],
-  ['/clocking', 'Clock on and off', '', '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 3h6"/>'],
-  ['/roster', 'Roster', '', '<rect x="3" y="4" width="18" height="17" rx="3"/><path d="M3 10h18M9 10v11M15 10v11"/>'],
-  ['/price-list', 'Price list', '', '<path d="M4 6h16M4 12h10M4 18h7"/><circle cx="18" cy="17" r="3"/>'],
-]; %>
-<nav class="rail" aria-label="Quick actions">
-  <% for (const [href, label, cls, icon] of quick) { %>
-    <a href="<%= href %>" class="<%= cls %>" data-label="<%= label %>" aria-label="<%= label %>"><svg viewBox="0 0 24 24" aria-hidden="true"><%- icon %></svg></a>
-  <% } %>
-</nav>
 <main class="page">
 <% if (typeof standing !== 'undefined' && standing && user && user.role === 'owner' && billingEnabled && (standing.reason === 'trial' || standing.reason === 'past_due' || !standing.ok)) { %>
   <div class="banner">

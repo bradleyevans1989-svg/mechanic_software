@@ -1,0 +1,53 @@
+<%- include('_head', { title: 'Book your car in' }) %>
+  <form method="post" action="/book/<%= slug %>" class="card form book-form">
+    <h2>Book your car in</h2>
+    <p><%= settings.booking_intro || 'Pick a day that suits and we\'ll confirm your booking.' %></p>
+    <% if (error) { %><p class="error" role="alert"><%= error %></p><% } %>
+    <% if (!dates.length) { %>
+      <p class="banner warn">We're fully booked online for the next few weeks. Please call us<%= settings.phone ? ' on ' + settings.phone : '' %>.</p>
+    <% } else { %>
+      <fieldset>
+        <legend>Your car</legend>
+        <div class="grid-2">
+          <label>Rego <input name="rego" value="<%= form.rego || '' %>" autocomplete="off" maxlength="12" style="text-transform:uppercase"></label>
+          <label>Make and model <input name="car" value="<%= form.car || '' %>" placeholder="e.g. Toyota Hilux" maxlength="120"></label>
+        </div>
+        <label>What does it need?
+          <select name="service">
+            <% for (const s of services) { %><option <%= form.service === s ? 'selected' : '' %>><%= s %></option><% } %>
+          </select>
+        </label>
+      </fieldset>
+      <fieldset>
+        <legend>When</legend>
+        <div class="grid-2">
+          <label>Day
+            <select name="date" required>
+              <% for (const d of dates) { %><option value="<%= d.value %>" <%= form.date === d.value ? 'selected' : '' %>><%= d.label %></option><% } %>
+            </select>
+          </label>
+          <label>Drop-off
+            <select name="drop_off">
+              <% for (const [k, l] of Object.entries(DROP_OFFS)) { %><option value="<%= k %>" <%= form.drop_off === k ? 'selected' : '' %>><%= l %></option><% } %>
+            </select>
+          </label>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>You</legend>
+        <label>Name <input name="name" value="<%= form.name || '' %>" required autocomplete="name" maxlength="120"></label>
+        <div class="grid-2">
+          <label>Mobile <input name="phone" type="tel" value="<%= form.phone || '' %>" required autocomplete="tel" maxlength="40"></label>
+          <label>Email <span class="muted">(optional)</span> <input name="email" type="email" value="<%= form.email || '' %>" autocomplete="email" maxlength="200"></label>
+        </div>
+        <label>Anything we should know? <span class="muted">(optional)</span><textarea name="notes" rows="3" maxlength="2000"><%= form.notes || '' %></textarea></label>
+      </fieldset>
+      <label class="book-hp" aria-hidden="true">Leave this empty <input name="website" tabindex="-1" autocomplete="off"></label>
+      <button class="btn primary book-submit">Request booking</button>
+      <p class="hint">This is a request. We'll call or text to confirm the time.</p>
+    <% } %>
+  </form>
+  <p class="book-foot muted small">Bookings by <a href="/">Bay Boss</a></p>
+</main>
+</body>
+</html>
