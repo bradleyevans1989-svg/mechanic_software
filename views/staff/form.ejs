@@ -14,6 +14,7 @@
       <input type="password" name="password" minlength="8" autocomplete="new-password" <%= member.id ? '' : 'required' %>>
     </label>
   </div>
+  <p class="hint">Owners see everything. Staff run the front desk and jobs but not reports or settings. Technicians only see their own jobs, clocking, the roster and the team pages: no prices, invoices or customer contact details.</p>
   <% if (member.id) { %>
     <label>Status
       <select name="active">

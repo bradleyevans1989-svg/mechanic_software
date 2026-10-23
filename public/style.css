@@ -665,6 +665,93 @@ form.banner.warn { display: flex; align-items: center; gap: .75rem; flex-wrap: w
 .pre { white-space: pre-wrap; }
 .scroll-x { overflow-x: auto; }
 
+/* Technician view: My jobs, built for a phone in a greasy hand: big tap targets, one column */
+.plate { display: inline-flex; align-items: center; justify-content: center; min-width: 5.6rem; padding: .3rem .55rem; border: 2.5px solid var(--ink); border-radius: 8px; background: #fff; font-weight: 800; font-size: .92rem; letter-spacing: .06em; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.plate.big { font-size: 1.25rem; padding: .45rem .8rem; min-width: 7.5rem; border-width: 3px; }
+.tj-head { margin: 1.4rem 0 .6rem; }
+.tj-list { display: grid; gap: .6rem; }
+.tj { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: .9rem; align-items: center; background: var(--card); border-radius: var(--r-lg); padding: .9rem 1rem; color: var(--ink); border-left: 5px solid transparent; }
+.tj:hover { text-decoration: none; box-shadow: 0 0 0 2px var(--line); }
+.tj.urgent { border-left-color: var(--danger); }
+.tj.on { border-left-color: var(--accent); }
+.tj-main { display: grid; gap: .1rem; min-width: 0; }
+.tj-desc { color: var(--ink); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.tj-meta { color: var(--muted); font-size: .85rem; }
+.tj-bar { display: block; height: 6px; border-radius: 999px; background: var(--tile); overflow: hidden; margin-top: .35rem; max-width: 14rem; }
+.tj-bar i { display: block; height: 100%; background: var(--ok); }
+.tj-side { display: grid; gap: .3rem; justify-items: end; text-align: right; }
+.tj-others summary { list-style: none; cursor: pointer; }
+.tj-others summary::-webkit-details-marker { display: none; }
+.tj-others summary h2::after { content: ' ▾'; color: var(--muted); }
+.tj-others[open] summary h2::after { content: ' ▴'; }
+.shift-strip { display: flex; justify-content: space-between; align-items: center; gap: .75rem; flex-wrap: wrap; border-left: 6px solid var(--line); }
+.shift-strip > div:first-child { display: grid; }
+.shift-strip.on-shift { border-left-color: var(--ok); }
+.shift-strip.on-break { border-left-color: var(--warn); }
+.back { margin: 0 0 .6rem; font-weight: 600; }
+.tj-hero { display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; }
+.tj-hero h1 { margin: 0; }
+.tj-hero p { margin: .15rem 0; }
+.tj-clock { display: grid; gap: .5rem; justify-items: start; }
+.tj-clock.on { box-shadow: inset 0 0 0 2px var(--accent); }
+.btn.big { min-height: 3.4rem; font-size: 1.05rem; padding: .75rem 1.6rem; }
+.seg { display: flex; gap: .5rem; flex-wrap: wrap; }
+.seg form { margin: 0; flex: 1 1 9rem; }
+.seg .btn { width: 100%; min-height: 3rem; }
+.tasks { list-style: none; margin: 0; padding: 0; }
+.tasks li { display: flex; gap: .8rem; align-items: flex-start; padding: .65rem 0; border-bottom: 1px solid var(--line); }
+.tasks li:last-child { border-bottom: 0; }
+.tasks li > div { display: grid; gap: .1rem; padding-top: .45rem; }
+.tasks form { margin: 0; }
+.tick { width: 2.6rem; height: 2.6rem; border-radius: 12px; border: 2px solid var(--line); background: #fff; cursor: pointer; display: grid; place-items: center; padding: 0; }
+.tick svg { width: 22px; height: 22px; fill: none; stroke: transparent; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.tick:hover { border-color: var(--ink); }
+.tasks li.done .tick { background: var(--ok); border-color: var(--ok); }
+.tasks li.done .tick svg { stroke: #fff; }
+.tasks li.done .task-text { text-decoration: line-through; color: var(--muted); }
+.tasks .how { font-weight: 600; }
+.tj-checks h3 { background: var(--tile); padding: .35rem .7rem; border-radius: var(--r-md); font-size: .82rem; }
+.tj-check { border: 0; border-bottom: 1px solid var(--line); margin: 0; padding: .6rem 0 .75rem; }
+.tj-check > input { min-height: 2.2rem; padding: .3rem .7rem; max-width: 30rem; }
+.tj-check legend { font-weight: 600; padding: 0; float: left; width: 100%; margin-bottom: .45rem; }
+.tj-check.r-attention legend { color: var(--warn); }
+.tj-check.r-urgent legend { color: var(--danger); }
+.tj-check.r-ok legend { color: var(--ok); }
+.tj-res { display: grid; grid-template-columns: 1fr 1.6fr 1fr 1fr; gap: .35rem; margin-bottom: .45rem; clear: both; max-width: 30rem; }
+.tj-res label { margin: 0; font-weight: 600; font-size: .85rem; cursor: pointer; }
+.tj-res input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.tj-res span { display: flex; align-items: center; justify-content: center; text-align: center; min-height: 2.5rem; padding: .3rem .4rem; font-size: .8rem; border-radius: 999px; background: var(--tile-2); border: 1.5px solid var(--line); }
+.tj-res input:focus-visible + span { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+.tj-res .res-ok input:checked + span { background: var(--ok-bg); border-color: var(--ok); color: var(--ok); }
+.tj-res .res-attention input:checked + span { background: var(--warn-bg); border-color: var(--warn); color: var(--warn); }
+.tj-res .res-urgent input:checked + span { background: var(--danger-bg); border-color: var(--danger); color: var(--danger); }
+.tj-res .res-na input:checked + span { background: var(--tile); border-color: var(--muted); }
+.photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: .75rem; }
+.photo-grid figure { margin: 0; }
+.photo-grid img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: var(--r-md); background: var(--tile); }
+.photo-grid figcaption { font-size: .82rem; margin-top: .3rem; }
+.photo-btn { margin: 0; cursor: pointer; }
+.search-spacer { visibility: hidden; }
+@media (max-width: 640px) {
+  .tj { grid-template-columns: minmax(0, 1fr) auto; }
+  .tj .plate { grid-column: 1 / -1; justify-self: start; }
+  .tj-clock .btn.big, .tj-clock form { width: 100%; }
+}
+.tasks li .push-right { margin-left: auto; }
+#tasks .inline-form .grow { min-width: 12rem; }
+#tasks .inline-form select { max-width: 12rem; }
+
+/* Quick assign: who's on a job, changed right from the list, board, Today and the calendar */
+.assign-form, .start-form { margin: 0; }
+.assign-select { max-width: 12rem; }
+.assign-select.unassigned { background-color: var(--warn-bg); color: var(--warn); }
+.start-form { display: inline-flex; gap: .35rem; align-items: center; flex-wrap: wrap; }
+.start-form .pill-select { max-width: 9.5rem; }
+.board .tile-link { display: block; color: var(--ink); }
+.board .tile-link:hover { text-decoration: none; }
+.board .meta .assign-select { font-size: .74rem; }
+
+
 /* Import from other software */
 .import-steps { list-style: none; display: flex; gap: .4rem; flex-wrap: wrap; margin: 0 0 1rem; padding: 0; }
 .import-steps li { display: flex; align-items: center; gap: .45rem; padding: .38rem .9rem .38rem .4rem; border-radius: 999px; background: var(--card); color: var(--muted); font-size: .88rem; font-weight: 600; }

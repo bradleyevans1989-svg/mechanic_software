@@ -1,0 +1,67 @@
+<%- include('../partials/header', { title: 'My jobs' }) %>
+<% const tile = (j, showWho) => { %>
+  <a class="tj<%= j.priority === 'urgent' ? ' urgent' : '' %><%= j.on_clock ? ' on' : '' %>" href="/my-jobs/<%= j.id %>">
+    <span class="plate"><%= (j.rego || 'No rego').toUpperCase() %></span>
+    <span class="tj-main">
+      <strong><%= [j.year, j.make, j.model].filter(Boolean).join(' ') || j.customer_name %></strong>
+      <span class="tj-desc"><%= j.description || 'No work written up yet' %></span>
+      <span class="tj-meta">
+        J<%= j.number %>
+        <% if (j.due_date) { %> · <%= j.due_date === today ? 'Due today' : 'Due ' + u.fmtDate(j.due_date) %><%= j.due_time ? ' ' + j.due_time : '' %><% } %>
+        <% if (showWho) { %> · <%= j.mechanic_name || 'Unassigned' %><% } %>
+      </span>
+      <% if (j.tasks) { %><span class="tj-bar" title="<%= j.tasks_done %> of <%= j.tasks %> tasks done"><i style="width:<%= Math.round(100 * j.tasks_done / j.tasks) %>%"></i></span><% } %>
+    </span>
+    <span class="tj-side">
+      <%- include('../partials/pill', { state: j.status, label: JOB_STATUSES[j.status] }) %>
+      <% if (j.priority === 'urgent') { %><%- include('../partials/pill', { state: 'overdue', label: 'Urgent' }) %><% } %>
+      <% if (j.tasks) { %><span class="muted small"><%= j.tasks_done %>/<%= j.tasks %> tasks</span><% } %>
+      <% if (j.on_clock) { %><span class="pill plain pill-in_progress">⏱ On the clock</span><% } %>
+    </span>
+  </a>
+<% } %>
+<div class="page-head">
+  <div>
+    <h1>My jobs</h1>
+    <p class="muted">G'day <%= user.name.split(' ')[0] %>. <%= todayJobs.length ? todayJobs.length + ' job' + (todayJobs.length === 1 ? '' : 's') + ' for today' : 'Nothing booked for you today' %><%= upcoming.length ? ', ' + upcoming.length + ' coming up' : '' %>.</p>
+  </div>
+</div>
+
+<section class="card shift-strip <%= entry ? (onBreak ? 'on-break' : 'on-shift') : '' %>">
+  <div>
+    <% if (!entry) { %>
+      <strong>Not clocked in</strong>
+      <span class="muted"><%= shift ? 'Next shift ' + (shift.date === today ? 'today' : u.fmtDate(shift.date)) + ' ' + shift.start_time + '–' + shift.end_time : 'No shift on the roster' %></span>
+    <% } else { %>
+      <strong><%= onBreak ? 'On a break' : 'On shift' %></strong>
+      <span class="muted">since <%= u.fmtTime(onBreak ? onBreak.started_at : entry.started_at, settings.timezone) %><% if (onJob) { %> · working on <a href="/my-jobs/<%= onJob.id %>"><%= onJob.rego || 'J' + onJob.number %></a><% } %></span>
+    <% } %>
+  </div>
+  <div class="actions">
+    <% if (!entry) { %>
+      <form method="post" action="/clocking/start"><input type="hidden" name="back" value="/my-jobs"><button class="btn accent">Start shift</button></form>
+    <% } else if (onBreak) { %>
+      <form method="post" action="/clocking/resume"><input type="hidden" name="back" value="/my-jobs"><button class="btn accent">Back from break</button></form>
+    <% } else { %>
+      <form method="post" action="/clocking/break"><input type="hidden" name="back" value="/my-jobs"><button class="btn">Start break</button></form>
+      <a class="btn" href="/clocking">Finish shift</a>
+    <% } %>
+  </div>
+</section>
+
+<h2 class="tj-head">Today</h2>
+<% if (!todayJobs.length) { %><p class="card muted">Nothing assigned to you for today. Check the other jobs below, or ask the office.</p><% } %>
+<div class="tj-list"><% for (const j of todayJobs) tile(j, false); %></div>
+
+<% if (upcoming.length) { %>
+  <h2 class="tj-head">Coming up</h2>
+  <div class="tj-list"><% for (const j of upcoming) tile(j, false); %></div>
+<% } %>
+
+<% if (others.length) { %>
+  <details class="tj-others">
+    <summary><h2 class="tj-head">Other jobs in the workshop <span class="muted small"><%= others.length %></span></h2></summary>
+    <div class="tj-list"><% for (const j of others) tile(j, true); %></div>
+  </details>
+<% } %>
+<%- include('../partials/footer') %>

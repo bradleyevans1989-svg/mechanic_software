@@ -1,0 +1,164 @@
+<%- include('../partials/header', { title: (job.rego ? job.rego.toUpperCase() + ' · ' : '') + 'J' + job.number }) %>
+<% const open = job.status !== 'invoiced' && job.status !== 'cancelled'; const tasksDone = tasks.filter((t) => t.done_at).length; %>
+<p class="back"><a href="/my-jobs">← My jobs</a></p>
+<div class="tj-hero">
+  <span class="plate big"><%= (job.rego || 'No rego').toUpperCase() %></span>
+  <div>
+    <h1><%= [job.year, job.make, job.model].filter(Boolean).join(' ') || 'Job J' + job.number %></h1>
+    <p class="muted">
+      J<%= job.number %> · <%= job.customer_name %>
+      <% if (job.due_date) { %> · Promised <%= job.due_date === today ? 'today' : u.fmtDate(job.due_date) %> <%= job.due_time %><% } %>
+    </p>
+    <p>
+      <%- include('../partials/pill', { state: job.status, label: JOB_STATUSES[job.status] }) %>
+      <% if (job.priority === 'urgent') { %><%- include('../partials/pill', { state: 'overdue', label: 'Urgent' }) %><% } %>
+      <span class="muted small"><%= job.mechanic_id === user.id ? 'Your job' : job.mechanic_name ? job.mechanic_name + "'s job" : 'Nobody on it yet' %></span>
+    </p>
+  </div>
+</div>
+<% if (saved) { %><p class="flash">Saved.</p><% } %>
+
+<% if (open) { %>
+  <section class="card tj-clock<%= myOpenEntry ? ' on' : '' %>">
+    <% if (myOpenEntry) { %>
+      <form method="post" action="/jobs/<%= job.id %>/clock-off"><button class="btn clocked big">⏱ Clock off this job</button></form>
+      <p class="muted small">On since <%= u.fmtTime(myOpenEntry.started_at, settings.timezone) %> · <%= u.fmtMinutes(myMinutes) %> on this job all up</p>
+    <% } else { %>
+      <form method="post" action="/jobs/<%= job.id %>/clock-on"><button class="btn primary big">⏱ Clock on to this job</button></form>
+      <p class="muted small"><%= myMinutes ? u.fmtMinutes(myMinutes) + ' on this job so far' : 'Clocking on here clocks you off any other job.' %></p>
+    <% } %>
+    <% if (!job.mechanic_id) { %>
+      <form method="post" action="/jobs/<%= job.id %>/take"><button class="btn small">Take this job</button></form>
+    <% } %>
+  </section>
+
+  <section class="card">
+    <h2>Status</h2>
+    <div class="seg">
+      <% for (const s of FLOOR_STATUSES) { %>
+        <form method="post" action="/jobs/<%= job.id %>/progress">
+          <input type="hidden" name="status" value="<%= s %>">
+          <button class="btn<%= job.status === s ? ' active' : '' %>" <%= job.status === s ? 'aria-pressed=true' : '' %>><%= JOB_STATUSES[s] %></button>
+        </form>
+      <% } %>
+    </div>
+  </section>
+<% } %>
+
+<section class="card">
+  <h2>Work requested</h2>
+  <p class="pre"><%= job.description || 'Nothing written up yet. Check with the office.' %></p>
+  <% if (job.odometer || job.vin) { %><p class="muted small"><%= job.odometer ? 'Odometer in: ' + Number(job.odometer).toLocaleString('en-AU') + ' km' : '' %><%= job.odometer && job.vin ? ' · ' : '' %><%= job.vin ? 'VIN ' + job.vin : '' %></p><% } %>
+</section>
+
+<section class="card" id="tasks">
+  <h2>Tasks <% if (tasks.length) { %><span class="muted small"><%= tasksDone %> of <%= tasks.length %> done</span><% } %></h2>
+  <% if (!tasks.length) { %><p class="muted">No task list on this job. Add steps below as you go if it helps.</p><% } %>
+  <ul class="tasks">
+    <% for (const t of tasks) { %>
+      <li class="<%= t.done_at ? 'done' : '' %>">
+        <form method="post" action="/jobs/<%= job.id %>/tasks/<%= t.id %>/toggle">
+          <button class="tick" aria-label="<%= t.done_at ? 'Mark not done' : 'Mark done' %>: <%= t.text %>"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button>
+        </form>
+        <div>
+          <span class="task-text"><%= t.text %></span>
+          <% if (t.procedure_id) { %><a class="small how" href="/procedures/<%= t.procedure_id %>">How to: <%= t.procedure_title %></a><% } %>
+          <% if (t.done_at) { %><span class="muted small"><%= t.done_by_name || 'Done' %> · <%= u.fmtTime(t.done_at, settings.timezone) %></span><% } %>
+        </div>
+      </li>
+    <% } %>
+  </ul>
+  <% if (open) { %>
+    <form method="post" action="/jobs/<%= job.id %>/tasks" class="inline-form mt">
+      <label class="grow">Add a task <input name="text" maxlength="300" placeholder="e.g. Check rear diff for leaks"></label>
+      <button class="btn small">Add</button>
+    </form>
+  <% } %>
+</section>
+
+<section class="card" id="inspection">
+  <h2>Inspection <% if (checks.length) { %><span class="muted small"><%= checks.filter((c) => !c.heading && c.result).length %> of <%= checks.filter((c) => !c.heading).length %> checked</span><% } %></h2>
+  <% if (!checks.length) { %>
+    <% if (open) { %>
+      <form method="post" action="/jobs/<%= job.id %>/checklist"><button class="btn">Start the inspection checklist</button></form>
+    <% } else { %><p class="muted">No inspection on this job.</p><% } %>
+  <% } else { %>
+    <form method="post" action="/jobs/<%= job.id %>/progress" class="tj-checks">
+      <% for (const c of checks) { %>
+        <% if (c.heading) { %>
+          <h3><%= c.item %></h3>
+        <% } else { %>
+          <fieldset class="tj-check r-<%= c.result || 'none' %>">
+            <legend><%= c.item %></legend>
+            <div class="tj-res">
+              <% for (const [k, label] of Object.entries(CHECK_RESULTS)) { %>
+                <label class="res-<%= k %>"><input type="radio" name="checks[c<%= c.id %>][result]" value="<%= k %>" <%= c.result === k ? 'checked' : '' %>><span><%= label %></span></label>
+              <% } %>
+            </div>
+            <input name="checks[c<%= c.id %>][note]" value="<%= c.note %>" placeholder="Note (optional)" aria-label="Note for <%= c.item %>">
+          </fieldset>
+        <% } %>
+      <% } %>
+      <% if (open) { %><div class="form-actions sticky"><button class="btn primary">Save inspection</button></div><% } %>
+    </form>
+  <% } %>
+</section>
+
+<section class="card">
+  <h2>Mechanic's notes</h2>
+  <form method="post" action="/jobs/<%= job.id %>/progress">
+    <textarea name="tech_notes" rows="4" placeholder="What you found, what you did, what to recommend" <%= open ? '' : 'disabled' %>><%= job.tech_notes %></textarea>
+    <% if (open) { %><div class="form-actions"><button class="btn primary">Save notes</button></div><% } %>
+  </form>
+</section>
+
+<section class="card" id="photos">
+  <h2>Photos <% if (photos.length) { %><span class="muted small"><%= photos.length %></span><% } %></h2>
+  <% if (photos.length) { %>
+    <div class="photo-grid">
+      <% for (const p of photos) { %>
+        <figure>
+          <a href="/jobs/<%= job.id %>/photos/<%= p.id %>" target="_blank"><img src="/jobs/<%= job.id %>/photos/<%= p.id %>" alt="<%= p.caption || 'Job photo' %>" loading="lazy"></a>
+          <figcaption><%= p.caption || '' %> <span class="muted"><%= p.user_name || '' %> · <%= u.fmtTime(p.created_at, settings.timezone) %></span>
+            <% if (open && p.user_id === user.id) { %><form method="post" action="/jobs/<%= job.id %>/photos/<%= p.id %>/delete" data-confirm="Delete this photo?" class="inline"><button class="link small">delete</button></form><% } %>
+          </figcaption>
+        </figure>
+      <% } %>
+    </div>
+  <% } %>
+  <% if (open) { %>
+    <form method="post" action="/jobs/<%= job.id %>/photos" class="inline-form mt" data-photo-form>
+      <input type="hidden" name="photo_data" data-photo-data>
+      <label class="grow">Caption <input name="caption" maxlength="200" placeholder="e.g. Worn rear pads"></label>
+      <label class="btn accent photo-btn">📷 Take or add photo<input type="file" accept="image/*" capture="environment" data-photo-file hidden></label>
+    </form>
+  <% } %>
+</section>
+
+<section class="card" id="activity">
+  <h2>Notes for the office</h2>
+  <% if (open) { %>
+    <form method="post" action="/jobs/<%= job.id %>/notes" class="inline-form">
+      <label class="grow">Add a note <input name="text" maxlength="2000" placeholder="Needs a tyre, waiting on approval…"></label>
+      <button class="btn small">Post</button>
+    </form>
+  <% } %>
+  <ul class="timeline">
+    <% for (const e of events) { %>
+      <li class="ev-<%= e.kind %>">
+        <span class="when"><%= u.fmtDateTime(e.at, settings.timezone) %></span>
+        <span class="who"><%= e.user_name || '' %></span>
+        <span class="what"><%= e.text %></span>
+      </li>
+    <% } %>
+    <% if (!events.length) { %><li class="muted">Nothing yet.</li><% } %>
+  </ul>
+</section>
+
+<% if (procedures.length) { %>
+  <details class="card">
+    <summary>Workshop procedures</summary>
+    <ul class="list compact mt"><% for (const p of procedures) { %><li><a href="/procedures/<%= p.id %>"><%= p.title %></a></li><% } %></ul>
+  </details>
+<% } %>
+<%- include('../partials/footer') %>
