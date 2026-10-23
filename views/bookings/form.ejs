@@ -26,7 +26,7 @@
     <% if (booking.job_id) { %>
       <a class="btn" href="/jobs/<%= booking.job_id %>">Open job card</a>
     <% } else { %>
-      <form method="post" action="/bookings/<%= booking.id %>/start"><button class="btn primary">Car's here: start job</button></form>
+      <form method="post" action="/bookings/<%= booking.id %>/start"><button class="btn primary"><%= vt.arrived %></button></form>
     <% } %>
     <form method="post" action="/bookings/<%= booking.id %>/delete" data-confirm="Delete this booking?"><button class="btn danger">Delete booking</button></form>
   </div>

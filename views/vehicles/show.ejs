@@ -1,7 +1,7 @@
-<%- include('../partials/header', { title: vehicle.rego || 'Vehicle' }) %>
+<%- include('../partials/header', { title: vehicle.rego || vt.asset }) %>
 <div class="page-head">
   <div>
-    <h1><%= u.vehicleLabel(vehicle) || 'Vehicle' %></h1>
+    <h1><%= u.vehicleLabel(vehicle) || vt.asset %></h1>
     <p>Owner: <a href="/customers/<%= customer.id %>"><%= customer.name %></a><% if (customer.phone) { %> · <a href="tel:<%= customer.phone %>"><%= customer.phone %></a><% } %></p>
   </div>
   <div class="actions">
@@ -15,12 +15,12 @@
 <section class="card">
   <dl class="facts">
     <div><dt>Colour</dt><dd><%= vehicle.colour || '—' %></dd></div>
-    <div><dt>VIN</dt><dd><%= vehicle.vin || '—' %></dd></div>
-    <div><dt>Odometer</dt><dd><%= vehicle.odometer != null ? vehicle.odometer.toLocaleString('en-AU') + ' km' : '—' %></dd></div>
-    <div><dt>Rego due</dt><dd><%= u.fmtDate(vehicle.rego_due) || '—' %></dd></div>
-    <div><dt>Next service</dt><dd><%= u.fmtDate(vehicle.next_service_date) || '—' %><%= vehicle.next_service_km ? ' or ' + vehicle.next_service_km.toLocaleString('en-AU') + ' km' : '' %></dd></div>
+    <div><dt><%= vt.vin %></dt><dd><%= vehicle.vin || '—' %></dd></div>
+    <div><dt><%= vt.meter %></dt><dd><%= vehicle.odometer != null ? vehicle.odometer.toLocaleString('en-AU') + ' ' + vt.unit : '—' %></dd></div>
+    <div><dt><%= vt.rego %> due</dt><dd><%= u.fmtDate(vehicle.rego_due) || '—' %></dd></div>
+    <div><dt>Next service</dt><dd><%= u.fmtDate(vehicle.next_service_date) || '—' %><%= vehicle.next_service_km ? ' or ' + vehicle.next_service_km.toLocaleString('en-AU') + ' ' + vt.unit : '' %></dd></div>
     <div><dt>Last service</dt><dd><%= u.fmtDate(vehicle.last_service_date) || '—' %></dd></div>
-    <div><dt>Service interval</dt><dd><%= vehicle.service_interval_months ? 'every ' + vehicle.service_interval_months + ' months' : '' %><%= vehicle.service_interval_months && vehicle.service_interval_km ? ' or ' : '' %><%= vehicle.service_interval_km ? vehicle.service_interval_km.toLocaleString('en-AU') + ' km' : '' %><%= !vehicle.service_interval_months && !vehicle.service_interval_km ? '—' : '' %></dd></div>
+    <div><dt>Service interval</dt><dd><%= vehicle.service_interval_months ? 'every ' + vehicle.service_interval_months + ' months' : '' %><%= vehicle.service_interval_months && vehicle.service_interval_km ? ' or ' : '' %><%= vehicle.service_interval_km ? vehicle.service_interval_km.toLocaleString('en-AU') + ' ' + vt.unit : '' %><%= !vehicle.service_interval_months && !vehicle.service_interval_km ? '—' : '' %></dd></div>
   </dl>
   <% if (reminders.length) { %>
     <h3>Reminders sent</h3>
@@ -44,7 +44,7 @@
   </ul>
   <details class="transfer">
     <summary class="btn small">Move to another customer</summary>
-    <form method="post" action="/vehicles/<%= vehicle.id %>/transfer" class="form" data-confirm="Move this vehicle? Past jobs and invoices stay with <%= customer.name %>.">
+    <form method="post" action="/vehicles/<%= vehicle.id %>/transfer" class="form" data-confirm="Move this <%= vt.assetLower %>? Past jobs and invoices stay with <%= customer.name %>.">
       <div class="grid-2">
         <label>Existing customer
           <select name="customer_id"><option value="">Choose…</option><% for (const c of customers) { if (c.id === customer.id) continue; %><option value="<%= c.id %>"><%= c.name %><%= c.phone ? ' · ' + c.phone : '' %></option><% } %></select>
@@ -53,8 +53,8 @@
         <label>Their phone <input name="new_phone" type="tel"></label>
         <label>Note <input name="note" placeholder="Sold privately, fleet reassignment…"></label>
       </div>
-      <p class="hint">The new owner gets the vehicle from today. Jobs, estimates and invoices already done stay with the customer they were billed to.</p>
-      <button class="btn primary small">Move vehicle</button>
+      <p class="hint">The new owner gets the <%= vt.assetLower %> from today. Jobs, estimates and invoices already done stay with the customer they were billed to.</p>
+      <button class="btn primary small">Move <%= vt.assetLower %></button>
     </form>
   </details>
 </section>
@@ -66,7 +66,7 @@
     <div class="history-item">
       <div class="history-head">
         <a href="/documents/<%= h.doc.id %>"><strong><%= u.fmtDate(h.doc.issue_date) %></strong> · <%= u.docNumber(h.doc) %></a>
-        <span><%= h.doc.odometer ? h.doc.odometer.toLocaleString('en-AU') + ' km · ' : '' %><%= u.money(h.doc.total) %></span>
+        <span><%= h.doc.odometer ? h.doc.odometer.toLocaleString('en-AU') + ' ' + vt.unit + ' · ' : '' %><%= u.money(h.doc.total) %></span>
       </div>
       <% if (h.doc.notes) { %><p class="muted"><%= h.doc.notes %></p><% } %>
       <ul class="compact">

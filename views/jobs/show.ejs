@@ -58,12 +58,12 @@
         <% for (const [k, label] of Object.entries(PRIORITIES)) { %><option value="<%= k %>" <%= job.priority === k ? 'selected' : '' %>><%= label %></option><% } %>
       </select>
     </label>
-    <label>Odometer (km) <input name="odometer" inputmode="numeric" value="<%= job.odometer ?? '' %>"></label>
+    <label><%= vt.meter %> (<%= vt.unit %>) <input name="odometer" inputmode="numeric" value="<%= job.odometer ?? '' %>"></label>
     <label>Promised by <input type="date" name="due_date" value="<%= job.due_date || '' %>"></label>
     <label>Time <input type="time" name="due_time" value="<%= job.due_time || '' %>"></label>
     <label>Opened <input value="<%= u.fmtDate(job.created_at) %>" disabled></label>
   </div>
-  <label class="check"><input type="checkbox" name="is_service" value="1" <%= job.is_service ? 'checked' : '' %>> Counts as a service <span class="muted">(sets the vehicle's next service due when invoiced)</span></label>
+  <label class="check"><input type="checkbox" name="is_service" value="1" <%= job.is_service ? 'checked' : '' %>> Counts as a service <span class="muted">(sets the <%= vt.assetLower %>'s next service due when invoiced)</span></label>
   <label>Work requested <textarea name="description" rows="2"><%= job.description %></textarea></label>
   <label>Mechanic's notes <textarea name="tech_notes" rows="3" placeholder="What was found, what was done, recommendations"><%= job.tech_notes %></textarea></label>
 

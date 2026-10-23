@@ -1,0 +1,44 @@
+<%- include('head', { title: type.page.headline + ' · ' + PRODUCT, description: type.page.intro }) %>
+<section class="mk-hero">
+  <p class="mk-kicker"><svg viewBox="0 0 24 24" aria-hidden="true"><%- type.icon %></svg><%= type.short %></p>
+  <h1><%= type.page.headline %></h1>
+  <p class="mk-lede"><%= type.page.intro %></p>
+  <div class="mk-cta">
+    <a class="btn primary" href="/signup?type=<%= type.key %>">Start your 14-day free trial</a>
+    <span class="muted small">Set up for <%= type.label.toLowerCase() %>s from the first login.</span>
+  </div>
+</section>
+<section class="mk-points-grid">
+  <% for (const [title, text] of type.page.points) { %>
+    <div class="card"><h2><%= title %></h2><p><%= text %></p></div>
+  <% } %>
+</section>
+<section class="card mk-ready">
+  <h2>Ready on day one</h2>
+  <div class="grid-3">
+    <div>
+      <h3>Your words</h3>
+      <ul class="compact">
+        <li><%= type.terms.assets %>, not "vehicles"</li>
+        <li><%= type.terms.meter %> (<%= type.terms.unit %>)</li>
+        <li><%= type.terms.rego %> and <%= type.terms.vin %></li>
+        <li>Services every <%= type.interval.months %> months or <%= type.interval.meter.toLocaleString('en-AU') %> <%= type.terms.unit %></li>
+      </ul>
+    </div>
+    <div>
+      <h3>Inspection checklist</h3>
+      <ul class="compact"><% for (const s of sections) { %><li><%= s %></li><% } %></ul>
+    </div>
+    <div>
+      <h3>Starter price list</h3>
+      <ul class="compact"><% for (const s of services) { %><li><%= s %></li><% } %></ul>
+    </div>
+  </div>
+  <p class="hint">Everything is yours to edit: change the checklist, prices and procedures to match how your workshop runs.</p>
+</section>
+<section class="mk-hero mk-end">
+  <h2>Try it on your own jobs</h2>
+  <p class="mk-lede">Free for 14 days. Then one simple monthly price, with every feature and as many staff logins as you need.</p>
+  <a class="btn primary" href="/signup?type=<%= type.key %>">Start free trial</a>
+</section>
+<%- include('foot') %>

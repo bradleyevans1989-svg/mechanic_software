@@ -173,7 +173,7 @@
             <% } else { %>
 <form method="post" action="/bookings/<%= b.id %>/start" class="start-form">
               <select name="mechanic_id" class="pill-select" aria-label="Who's doing it"><option value="">Who's on it?</option><% for (const m of mechanics) { %><option value="<%= m.id %>"><%= m.name %></option><% } %></select>
-              <button class="btn small primary">Car's here: start job</button>
+              <button class="btn small primary"><%= vt.arrived %></button>
             </form>
             <% } %>
           </div>
@@ -204,7 +204,7 @@
 
   <section class="card">
     <h2>Service and rego due</h2>
-    <p class="hint">Vehicles with a service or rego date from 30 days ago to 30 days ahead.</p>
+    <p class="hint"><%= vt.assets %> with a service or rego date from 30 days ago to 30 days ahead.</p>
     <% if (!due.length) { %><p class="muted">Nothing due.</p><% } %>
     <table class="table">
       <% for (const v of due) { %>
@@ -212,7 +212,7 @@
           <td><a href="/vehicles/<%= v.id %>"><%= u.vehicleLabel(v) %></a><div class="muted small"><%= v.customer_name %><% if (v.customer_phone) { %> · <a href="tel:<%= v.customer_phone %>"><%= v.customer_phone %></a><% } %></div></td>
           <td>
             <% if (v.next_service_date) { %>Service <%= u.fmtDate(v.next_service_date) %><br><% } %>
-            <% if (v.rego_due) { %>Rego <%= u.fmtDate(v.rego_due) %><% } %>
+            <% if (v.rego_due) { %><%= vt.rego %> <%= u.fmtDate(v.rego_due) %><% } %>
           </td>
         </tr>
       <% } %>

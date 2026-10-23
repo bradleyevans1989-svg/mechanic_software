@@ -35,6 +35,7 @@ Bay Boss is workshop software for mechanics, built to be sold to many workshops 
 - **Staff logins**: each person has their own email and password. Owners see reports and settings and manage staff; staff do everything else.
 - **Technician logins**: technicians land on a phone-friendly **My jobs** page with the jobs assigned to them for today and coming up. On each job they clock on and off, tick off tasks (each can link to a procedure), fill in the inspection checklist, write mechanic's notes, take photos with the phone camera and leave notes for the office, and move the job between In progress, Waiting on parts and Ready for pickup. They can pick up an unassigned job. Prices, invoices, estimates, customers' contact details, parts, reports, settings and Xero are hidden from them. Hand out work from the Mechanic dropdown on each job in the Jobs list, board, Today screen and calendar day (it saves as you pick, and the calendar marks who's on leave), or pick who's on it when you press "Start job" on a booking. Add the task list on the job card. Demo technician: tech@example.com / demo-password.
 - **Xero sync**: customers, invoices and payments are sent to the workshop's own Xero automatically. Edits, removed payments and voids follow.
+- **Workshop types**: car mechanics, auto electricians, motorcycle and scooter, truck and heavy vehicle, farm machinery, and boat and marine workshops. The type (picked at sign-up, changeable under Settings) sets what the app calls the things being repaired (vehicles, bikes, trucks, machines, boats), km or engine hours, VIN, serial/PIN or HIN, make suggestions, the inspection checklist, and a starter price list and procedures. Public pages for each type are at `/workshops`.
 - **Many workshops**: self-serve sign-up, per-workshop settings, numbering and timezone.
 - **Subscriptions**: 14-day free trial, then a monthly plan paid through Stripe. Workshops that stop paying are locked (never deleted) until they subscribe again.
 
@@ -54,7 +55,8 @@ Needs Node.js 20+ and Postgres 15+.
 npm install
 createdb workshop
 export DATABASE_URL=postgres://localhost/workshop
-npm run seed     # optional: a demo workshop, log in as demo@example.com / demo-password
+npm run seed     # optional: demo workshops, log in as demo@example.com / demo-password
+                 # (or demo-electrical@, demo-motorcycle@, demo-truck@, demo-farm@, demo-marine@example.com)
 npm start        # http://localhost:3000
 ```
 
