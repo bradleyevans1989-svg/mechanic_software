@@ -1,0 +1,86 @@
+<%- include('../partials/header', { title: 'Match columns' }) %>
+<div class="page-head">
+  <div>
+    <h1>Match columns</h1>
+    <p class="muted"><%= SOURCES[source].name === 'Something else' ? 'We didn\'t recognise the software, so check each column below.' : (detected === source ? 'This looks like a ' + SOURCES[source].name + ' export. ' : 'From ' + SOURCES[source].name + '. ') + 'Columns we recognised are already matched.' %></p>
+  </div>
+</div>
+<%- include('steps', { step: 2 }) %>
+<% for (const p of problems) { %><p class="error"><%= p %></p><% } %>
+
+<form method="post" action="/import/columns" class="card form toolbar-row">
+  <%- include('state', { includeSheets: false, includeMap: false, includeOptions: false }) %>
+  <input type="hidden" name="remap" value="1">
+  <label class="inline">Old software
+    <select name="source"><% for (const [k, s] of Object.entries(SOURCES)) { %><option value="<%= k %>" <%= source === k ? 'selected' : '' %>><%= s.name %></option><% } %></select>
+  </label>
+  <% for (const [slot, f] of Object.entries(files)) { if (f.sheets.length < 2 || !f.own) continue; %>
+    <label class="inline"><%= KINDS[slot].label %> sheet
+      <select name="files[<%= slot %>][sheet]"><% f.sheets.forEach((s, i) => { %><option value="<%= i %>" <%= f.sheet === i ? 'selected' : '' %>><%= s.name %> (<%= s.rows.length %> rows)</option><% }) %></select>
+    </label>
+  <% } %>
+  <button class="btn">Match again</button>
+</form>
+
+<form method="post" action="/import/preview">
+  <%- include('state', { includeSheets: true, includeMap: false, includeOptions: false }) %>
+  <% for (const [slot, p] of Object.entries(prepared)) { const f = files[slot]; const sample = p.rows.slice(0, 3); %>
+    <section class="card">
+      <div class="card-head">
+        <h2><%= KINDS[slot].label %> <span class="muted small"><%= f.name %><%= f.sheets.length > 1 ? ' · sheet ' + f.sheets[f.sheet].name : '' %> · <%= p.count %> rows</span></h2>
+      </div>
+      <% if (p.headerIndex > 0) { %><p class="hint">Column names found on line <%= p.headerIndex + 1 %>; the lines above them are left out.</p><% } %>
+      <% const fieldRow = (field) => { const col = p.map[field.key]; %>
+          <tr class="<%= col === undefined ? 'unmapped' : '' %>">
+            <td><strong><%= field.label %></strong><% if (field.hint) { %><br><small class="muted"><%= field.hint %></small><% } %></td>
+            <td>
+              <select name="map[<%= slot %>][<%= field.key %>]" aria-label="<%= field.label %>">
+                <option value="">Not in this file</option>
+                <% p.headers.forEach((h, i) => { %><option value="<%= i %>" <%= col === i ? 'selected' : '' %>><%= h || 'Column ' + (i + 1) %></option><% }) %>
+              </select>
+            </td>
+            <td class="muted small sample"><%= col === undefined ? '' : sample.map((r) => r[col]).filter(Boolean).join(' · ').slice(0, 80) %></td>
+          </tr>
+      <% }; %>
+      <% const main = KINDS[slot].fields.filter((f) => !f.vehicle); const car = KINDS[slot].fields.filter((f) => f.vehicle); %>
+      <div class="scroll-x"><table class="table map-table">
+        <thead><tr><th>Bay Boss field</th><th>Column in your file</th><th>First rows</th></tr></thead>
+        <% main.forEach(fieldRow) %>
+      </table></div>
+      <% if (car.length) { const anyCar = car.some((f) => p.map[f.key] !== undefined); %>
+        <details class="map-more" <%= anyCar || !prepared.vehicles ? 'open' : '' %>>
+          <summary>Vehicle columns in this file<%= anyCar ? '' : ' (none found)' %></summary>
+          <div class="scroll-x"><table class="table map-table">
+            <% car.forEach(fieldRow) %>
+          </table></div>
+        </details>
+      <% } %>
+      <% const used = new Set(Object.values(p.map)); const left = p.headers.filter((h, i) => h && !used.has(i)); %>
+      <% if (left.length) { %><p class="hint">Not brought across: <%= left.join(', ') %>.</p><% } %>
+    </section>
+  <% } %>
+
+  <section class="card form">
+    <h2>Options</h2>
+    <% if (kind === 'parts') { %>
+      <div class="grid-3">
+        <label>Sell prices in the file
+          <select name="options[sell_inc_gst]"><option value="1" <%= options.sellIncGst ? 'selected' : '' %>>Include GST (take it off)</option><option value="0" <%= options.sellIncGst ? '' : 'selected' %>>Are ex GST</option></select>
+        </label>
+        <label>Cost prices in the file
+          <select name="options[cost_inc_gst]"><option value="0" <%= options.costIncGst ? '' : 'selected' %>>Are ex GST</option><option value="1" <%= options.costIncGst ? 'selected' : '' %>>Include GST (take it off)</option></select>
+        </label>
+        <label>Markup when there's no sell price (%) <input name="options[markup]" inputmode="decimal" value="<%= options.markup %>"></label>
+        <label>Stock on hand
+          <select name="options[set_stock]"><option value="1" <%= options.setStock ? 'selected' : '' %>>Set it to the file's quantity</option><option value="0" <%= options.setStock ? '' : 'selected' %>>Leave stock as it is</option></select>
+        </label>
+      </div>
+      <p class="hint">Bay Boss keeps prices ex GST. Check a price or two on the next step against your old system.</p>
+    <% } else { %>
+      <label>Tag new customers <input name="options[tag]" value="<%= options.tag %>" maxlength="40" placeholder="Leave blank for no tag"></label>
+      <p class="hint">The tag lets you find everyone you imported on the Customers page, and remove it later if you like.</p>
+    <% } %>
+  </section>
+  <div class="form-actions"><a class="btn" href="/import?kind=<%= kind %>">Start again</a> <button class="btn primary">Next: check the import</button></div>
+</form>
+<%- include('../partials/footer') %>

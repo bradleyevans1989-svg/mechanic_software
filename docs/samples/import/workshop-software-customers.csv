@@ -1,0 +1,6 @@
+IMPORTED ID,FIRST NAME,LAST NAME,COMPANY NAME,CUSTOMER TYPE,ADDRESS 1,ADDRESS 2,SUBURB,STATE,POSTCODE,CASH OR ACCOUNT,PH NUMB,MOBILE,EMAIL,NOTE,CUSTOMER SOURCE,PREFERRED CONTACT METHOD
+1001,Sam,Taylor,,I,,,,,,CASH,,0412 345 678,sam@example.com,Long-time customer,Walk-in,SMS
+1002,Priya,Sharma,,I,14 Banksia Ave,,Paddington,QLD,4064,CASH,07 3369 1122,0401 222 333,priya.sharma@example.com,,Google,SMS
+1003,Dave,Brennan,Brennan Plumbing Pty Ltd,C,"Unit 3, 88 Industrial Dr",,Brendale,QLD,4500,ACCOUNT,07 3205 4400,0438 765 432,accounts@brennanplumbing.example,Fleet: 3 utes. Invoices to accounts email.,Referral,Email
+1004,Megan,O'Connor,,I,2/9 Kent St,,New Farm,QLD,4005,CASH,,0455 100 200,megan.oc@example,,Facebook,SMS
+1005,,,,I,,,,,,CASH,,,,,,

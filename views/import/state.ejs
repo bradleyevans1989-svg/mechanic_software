@@ -1,0 +1,23 @@
+<% /* Everything chosen so far, carried to the next step. */ %>
+<input type="hidden" name="kind" value="<%= kind %>">
+<input type="hidden" name="source" value="<%= source %>">
+<% for (const [slot, f] of Object.entries(files)) { if (!f.own) continue; %>
+  <input type="hidden" name="files[<%= slot %>][name]" value="<%= f.name %>">
+  <input type="hidden" name="files[<%= slot %>][data]" value="<%= f.data %>">
+<% } %>
+<% for (const [slot, f] of Object.entries(files)) { if (!includeSheets) break; %>
+  <% if (f.own) { %><input type="hidden" name="files[<%= slot %>][sheet]" value="<%= f.sheet %>"><% } %>
+<% } %>
+<% if (typeof prepared !== 'undefined' && prepared && includeMap) { for (const [slot, p] of Object.entries(prepared)) { for (const [k, i] of Object.entries(p.map)) { %>
+  <input type="hidden" name="map[<%= slot %>][<%= k %>]" value="<%= i %>">
+<% } } } %>
+<% if (typeof options !== 'undefined' && options && includeOptions) { %>
+  <% if (kind === 'parts') { %>
+    <input type="hidden" name="options[sell_inc_gst]" value="<%= options.sellIncGst ? 1 : 0 %>">
+    <input type="hidden" name="options[cost_inc_gst]" value="<%= options.costIncGst ? 1 : 0 %>">
+    <input type="hidden" name="options[markup]" value="<%= options.markup %>">
+    <input type="hidden" name="options[set_stock]" value="<%= options.setStock ? 1 : 0 %>">
+  <% } else { %>
+    <input type="hidden" name="options[tag]" value="<%= options.tag %>">
+  <% } %>
+<% } %>

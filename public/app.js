@@ -275,6 +275,64 @@ document.addEventListener('click', (e) => {
   sync();
 })();
 
+// Live board: tick the clocks every second, and fetch a fresh board every 20 seconds.
+(() => {
+  const root = document.querySelector('[data-liveboard]');
+  if (!root) return;
+  const clock = document.querySelector('[data-bw-clock]');
+  const fmtNow = new Intl.DateTimeFormat('en-AU', { timeZone: root.dataset.tz || undefined, hour: 'numeric', minute: '2-digit' });
+  const hm = (m) => { m = Math.round(m); const h = Math.floor(m / 60); return h ? `${h}h ${String(m % 60).padStart(2, '0')}m` : `${m}m`; };
+  const hms = (s) => { s = Math.floor(s); return `${Math.floor(s / 3600)}:${String(Math.floor(s / 60) % 60).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; };
+  const PACE = { ok: ['✓', 'On track'], nearing: ['!', 'Nearly at estimate'], over: ['▲', 'Over estimate'] };
+  let loadedAt = Date.now();
+
+  function tick() {
+    if (clock) clock.textContent = fmtNow.format(new Date());
+    const gone = (Date.now() - loadedAt) / 1000;
+    root.querySelectorAll('.bay').forEach((bay) => {
+      const running = Number(bay.dataset.running);
+      if (!running) return;
+      const secs = Number(bay.dataset.sec) + running * gone;
+      bay.querySelector('[data-elapsed]').textContent = hms(secs);
+      const est = Number(bay.dataset.est);
+      if (!est) return;
+      const mins = Math.floor(secs / 60);
+      const pace = mins > est ? 'over' : mins >= est * 0.8 ? 'nearing' : 'ok';
+      const left = bay.querySelector('[data-left]');
+      if (left) left.textContent = mins > est ? `${hm(mins - est)} over` : `${hm(est - mins)} left`;
+      if (!bay.classList.contains(`pace-${pace}`)) {
+        bay.classList.remove('pace-ok', 'pace-nearing', 'pace-over');
+        bay.classList.add(`pace-${pace}`);
+        bay.querySelector('[data-pace]').innerHTML = `<span aria-hidden="true">${PACE[pace][0]}</span> ${PACE[pace][1]}`;
+      }
+    });
+  }
+
+  async function refresh() {
+    try {
+      const res = await fetch('/live-board?part=board', { headers: { accept: 'text/html' } });
+      // A redirect to the login page means the session ended; reload so it shows.
+      if (res.redirected || !res.ok) return res.status === 401 || res.redirected ? location.reload() : undefined;
+      root.innerHTML = await res.text();
+      loadedAt = Date.now();
+      tick();
+    } catch {
+      // Offline for a moment: keep ticking and try again next time.
+    }
+  }
+
+  tick();
+  setInterval(tick, 1000);
+  setInterval(refresh, 20000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
+  // Keep a workshop screen from going to sleep while the board is up.
+  if (document.body.classList.contains('bw-tv') && navigator.wakeLock) {
+    const lock = () => navigator.wakeLock.request('screen').catch(() => {});
+    lock();
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) lock(); });
+  }
+})();
+
 // The menu button folds the sidebar to icons on a wide screen, and slides it in over the page on a phone.
 document.addEventListener('click', (e) => {
   const root = document.documentElement;
@@ -296,15 +354,58 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') document.documentElement.classList.remove('side-open');
 });
 
-// A CSV file picked on the price file import fills the textarea, so the form posts as plain text.
-document.querySelectorAll('[data-csv-into]').forEach((input) => {
+
+// Spreadsheet uploads (CSV or Excel) travel as base64 in hidden fields, so a
+// multi-step form can carry them from step to step without storing anything.
+document.querySelectorAll('[data-file-into]').forEach((input) => {
   input.addEventListener('change', () => {
+    const slot = input.dataset.fileInto;
+    const form = input.form;
+    const name = form.querySelector(`[data-file-name="${slot}"]`);
+    const data = form.querySelector(`[data-file-data="${slot}"]`);
     const file = input.files && input.files[0];
-    const target = document.getElementById(input.dataset.csvInto);
-    if (!file || !target) return;
+    if (!file) { name.value = ''; data.value = ''; return; }
     const reader = new FileReader();
-    reader.onload = () => { target.value = reader.result; };
-    reader.readAsText(file);
+    reader.onload = () => { name.value = file.name; data.value = String(reader.result).replace(/^data:[^,]*,/, ''); };
+    reader.readAsDataURL(file);
+  });
+});
+
+// The import's upload step shows the file pickers for what's being imported.
+document.querySelectorAll('[data-import-upload]').forEach((form) => {
+  const show = () => {
+    const kind = (form.querySelector('[name="kind"]:checked') || {}).value || 'customers';
+    form.querySelectorAll('[data-kind-show]').forEach((el) => { el.hidden = el.dataset.kindShow !== kind; });
+  };
+  form.addEventListener('change', show);
+  show();
+  form.addEventListener('submit', (e) => {
+    const kind = (form.querySelector('[name="kind"]:checked') || {}).value;
+    const main = form.querySelector(`[data-file-data="${kind}"]`);
+    if (main && !main.value) { e.preventDefault(); alert(kind === 'parts' ? 'Choose your parts or stock file first.' : 'Choose your customers file first.'); }
+  });
+});
+
+// Row filter on the import check step.
+document.querySelectorAll('[data-import-filter]').forEach((tabs) => {
+  const rows = document.querySelectorAll('.import-rows tbody tr, .import-rows tr[data-status]');
+  tabs.addEventListener('click', (e) => {
+    const a = e.target.closest('[data-show]');
+    if (!a) return;
+    e.preventDefault();
+    tabs.querySelectorAll('a').forEach((x) => x.classList.toggle('active', x === a));
+    const want = a.dataset.show;
+    rows.forEach((r) => {
+      r.hidden = want === 'note' ? r.dataset.note !== '1' : Boolean(want) && r.dataset.status !== want;
+    });
+  });
+});
+
+// Long-running form posts say so and can't be pressed twice.
+document.querySelectorAll('form[data-busy]').forEach((form) => {
+  form.addEventListener('submit', () => {
+    const b = form.querySelector('button');
+    if (b) { b.disabled = true; b.textContent = form.dataset.busy; }
   });
 });
 
