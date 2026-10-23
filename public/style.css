@@ -752,3 +752,64 @@ form.banner.warn { display: flex; align-items: center; gap: .75rem; flex-wrap: w
 /* Rego and VIN lookup on vehicle forms */
 .lookup-bar { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; margin: .25rem 0 .75rem; }
 .lookup-bar select { width: auto; min-height: 2.2rem; padding: .25rem .6rem; }
+
+
+/* Live board: every job on the floor, built to be left up on a workshop screen */
+.bw-head p { margin: .1rem 0 0; }
+.bw-now { font-weight: 800; font-size: 1.4rem; letter-spacing: -.02em; font-variant-numeric: tabular-nums; margin-right: .5rem; }
+/* Light in the app; the workshop screen (body.bw-tv) swaps in the dark set below. */
+#bays { --bw-bg: transparent; --bw-tile: #ffffff; --bw-line: #e2e2e2; --bw-track: #ececea; --bw-ink: #0e0e0e; --bw-muted: #6f6f6f;
+  --bw-accent: #e8520a; --bw-accent-ink: #b8400a; --bw-over-ink: #b42323; --bw-warn-ink: #8a5a00;
+  --pace-ok: #0ca30c; --pace-nearing: #eda100; --pace-over: #d03b3b;
+  --tech-0: #2a78d6; --tech-1: #1baf7a; --tech-2: #6250d6; --tech-3: #e87ba4; --tech-4: #eda100; --tech-5: #008300; --tech-other: #8a8a86;
+  background: var(--bw-bg); color: var(--bw-ink); }
+body.bw-tv #bays { --bw-bg: #0f0f0e; --bw-tile: #1a1a19; --bw-line: #2c2c2a; --bw-track: #262624; --bw-ink: #f0efec; --bw-muted: #a3a29b;
+  --bw-accent-ink: #e8520a; --bw-over-ink: #ff8a8a; --bw-warn-ink: #fab219; --pace-nearing: #fab219;
+  --tech-0: #3987e5; --tech-1: #199e70; --tech-2: #9085e9; --tech-3: #d55181; --tech-4: #c98500; --tech-5: #008300; }
+#bays a { color: inherit; }
+.bw-summary { display: flex; flex-wrap: wrap; gap: .5rem 1.4rem; padding: .25rem .35rem 1rem; color: var(--bw-muted); font-size: .9rem; }
+.bw-summary b { color: var(--bw-ink); font-size: 1.15rem; margin-right: .3rem; font-variant-numeric: tabular-nums; }
+.bw-summary span[class^="pace-"]::before { content: ""; display: inline-block; width: .6rem; height: .6rem; border-radius: 2px; margin-right: .4rem; background: var(--c); }
+.bw-summary .pace-ok { --c: var(--pace-ok); } .bw-summary .pace-nearing { --c: var(--pace-nearing); } .bw-summary .pace-over { --c: var(--pace-over); }
+.bw-live { display: inline-block; width: .55rem; height: .55rem; border-radius: 50%; background: var(--bw-accent); margin-right: .4rem; animation: bw-pulse 1.6s ease-in-out infinite; vertical-align: middle; }
+@keyframes bw-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(232, 82, 10, .55); } 50% { box-shadow: 0 0 0 .35rem rgba(232, 82, 10, 0); } }
+.bw-empty { text-align: center; padding: 3rem 1rem; color: var(--bw-muted); }
+.bw-empty strong { color: var(--bw-ink); font-size: 1.2rem; }
+.bw-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: .85rem; }
+.bay { background: var(--bw-tile); border-radius: var(--r-xl); padding: .9rem 1rem .8rem; display: flex; flex-direction: column; gap: .5rem; border-top: 4px solid var(--bw-line); --pace: var(--bw-muted); }
+.bay.pace-ok { --pace: var(--pace-ok); } .bay.pace-nearing { --pace: var(--pace-nearing); } .bay.pace-over { --pace: var(--pace-over); }
+.bay { border-top-color: var(--pace); }
+.bay.urgent { box-shadow: inset 4px 0 0 var(--bw-accent); }
+.bay header { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+.bay-no { background: var(--bw-accent); color: #0f0f0e !important; font-weight: 800; border-radius: 6px; padding: .05rem .45rem; font-size: .85rem; }
+.bay-rego { font-size: 1.15rem; letter-spacing: .04em; text-transform: uppercase; }
+.bay-pace { margin-left: auto; font-size: .78rem; font-weight: 700; color: var(--bw-ink); border: 1.5px solid var(--pace); border-radius: 999px; padding: .1rem .55rem; white-space: nowrap; }
+.bay-pace span { color: var(--pace); }
+.bay-car { color: var(--bw-muted); font-size: .85rem; }
+.bay-car b { color: var(--bw-warn-ink); font-weight: 600; }
+.bay-clock { display: flex; align-items: baseline; gap: .5rem; flex-wrap: wrap; color: var(--bw-muted); font-size: .85rem; }
+.bay-clock b { color: var(--bw-ink); font-size: 2rem; font-weight: 800; letter-spacing: -.03em; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.bay-left { margin-left: auto; color: var(--bw-ink); font-weight: 600; }
+.bay.pace-over .bay-left { color: var(--bw-over-ink); }
+.bay-bar { position: relative; display: flex; gap: 2px; height: 14px; background: var(--bw-track); border-radius: 4px; overflow: hidden; }
+.bay-bar > span { height: 100%; flex: none; transition: width .6s ease; }
+.bay-bar > span:first-child { border-radius: 4px 0 0 4px; }
+.bay-over { position: absolute; top: 0; bottom: 0; right: 0; background: repeating-linear-gradient(135deg, rgba(208, 59, 59, .55) 0 4px, transparent 4px 8px); pointer-events: none; }
+.bay-est { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; background: var(--bw-ink); }
+.bay-chart { width: 100%; height: 72px; display: block; overflow: visible; }
+.bay-chart .est { stroke: var(--bw-muted); stroke-width: 1.5; stroke-dasharray: 4 4; }
+.bay-chart .logged { fill: none; stroke: var(--pace); stroke-width: 2; stroke-linejoin: round; }
+.bay-chart .area { fill: var(--pace); opacity: .14; }
+.bay-chart .hit { fill: transparent; }
+.bay-axis { display: flex; justify-content: space-between; color: var(--bw-muted); font-size: .72rem; margin-top: -.3rem; }
+.bay-techs { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: .25rem 1rem; font-size: .85rem; }
+.bay-techs li > i { display: inline-block; width: .65rem; height: .65rem; border-radius: 2px; margin-right: .35rem; }
+.bay-techs b { font-variant-numeric: tabular-nums; }
+.bw-on { color: var(--bw-accent-ink); font-size: .78rem; font-weight: 600; margin-left: .2rem; }
+.bay footer { display: flex; justify-content: space-between; gap: .5rem; flex-wrap: wrap; color: var(--bw-muted); font-size: .75rem; border-top: 1px solid var(--bw-line); padding-top: .45rem; margin-top: auto; }
+body.bw-tv { background: #0f0f0e; color: #f0efec; }
+body.bw-tv main { padding: 1rem 1.25rem; }
+body.bw-tv .bw-head .muted { color: #a3a29b; }
+body.bw-tv #bays { padding: 0; }
+body.bw-tv .bay-clock b { font-size: 2.4rem; }
+@media (prefers-reduced-motion: reduce) { .bw-live { animation: none; } .bay-bar > span { transition: none; } }

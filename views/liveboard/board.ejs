@@ -1,0 +1,73 @@
+<% const hm = (m) => { m = Math.round(m); const h = Math.floor(m / 60); return h ? `${h}h ${String(m % 60).padStart(2, '0')}m` : `${m}m`; };
+   const PACE = { ok: ['✓', 'On track'], nearing: ['!', 'Nearly at estimate'], over: ['▲', 'Over estimate'], none: ['–', 'No estimate'] }; %>
+<div class="bw-summary" data-rendered-at="<%= renderedAt %>">
+  <span><b><%= board.length %></b> on the floor</span>
+  <span><i class="bw-live" aria-hidden="true"></i><b><%= counts.live %></b> being worked on now</span>
+  <span class="pace-ok"><b><%= counts.ok %></b> on track</span>
+  <span class="pace-nearing"><b><%= counts.nearing %></b> nearly at estimate</span>
+  <span class="pace-over"><b><%= counts.over %></b> over</span>
+</div>
+
+<% if (!board.length) { %>
+  <div class="bw-empty">
+    <strong>All quiet in the bays.</strong>
+    <p>Jobs show up here once they're in progress or someone clocks on to them from the job card.</p>
+  </div>
+<% } %>
+
+<div class="bw-grid">
+<% for (const j of board) {
+     const est = j.estimate ? j.estimate.minutes : 0;
+     const scale = Math.max(est, j.minutes, 1);
+     const estPct = est ? est / scale * 100 : null;
+     const W = 300, H = 72, pts = j.curve.points, span = Math.max(j.curve.spanMinutes, 1);
+     const yMax = Math.max(est, j.minutes, 30) * 1.1;
+     const x = (m) => (m / span * W).toFixed(1), y = (m) => (H - m / yMax * H).toFixed(1);
+     const line = pts.map(([a, b]) => `${x(a)},${y(b)}`).join(' ');
+     const since = j.curve.from && renderedAt - j.curve.from < 12 * 3600e3 ? u.fmtTime(j.curve.from, settings.timezone) : u.fmtDateTime(j.curve.from, settings.timezone);
+     const car = [j.year, j.make, j.model].filter(Boolean).join(' '); %>
+  <article class="bay pace-<%= j.pace %><%= j.priority === 'urgent' ? ' urgent' : '' %>" data-sec="<%= j.seconds %>" data-running="<%= j.running %>" data-est="<%= est %>">
+    <header>
+      <a class="bay-no" href="/jobs/<%= j.id %>">J<%= j.number %></a>
+      <strong class="bay-rego"><%= j.rego || 'No rego' %></strong>
+      <span class="bay-pace" data-pace><span aria-hidden="true"><%= PACE[j.pace][0] %></span> <%= PACE[j.pace][1] %></span>
+    </header>
+    <div class="bay-car"><%= car || 'Vehicle not set' %> · <%= j.customer_name %><% if (j.status === 'waiting_parts') { %> · <b>waiting on parts</b><% } %></div>
+
+    <div class="bay-clock">
+      <b data-elapsed><%= hm(j.minutes) %></b>
+      <span><%= est ? `of ${hm(est)} estimated` : 'logged, no estimate' %></span>
+      <span class="bay-left" data-left><% if (est) { %><%= j.minutes > est ? `${hm(j.minutes - est)} over` : `${hm(est - j.minutes)} left` %><% } %></span>
+    </div>
+
+    <div class="bay-bar" role="img" aria-label="<%= hm(j.minutes) %> logged<%= est ? ` of ${hm(est)} estimated` : '' %>">
+      <% for (const t of j.techs) { if (!t.minutes) continue; %>
+        <span style="width:<%= (t.minutes / scale * 100).toFixed(2) %>%;background:<%= t.colour %>" title="<%= t.name %>: <%= hm(t.minutes) %>"></span>
+      <% } %>
+      <% if (estPct !== null && estPct < 100) { %><i class="bay-over" style="left:<%= estPct.toFixed(2) %>%"></i><% } %>
+      <% if (estPct !== null) { %><i class="bay-est" style="left:<%= estPct.toFixed(2) %>%" title="Estimate: <%= hm(est) %>"></i><% } %>
+    </div>
+
+    <% if (pts.length > 1) { %>
+    <svg class="bay-chart" viewBox="0 0 <%= W %> <%= H %>" preserveAspectRatio="none" role="img" aria-label="Hours logged since <%= since %>">
+      <% if (est) { %><line class="est" x1="0" x2="<%= W %>" y1="<%= y(est) %>" y2="<%= y(est) %>" vector-effect="non-scaling-stroke"><title>Estimate <%= hm(est) %></title></line><% } %>
+      <polygon class="area" points="0,<%= H %> <%= line %> <%= x(pts[pts.length - 1][0]) %>,<%= H %>"/>
+      <polyline class="logged" points="<%= line %>" vector-effect="non-scaling-stroke"/>
+      <% for (const [a, b] of pts) { %><circle cx="<%= x(a) %>" cy="<%= y(b) %>" r="9" class="hit"><title><%= hm(b) %> logged after <%= hm(a) %></title></circle><% } %>
+    </svg>
+    <div class="bay-axis"><span>since <%= since %></span><span>now</span></div>
+    <% } %>
+
+    <ul class="bay-techs">
+      <% for (const t of j.techs) { %>
+        <li><i style="background:<%= t.colour %>" aria-hidden="true"></i><%= t.name %> <b><%= hm(t.minutes) %></b><% if (t.running) { %> <span class="bw-on"><i class="bw-live" aria-hidden="true"></i>on since <%= u.fmtTime(t.running, settings.timezone) %></span><% } %></li>
+      <% } %>
+      <% if (!j.techs.length) { %><li class="muted">Nobody has clocked on yet<%= j.mechanic_name ? ` · ${j.mechanic_name} assigned` : '' %></li><% } %>
+    </ul>
+    <footer>
+      <span><%= j.estimate ? `Estimate from ${j.estimate.from}` : 'Add labour to the estimate or booking to track pace' %></span>
+      <% if (j.due_date) { %><span>Promised <%= j.due_date === today ? 'today' : u.fmtDate(j.due_date) %> <%= j.due_time || '' %></span><% } %>
+    </footer>
+  </article>
+<% } %>
+</div>

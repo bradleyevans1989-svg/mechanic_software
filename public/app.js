@@ -251,6 +251,64 @@ document.addEventListener('click', (e) => {
   sync();
 })();
 
+// Live board: tick the clocks every second, and fetch a fresh board every 20 seconds.
+(() => {
+  const root = document.querySelector('[data-liveboard]');
+  if (!root) return;
+  const clock = document.querySelector('[data-bw-clock]');
+  const fmtNow = new Intl.DateTimeFormat('en-AU', { timeZone: root.dataset.tz || undefined, hour: 'numeric', minute: '2-digit' });
+  const hm = (m) => { m = Math.round(m); const h = Math.floor(m / 60); return h ? `${h}h ${String(m % 60).padStart(2, '0')}m` : `${m}m`; };
+  const hms = (s) => { s = Math.floor(s); return `${Math.floor(s / 3600)}:${String(Math.floor(s / 60) % 60).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; };
+  const PACE = { ok: ['✓', 'On track'], nearing: ['!', 'Nearly at estimate'], over: ['▲', 'Over estimate'] };
+  let loadedAt = Date.now();
+
+  function tick() {
+    if (clock) clock.textContent = fmtNow.format(new Date());
+    const gone = (Date.now() - loadedAt) / 1000;
+    root.querySelectorAll('.bay').forEach((bay) => {
+      const running = Number(bay.dataset.running);
+      if (!running) return;
+      const secs = Number(bay.dataset.sec) + running * gone;
+      bay.querySelector('[data-elapsed]').textContent = hms(secs);
+      const est = Number(bay.dataset.est);
+      if (!est) return;
+      const mins = Math.floor(secs / 60);
+      const pace = mins > est ? 'over' : mins >= est * 0.8 ? 'nearing' : 'ok';
+      const left = bay.querySelector('[data-left]');
+      if (left) left.textContent = mins > est ? `${hm(mins - est)} over` : `${hm(est - mins)} left`;
+      if (!bay.classList.contains(`pace-${pace}`)) {
+        bay.classList.remove('pace-ok', 'pace-nearing', 'pace-over');
+        bay.classList.add(`pace-${pace}`);
+        bay.querySelector('[data-pace]').innerHTML = `<span aria-hidden="true">${PACE[pace][0]}</span> ${PACE[pace][1]}`;
+      }
+    });
+  }
+
+  async function refresh() {
+    try {
+      const res = await fetch('/live-board?part=board', { headers: { accept: 'text/html' } });
+      // A redirect to the login page means the session ended; reload so it shows.
+      if (res.redirected || !res.ok) return res.status === 401 || res.redirected ? location.reload() : undefined;
+      root.innerHTML = await res.text();
+      loadedAt = Date.now();
+      tick();
+    } catch {
+      // Offline for a moment: keep ticking and try again next time.
+    }
+  }
+
+  tick();
+  setInterval(tick, 1000);
+  setInterval(refresh, 20000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
+  // Keep a workshop screen from going to sleep while the board is up.
+  if (document.body.classList.contains('bw-tv') && navigator.wakeLock) {
+    const lock = () => navigator.wakeLock.request('screen').catch(() => {});
+    lock();
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) lock(); });
+  }
+})();
+
 // The menu button folds the sidebar to icons on a wide screen, and slides it in over the page on a phone.
 document.addEventListener('click', (e) => {
   const root = document.documentElement;

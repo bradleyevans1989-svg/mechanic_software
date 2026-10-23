@@ -127,6 +127,7 @@ function createApp(store, { autoSync = true } = {}) {
   require('./routes/timesheets')(app, ctx);
   require('./routes/calendar')(app, ctx);
   require('./routes/clocking')(app, ctx);
+  require('./routes/liveboard')(app, ctx);
   require('./routes/team')(app, ctx);
   require('./routes/templates')(app, ctx);
   messageRoutes.pages(app, ctx);

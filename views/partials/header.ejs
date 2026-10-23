@@ -19,6 +19,7 @@
   '/': '<rect x="3.5" y="3.5" width="7" height="8.5" rx="2.2"/><rect x="13.5" y="3.5" width="7" height="5" rx="2.2"/><rect x="13.5" y="11.5" width="7" height="9" rx="2.2"/><rect class="acc" x="3.5" y="15" width="7" height="5.5" rx="2.2"/>',
   '/bookings': '<rect x="3.5" y="5" width="17" height="15.5" rx="3.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/><path class="acc" d="M8 14.2h1.5M12 14.2h1.5M8 17.2h1.5"/>',
   '/jobs': '<path d="M14.9 4.2a4.6 4.6 0 0 0-5.6 6l-5 5a2 2 0 0 0 2.8 2.8l5-5a4.6 4.6 0 0 0 6-5.6"/><path class="acc" d="M14.9 4.2l-2.3 2.3.5 2.6 2.6.5 2.3-2.3"/>',
+  '/live-board': '<rect x="3" y="4" width="18" height="13.5" rx="3.5"/><path d="M8.5 21h7M12 17.5V21"/><path class="acc" d="M7 13.5l3-3 2.5 2L17 8"/>',
   '/estimates': '<path d="M7.5 3h6.5l5 5v10.5a2.5 2.5 0 0 1-2.5 2.5h-9A2.5 2.5 0 0 1 5 18.5v-13A2.5 2.5 0 0 1 7.5 3z"/><path d="M14 3v5h5"/><path class="acc" d="M9 13h6M9 17h4"/>',
   '/invoices': '<path d="M5.5 3.5h13v17l-2.6-1.6-2.6 1.6-2.6-1.6-2.6 1.6-2.6-1.6z"/><path class="acc" d="M9 8.5h6M9 12.5h6M9 16.5h3"/>',
   '/customers': '<circle cx="9.5" cy="8" r="3.8"/><path d="M2.5 20.5a7 7 0 0 1 14 0"/><path class="acc" d="M16 4.6a3.8 3.8 0 0 1 0 6.8M18.6 14.6a7 7 0 0 1 3 5.9"/>',
@@ -30,7 +31,7 @@
   '/settings': '<path d="M3.5 7h9.5M18 7h2.5M3.5 17h3M11 17h9.5"/><circle class="acc" cx="15.5" cy="7" r="2.5"/><circle class="acc" cx="8.5" cy="17" r="2.5"/>',
 }; %>
   <nav class="nav" aria-label="Main menu">
-    <% const links = [['/', 'Today'], ['/bookings', 'Diary'], ['/jobs', 'Jobs'], ['/estimates', 'Estimates'], ['/invoices', 'Invoices'], ['/customers', 'Customers'], ['/parts', 'Parts'], ['/reminders', 'Reminders'], ['/messages', 'Messages'], ['/team', 'Team']];
+    <% const links = [['/', 'Today'], ['/bookings', 'Diary'], ['/jobs', 'Jobs'], ['/live-board', 'Live board'], ['/estimates', 'Estimates'], ['/invoices', 'Invoices'], ['/customers', 'Customers'], ['/parts', 'Parts'], ['/reminders', 'Reminders'], ['/messages', 'Messages'], ['/team', 'Team']];
        if (user && user.role === 'owner') links.push(['/reports', 'Reports'], ['/settings', 'Settings']); %>
     <% for (const [href, label] of links) { const active = href === '/' ? path === '/' : href === '/team' ? /^\/(team|procedures|training|roster|clocking)/.test(path) : href === '/customers' ? /^\/(customers|vehicles)/.test(path) : href === '/parts' ? /^\/(parts|purchase-orders|suppliers)/.test(path) : path.startsWith(href); %>
       <a href="<%= href %>" class="<%= active ? 'active' : '' %>" data-label="<%= label %>"<%- active ? ' aria-current="page"' : '' %>><svg viewBox="0 0 24 24" aria-hidden="true"><%- icons[href] || icons['/parts'] %></svg><span><%= label %></span></a>
