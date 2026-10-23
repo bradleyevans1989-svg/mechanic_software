@@ -219,3 +219,4 @@ module.exports = function (app, { store }) {
     res.redirect('/training');
   });
 };
+

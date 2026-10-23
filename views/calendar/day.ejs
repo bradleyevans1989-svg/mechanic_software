@@ -20,19 +20,25 @@
           <div><strong><%= b.time || 'Any time' %></strong> · <%= [b.rego, b.make, b.model].filter(Boolean).join(' ') %>
             <div class="muted"><%= b.customer_name %> — <%= b.description %></div></div>
           <div class="row-actions">
-            <% if (b.job_id) { %><a class="btn small" href="/jobs/<%= b.job_id %>">Job card</a><% } else { %><a class="btn small" href="/bookings/<%= b.id %>/edit">Edit</a><% } %>
+            <% if (b.job_id) { %><a class="btn small" href="/jobs/<%= b.job_id %>">Job card</a><% } else { %><a class="btn small" href="/bookings/<%= b.id %>/edit">Edit</a>
+              <% if (b.status === 'booked') { %><form method="post" action="/bookings/<%= b.id %>/start" class="start-form">
+              <select name="mechanic_id" class="pill-select" aria-label="Who's doing it"><option value="">Who's on it?</option><% for (const m of mechanics) { %><option value="<%= m.id %>"><%= m.name %></option><% } %></select>
+              <button class="btn small">Start job</button>
+            </form><% } %><% } %>
           </div>
         </li>
       <% } %>
     </ul>
-    <h2 class="mt">Jobs in the workshop</h2>
+    <% const away = entries.filter((e) => e.kind === 'leave' && e.user_id).map((e) => e.user_id); const unassigned = jobs.filter((j) => !j.mechanic_id && j.status !== 'invoiced').length; %>
+    <h2 class="mt">Jobs in the workshop <% if (unassigned) { %><span class="pill plain pill-unpaid"><%= unassigned %> unassigned</span><% } %></h2>
     <% if (!jobs.length) { %><p class="muted">No jobs span this day.</p><% } %>
     <ul class="list">
       <% for (const j of jobs) { %>
         <li>
           <a href="/jobs/<%= j.id %>"><strong>J<%= j.number %></strong> · <%= [j.rego, j.make, j.model].filter(Boolean).join(' ') %></a>
-          <%- include('../partials/pill', { state: j.status, label: JOB_STATUSES[j.status] }) %>
-          <div class="muted full"><%= j.customer_name %> — <%= j.description %><%= j.mechanic_name ? ' · ' + j.mechanic_name : '' %></div>
+          <span class="row-actions"><% if (j.status === 'invoiced') { %><span class="muted small"><%= j.mechanic_name || '' %></span><% } else { %><%- include('../partials/assign', { job: j, back: '/calendar/day/' + date, away }) %><% } %>
+          <%- include('../partials/pill', { state: j.status, label: JOB_STATUSES[j.status] }) %></span>
+          <div class="muted full"><%= j.customer_name %> — <%= j.description %></div>
         </li>
       <% } %>
     </ul>

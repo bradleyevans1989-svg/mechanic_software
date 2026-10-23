@@ -1,13 +1,15 @@
 // Adds demo workshops with made-up customers so you can try the app, one per type of workshop.
 // Usage: npm run seed   then log in as demo@example.com / demo-password (a car workshop),
 // or demo-marine@example.com, demo-truck@example.com and so on for the other types.
+// The car workshop also has a technician login: tech@example.com / demo-password.
 const { createStore, nextNumber, saveLines } = require('../lib/db');
 const { hashPassword } = require('../lib/auth');
 const { now, today, addDays } = require('../lib/util');
-const { TYPE_KEYS, typeFor, addStarterItems, addStarterProcedures } = require('../lib/verticals');
+const { TYPE_KEYS, GENERAL_PROCEDURES, typeFor, addStarterItems, addStarterProcedures } = require('../lib/verticals');
 
 const EMAIL = 'demo@example.com';
 const PASSWORD = 'demo-password';
+const TECH_EMAIL = 'tech@example.com';
 
 const emailFor = (type) => (type === 'mechanical' ? EMAIL : `demo-${type}@example.com`);
 
@@ -100,6 +102,52 @@ async function seedType(store, type) {
   return true;
 }
 
+// A technician login with a few jobs of their own, added to the demo workshop if it doesn't have one yet.
+async function seedTech(store) {
+  const owner = await store.system.get('SELECT workshop_id FROM users WHERE email = $1', [EMAIL]);
+  if (!owner || (await store.system.get('SELECT id FROM users WHERE email = $1', [TECH_EMAIL]))) return;
+  const tech = await store.system.get(
+    `INSERT INTO users (workshop_id, name, email, password_hash, role) VALUES ($1, 'Jess Carter', $2, $3, 'tech') RETURNING id`,
+    [owner.workshop_id, TECH_EMAIL, hashPassword(PASSWORD)]
+  );
+  const t = today();
+  await store.tenant(owner.workshop_id).tx(async (db) => {
+    const vehicle = (rego) => db.get('SELECT id, customer_id, odometer FROM vehicles WHERE rego = $1', [rego]);
+    // The starter procedures, so tasks can point at "how we do it here".
+    if (!(await db.get('SELECT id FROM procedures LIMIT 1'))) {
+      for (const p of GENERAL_PROCEDURES) {
+        await db.run('INSERT INTO procedures (title, category, body) VALUES ($1, $2, $3)', [p.title, p.category, p.body]);
+      }
+    }
+    const brakes = await db.get(`SELECT id FROM procedures WHERE title = 'Estimating extra work'`);
+    const work = [
+      ['123ABC', 'in_progress', 'Logbook service 140k. Customer mentions a squeak from the front over bumps.', 'normal', t, '15:00',
+        ['Drain and refill engine oil', 'Replace oil and air filters', 'Check front suspension bushes for the squeak', 'Top up fluids and reset service light', 'Road test']],
+      ['XYZ789', 'open', 'Brake noise front left. Check pads and rotors, quote if they need doing.', 'urgent', t, '12:00',
+        ['Inspect front pads and rotors', 'Photograph anything worn', 'Ring the office with a price before going ahead']],
+      ['JS4WD', 'open', 'Timing belt and water pump.', 'normal', addDays(t, 1), '16:00',
+        ['Replace timing belt kit', 'Replace water pump', 'Bleed cooling system']],
+    ];
+    for (const [rego, status, desc, priority, due, time, tasks] of work) {
+      const v = await vehicle(rego);
+      if (!v) continue;
+      const job = await db.get(
+        `INSERT INTO jobs (number, customer_id, vehicle_id, mechanic_id, status, description, priority, due_date, due_time, odometer, created_at, is_service)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id`,
+        [await nextNumber(db, 'job'), v.customer_id, v.id, tech.id, status, desc, priority, due, time, v.odometer, now(), /service/i.test(desc)]
+      );
+      for (const [i, text] of tasks.entries()) {
+        await db.run(
+          `INSERT INTO job_tasks (job_id, text, sort, procedure_id, done_at, done_by) VALUES ($1, $2, $3, $4, $5, $6)`,
+          [job.id, text, i, /^Ring the office/.test(text) && brakes ? brakes.id : null, status === 'in_progress' && i < 2 ? new Date() : null, status === 'in_progress' && i < 2 ? tech.id : null]
+        );
+      }
+      await db.run(`INSERT INTO job_events (job_id, user_id, kind, text) VALUES ($1, $2, 'mechanic', 'Assigned to Jess Carter')`, [job.id, tech.id]);
+    }
+  });
+  console.log(`Added a technician login: ${TECH_EMAIL} / ${PASSWORD}`);
+}
+
 // A year of finished work and a few cars on the floor, so the Today page's charts have something to show.
 async function seedHistory(db, vehicles, mickId, t) {
   let seed = 7;
@@ -183,11 +231,12 @@ async function seedHistory(db, vehicles, mickId, t) {
 async function seedDemo(store) {
   let added = false;
   for (const type of TYPE_KEYS) added = (await seedType(store, type)) || added;
+  await seedTech(store);
   if (!added) console.log(`Demo workshops already exist. Log in as ${EMAIL} / ${PASSWORD}`);
   return added;
 }
 
-module.exports = { seedDemo, emailFor, EMAIL, PASSWORD };
+module.exports = { seedDemo, seedTech, emailFor, EMAIL, PASSWORD, TECH_EMAIL };
 
 if (require.main === module) {
   (async () => {
