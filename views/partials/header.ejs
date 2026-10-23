@@ -27,6 +27,7 @@
   '/my-jobs': '<rect x="4.5" y="4.5" width="15" height="17" rx="3.5"/><path d="M9 4.5V3h6v1.5"/><path class="acc" d="M8.5 13l2.5 2.5 4.5-5"/>',
   '/clocking': '<circle cx="12" cy="13.5" r="7.5"/><path d="M9.5 3h5M12 3v3"/><path class="acc" d="M12 10v3.5l2.5 2"/>',
   '/roster': '<rect x="3.5" y="4" width="17" height="16.5" rx="3.5"/><path d="M3.5 9.5h17M9.2 9.5v11M14.8 9.5v11"/><path class="acc" d="M11.2 14.2h1.6"/>',
+  '/messages': '<path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7.5a2.5 2.5 0 0 1-2.5 2.5H10l-4.5 3.5V16.5h0A2.5 2.5 0 0 1 4 14z"/><path class="acc" d="M8.5 9.2h7M8.5 12.2h4.5"/>',
   '/team': '<path d="M3 18h18"/><path d="M5.5 18v-3.5a6.5 6.5 0 0 1 13 0V18"/><path class="acc" d="M10 8.4V5.5h4v2.9"/>',
   '/reports': '<path d="M3.5 20.5h17"/><path d="M6.5 16.5v-4M11 16.5V7.5M15.5 16.5v-6"/><path class="acc" d="M19.5 16.5V4"/>',
   '/settings': '<path d="M3.5 7h9.5M18 7h2.5M3.5 17h3M11 17h9.5"/><circle class="acc" cx="15.5" cy="7" r="2.5"/><circle class="acc" cx="8.5" cy="17" r="2.5"/>',
@@ -35,7 +36,7 @@
     <% const isTech = user && user.role === 'tech';
        const links = isTech
          ? [['/my-jobs', 'My jobs'], ['/clocking', 'Clocking'], ['/roster', 'Roster'], ['/team', 'Team']]
-         : [['/', 'Today'], ['/bookings', 'Diary'], ['/jobs', 'Jobs'], ['/estimates', 'Estimates'], ['/invoices', 'Invoices'], ['/customers', 'Customers'], ['/parts', 'Parts'], ['/reminders', 'Reminders'], ['/team', 'Team']];
+         : [['/', 'Today'], ['/bookings', 'Diary'], ['/jobs', 'Jobs'], ['/estimates', 'Estimates'], ['/invoices', 'Invoices'], ['/customers', 'Customers'], ['/parts', 'Parts'], ['/reminders', 'Reminders'], ['/messages', 'Messages'], ['/team', 'Team']];
        if (user && user.role === 'owner') links.push(['/reports', 'Reports'], ['/settings', 'Settings']); %>
     <% for (const [href, label] of links) { const active = href === '/' ? path === '/' : href === '/team' ? new RegExp(isTech ? '^/(team|procedures|training)' : '^/(team|procedures|training|roster|clocking)').test(path) : href === '/customers' ? /^\/(customers|vehicles)/.test(path) : href === '/parts' ? /^\/(parts|purchase-orders|suppliers)/.test(path) : path.startsWith(href); %>
       <a href="<%= href %>" class="<%= active ? 'active' : '' %>" data-label="<%= label %>"<%- active ? ' aria-current="page"' : '' %>><svg viewBox="0 0 24 24" aria-hidden="true"><%- icons[href] || icons['/parts'] %></svg><span><%= label %></span></a>
@@ -73,13 +74,15 @@
   </form>
   <% } %>
   <% if (user) { %>
-    <% const n = typeof notices !== 'undefined' && notices ? notices : { todos: 0, overdue: 0 }; const count = n.todos + (isTech ? 0 : n.overdue); %>
+    <% const n = typeof notices !== 'undefined' && notices ? notices : { todos: 0, overdue: 0, texts: 0, requests: 0 }; const count = n.todos + (isTech ? 0 : n.overdue + (n.texts || 0) + (n.requests || 0)); %>
     <details class="bell">
       <summary aria-label="Notifications<%= count ? ': ' + count : '' %>"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path class="acc" d="M10 21h4"/></svg><% if (count) { %><b class="count"><%= count > 99 ? '99+' : count %></b><% } %></summary>
       <div class="bell-menu">
         <a href="/team"><strong><%= n.todos %></strong> open to-do<%= n.todos === 1 ? '' : 's' %> for the team</a>
         <% if (!isTech) { %>
         <a href="/invoices?state=overdue"><strong><%= n.overdue %></strong> overdue invoice<%= n.overdue === 1 ? '' : 's' %></a>
+        <% if (n.texts) { %><a href="/messages"><strong><%= n.texts %></strong> new text<%= n.texts === 1 ? '' : 's' %> from customers</a><% } %>
+        <% if (n.requests) { %><a href="/bookings/requests"><strong><%= n.requests %></strong> online booking request<%= n.requests === 1 ? '' : 's' %></a><% } %>
         <a href="/reminders">Service and rego reminders</a>
         <% } %>
       </div>

@@ -1,0 +1,10 @@
+<%- include('_head', { title: 'Booking requested' }) %>
+  <section class="card book-form">
+    <h2>Thanks, we've got your request</h2>
+    <p>We'll be in touch to confirm<%= date ? ' your booking for ' + date : '' %>.<% if (settings.phone) { %> If you need us sooner, call <a href="tel:<%= settings.phone %>"><%= settings.phone %></a>.<% } %></p>
+    <p><a href="/book/<%= slug %>">Book another car</a></p>
+  </section>
+  <p class="book-foot muted small">Bookings by <a href="/">Bay Boss</a></p>
+</main>
+</body>
+</html>

@@ -30,7 +30,8 @@ module.exports = function (app, { store, BOOKING_STATUSES }) {
       const date = addDays(start, i);
       days.push({ date, bookings: rows.filter((b) => b.date === date) });
     }
-    res.render('bookings/index', { days, start, prev: addDays(start, -7), next: addDays(start, 7) });
+    const requests = (await req.db.get(`SELECT COUNT(*)::int AS n FROM booking_requests WHERE status = 'pending'`)).n;
+    res.render('bookings/index', { days, start, prev: addDays(start, -7), next: addDays(start, 7), requests });
   });
 
   async function renderForm(req, res, booking, error) {

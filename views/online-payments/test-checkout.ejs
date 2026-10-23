@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Test payment · <%= settings.business_name %></title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="login-page">
+  <form method="post" action="/share/<%= token %>/pay/test" class="card login">
+    <p class="banner warn">Test mode: no money moves. This stands in for the real card payment page.</p>
+    <h1>Pay <%= u.money(row.amount_cents) %></h1>
+    <p>Invoice <%= docNumber(doc) %> from <%= settings.business_name %></p>
+    <input type="hidden" name="session" value="<%= row.session_id %>">
+    <button class="btn primary" name="outcome" value="paid">Pay (test)</button>
+    <button class="btn" name="outcome" value="failed" style="margin-top:.5rem">Card declined (test)</button>
+  </form>
+</body>
+</html>

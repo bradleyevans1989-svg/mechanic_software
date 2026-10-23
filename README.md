@@ -4,11 +4,14 @@ Bay Boss is workshop software for mechanics, built to be sold to many workshops 
 
 ## What it does
 
+- **Rego and VIN lookup**: "Look up rego" on the vehicle forms fills in make, model, year, colour and VIN (through a paid provider, see below). "Decode VIN" works without one: it reads the maker and model year from the VIN.
 - **Customers and vehicles**: rego, VIN, odometer, rego due date and next service, with full service history per car. Vehicles can change hands, keeping who owned them when. Both lists have search, filters (owing, companies, individuals, deleted; rego or service due), tags, sort and CSV download. Deleting a customer archives them and they can be restored.
 - **Invoices and estimates lists**: search, date range, status filters, sort, CSV download and bulk actions (mark sent, void, download).
 - **Diary and calendar**: week view of bookings, and a month calendar showing bookings, jobs spanning the days they're in the workshop, staff leave, public holidays, toolbox talks and notes, colour coded. Press "Car's here: start job" to turn a booking into a job card.
 - **Job cards**: work requested, mechanic's notes, assigned mechanic, priority and promised time, labour and parts. Print a job card for the floor. A list view sorted by what's promised soonest, a board view by status, and a "My jobs" tab.
 - **Inspection checklist**: a workshop-wide checklist (set under Settings) added to any job, marked OK / needs attention / urgent with notes, and printed as a customer-facing inspection report.
+- **Customer approval of inspections**: put a price on anything that needs attention, make a link, and text or email it. The customer sees the inspection on their phone with prices including GST and approves or declines each item; the job card shows when they opened and answered, and one button puts the approved work on the job as labour lines.
+- **Loan cars**: add your courtesy cars, book them from a job or the Diary's Loan cars tab with no double-booking, and see a fortnight of availability. Handing over records the licence, odometer, fuel and condition with the customer agreeing to your terms (a printable agreement to sign); returning records them again and shows km driven and fuel differences. "Who had a car on a day?" answers fines and toll notices.
 - **Time clock**: staff clock on and off jobs or add time by hand; unbilled time becomes a labour line in quarter hours at the workshop rate. Owners see weekly timesheets.
 - **Activity log**: every status change, assignment, clock on/off, invoice and note on a job, with who and when.
 - **Price list**: saved parts and services with codes and prices, dropped onto any job, estimate or invoice from a search box in the line editor.
@@ -18,7 +21,12 @@ Bay Boss is workshop software for mechanics, built to be sold to many workshops 
 - **Your look**: upload your logo, set a brand colour, tagline, website and licence number, then pick one of ten invoice designs and ten job card designs under Settings. Previews show your own details.
 - **Tax invoices with GST**: ABN, GST breakdown, payments, balance owing, overdue tracking. Print or save as PDF.
 - **Today screen**: today's bookings, cars in the workshop, unpaid invoices, and services or rego coming due.
+- **Text messages**: text customers from their page, a job, an invoice or the Reminders page, see their replies under Messages, and send day-before booking reminders automatically (ClickSend or Twilio, with a test mode).
+- **Online booking**: each workshop gets a booking page (`/book/your-workshop`) to link from its website, Facebook and Google profile. Customers pick a service, an open day and a drop-off time; requests wait under Diary → Online requests until someone accepts (matching the car by rego or the customer by phone, or adding them) or declines. Owners set the services, open days, notice and a daily limit under Settings → Online booking.
+- **Online payments**: a Pay now button on the invoice link takes card, Apple Pay and Google Pay, and Afterpay and Zip, through the workshop's own Stripe account (Settings → Online payments). Payments are recorded on the invoice and go to Xero. A test mode with a pretend checkout is on test sites.
 - **Send to customer**: every estimate and invoice has a private link the customer can open without logging in; estimates can be accepted online. Email and text buttons open your own apps with the message filled in, or set up Resend (below) to email straight from the app.
+- **KPIs** (Reports → KPIs): sales, car count, average invoice, labour share, effective labour rate, technician efficiency (hours sold against hours clocked), estimate close rate, returning customers, parts margin, days in the workshop, no-shows and debtor days, each against the period before, plus a by-mechanic table. Pick this month, last month, quarter, 90 days, financial year or any dates.
+- **Google reviews**: paste your Google review link under Settings, then ask from any invoice by text (opens your phone with the message filled in) or by email. Switch on "email when paid" and customers are asked once their invoice is paid in full, at most once every 180 days. Paid invoices on the customer link show a review button.
 - **Reports**: monthly sales, GST collected and payments received; who owes you by how overdue; BAS quarter figures (G1 and 1A); sales and hours by mechanic; top customers; printable customer statements; and a CSV export for the accountant.
 - **Clocking and roster**: staff start their shift, take breaks and finish from the Today screen or the Clocking page; owners see who's in now and shift hours on the timesheets. A weekly roster with shifts, days off, RDOs and leave, with "my next shift" on the Today screen.
 - **Team**: a to-do chat for the team, step-by-step procedures (how we do things, with a print button), and training modules worth points with a points board.
@@ -72,6 +80,12 @@ That comfortably runs dozens of workshops. As you grow, move the database to a b
 | `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, `STRIPE_WEBHOOK_SECRET` | Turn on subscription billing (see below). Without them every workshop is free. | none |
 | `PLAN_PRICE_LABEL` | Shown on the Subscribe button, e.g. `$49/month`. | none |
 | `RESEND_API_KEY`, `EMAIL_FROM` | Send estimates and invoices by email through [Resend](https://resend.com). `EMAIL_FROM` is the sender, e.g. `Bay Boss <invoices@yourdomain.com.au>`, on a domain verified in Resend. Replies go to each workshop's own email. | email buttons open the user's own mail app |
+| `SMS_PROVIDER` | `clicksend`, `twilio` or `log` (test mode: texts are saved but never sent). See "Text messages" below. | `log` on test sites and in development, otherwise off (Text buttons open the user's phone) |
+| `CLICKSEND_USERNAME`, `CLICKSEND_API_KEY`, `CLICKSEND_FROM` | ClickSend login and API key. `CLICKSEND_FROM` is an optional dedicated number for replies. | none |
+| `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM` | Twilio account and the number texts come from. | none |
+| `SMS_INBOUND_SECRET` | The secret part of the address replies are posted to. | made from `SESSION_SECRET` |
+| `REGO_PROVIDER` | `regcheck` for Car Registration API Australia, or `demo` (test mode: made-up details). | `demo` on test sites and in development, otherwise off |
+| `REGCHECK_USERNAME` | Your [Car Registration API](https://www.carregistrationapi.com.au/) username. Lookups are charged per plate; the Xero and add-ons page shows each workshop's count this month. | none |
 | `PGSSL` | Set to `require` if your database needs SSL from outside its network. | off |
 | `PORT` | Port to listen on. | `3000` |
 
@@ -100,6 +114,18 @@ One Xero app serves every workshop; each workshop connects its own Xero organisa
 Xero limits an uncertified app to 25 connected organisations. Before more than 25 workshops use Xero, apply to the [Xero App Partner program](https://developer.xero.com/documentation/xero-app-store/app-partner-guides/app-partner-steps/).
 
 Sync is one way: the app sends to Xero and never reads back. Invoices made before connecting are only sent if the owner chooses "Send older invoices", so invoices already in Xero aren't duplicated.
+
+## Text messages (ClickSend or Twilio)
+
+One SMS account serves every workshop, like email through Resend. Workshops text customers from the customer's page, a job ("car's ready"), an invoice or estimate, or the Reminders page, and replies land under **Messages**. Owners can turn on day-before booking texts under **Settings → Text messages** (sent from 8am in the workshop's timezone, once per booking).
+
+1. Sign up at [ClickSend](https://www.clicksend.com/au/) (Australian, about 5 to 8c a text). Buy a dedicated number if you want customers to be able to reply (a sender name can't take replies).
+2. Set `SMS_PROVIDER=clicksend`, `CLICKSEND_USERNAME`, `CLICKSEND_API_KEY`, and `CLICKSEND_FROM` (the dedicated number).
+3. In ClickSend, add an inbound SMS rule that posts to the URL shown under **Settings → Text messages** (`<APP_URL>/sms/inbound/<secret>`).
+
+For Twilio, set `SMS_PROVIDER=twilio`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` and `TWILIO_FROM`, and set the number's "A message comes in" webhook to the same URL.
+
+Replies are filed with whichever workshop last texted that number. Texts are kept per customer; in test mode they are marked as test and an "Add test reply" box stands in for the customer.
 
 ## Parts suppliers (Burson, Repco)
 
