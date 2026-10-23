@@ -118,7 +118,8 @@ module.exports = function (app) {
     await req.db.run(
       `UPDATE settings SET business_name = $1, abn = $2, address = $3, phone = $4, email = $5, bank_details = $6,
          invoice_terms = $7, labour_rate_cents = $8, payment_days = $9, next_invoice_no = $10, next_quote_no = $11,
-         next_job_no = $12, timezone = $13, checklist = $14, brand_colour = $15, tagline = $16, website = $17, licence = $18, quote_days = $19`,
+         next_job_no = $12, timezone = $13, checklist = $14, brand_colour = $15, tagline = $16, website = $17, licence = $18, quote_days = $19,
+         markup_pct = $20`,
       [
         g('business_name') || 'My Workshop',
         g('abn'),
@@ -139,6 +140,7 @@ module.exports = function (app) {
         g('website').slice(0, 120),
         g('licence').slice(0, 120),
         Math.min(n('quote_days', 1), 365),
+        Math.min(Math.max(parseFloat(req.body.markup_pct) || 0, 0), 1000),
       ]
     );
     res.redirect('/settings?saved=1');

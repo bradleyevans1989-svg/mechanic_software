@@ -60,7 +60,7 @@ module.exports = function (app) {
     const q = String(req.query.q || '').trim().slice(0, 100);
     const like = `%${q.replace(/[\\%_]/g, '\\$&')}%`;
     const items = await req.db.all(
-      `SELECT id, kind, code, description, unit_cents, gst FROM price_items
+      `SELECT id, kind, code, description, unit_cents, cost_cents, gst FROM price_items
        WHERE active AND ($1 = '' OR description ILIKE $2 OR code ILIKE $2)
        ORDER BY (code ILIKE $2) DESC, lower(description) LIMIT 25`,
       [q, like]

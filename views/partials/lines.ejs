@@ -1,17 +1,18 @@
-<%# Editable labour/parts table. Prices are ex GST. %>
-<div class="lines" data-lines data-labour-rate="<%= u.dollars(settings.labour_rate_cents) %>">
+<%# Editable labour/parts table. Prices are ex GST. Cost and markup stay off technician logins. %>
+<% const showCost = !(user && user.role === 'tech'); %>
+<div class="lines" data-lines data-labour-rate="<%= u.dollars(settings.labour_rate_cents) %>" data-default-markup="<%= settings.markup_pct ?? 30 %>">
   <table class="lines-table">
     <thead>
-      <tr><th>Type</th><th class="w-desc">Description</th><th class="num">Qty / hrs</th><th class="num">Price ex GST</th><th>GST</th><th class="num">Amount</th><th></th></tr>
+      <tr><th>Type</th><th class="w-desc">Description</th><th class="num">Qty / hrs</th><% if (showCost) { %><th class="num">Cost ex GST</th><th class="num">Markup %</th><% } %><th class="num">Price ex GST</th><th>GST</th><th class="num">Amount</th><th></th></tr>
     </thead>
     <tbody>
       <% lines.forEach((l, i) => { %>
-        <%- include('line-row', { i, l }) %>
+        <%- include('line-row', { i, l, showCost }) %>
       <% }) %>
     </tbody>
   </table>
   <template data-line-template>
-    <%- include('line-row', { i: '__i__', l: { kind: 'part', description: '', qty: 1, unit_cents: 0, gst: 1 } }) %>
+    <%- include('line-row', { i: '__i__', l: { kind: 'part', description: '', qty: 1, unit_cents: 0, gst: 1, cost_cents: 0, markup_pct: null }, showCost }) %>
   </template>
   <div class="lines-actions">
     <button type="button" class="btn small" data-add-line="labour">+ Labour</button>
@@ -27,5 +28,9 @@
     <tr><th>Subtotal ex GST</th><td data-total="subtotal"><%= u.money(totals.subtotal) %></td></tr>
     <tr><th>GST</th><td data-total="gst"><%= u.money(totals.gst) %></td></tr>
     <tr class="grand"><th>Total inc GST</th><td data-total="total"><%= u.money(totals.total) %></td></tr>
+    <% if (showCost) { const cost = u.costTotal(lines); %>
+      <tr class="profit"><th>Cost ex GST</th><td data-total="cost"><%= u.money(cost) %></td></tr>
+      <tr class="profit"><th>Profit ex GST</th><td data-total="profit"><%= u.money(totals.subtotal - cost) %></td></tr>
+    <% } %>
   </table>
 </div>

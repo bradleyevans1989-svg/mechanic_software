@@ -389,18 +389,21 @@ th.today { background: var(--accent); border-radius: 999px; }
 
 /* Line items editor */
 .lines { overflow-x: auto; }
-.lines-table { width: 100%; border-collapse: collapse; min-width: 640px; }
+.lines-table { width: 100%; border-collapse: collapse; min-width: 760px; }
 .lines-table th { text-align: left; font-size: .8rem; color: var(--muted); font-weight: 600; padding: .4rem; border-bottom: 1px solid var(--line); }
 .lines-table td { padding: .3rem; border-bottom: 1px solid var(--line); vertical-align: middle; }
-.lines-table .w-desc { width: 45%; }
+.lines-table .w-desc { width: 36%; }
 .lines-table td.num input { text-align: right; max-width: 7rem; margin-left: auto; display: block; }
 .lines-table select { min-width: 5.5rem; }
+.lines-table td.num input.pct { max-width: 4.5rem; }
 .lines-table.view td { padding: .55rem .4rem; }
 .lines-table input, .lines-table select { min-height: 2.3rem; padding: .35rem .6rem; }
 .lines-actions { display: flex; gap: .5rem; margin: .75rem 0; flex-wrap: wrap; }
 .totals { margin-left: auto; min-width: 260px; border-collapse: collapse; }
 .totals th { text-align: left; font-weight: normal; color: var(--muted); padding: .25rem 1rem .25rem 0; }
 .totals td { text-align: right; padding: .25rem 0; font-variant-numeric: tabular-nums; }
+.totals .profit th, .totals .profit td { font-size: .85rem; color: var(--muted); }
+.totals .grand + .profit th, .totals .grand + .profit td { padding-top: .6rem; }
 .totals .grand th, .totals .grand td { font-weight: 800; color: var(--ink); font-size: 1.15rem; border-top: 2px solid var(--ink); padding-top: .4rem; }
 
 .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .75rem; margin: 0; }

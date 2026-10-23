@@ -1,4 +1,4 @@
-const { parseDollars, parseIntOrNull, roundCents } = require('../lib/util');
+const { parseDollars, parseIntOrNull, roundCents, markupOf } = require('../lib/util');
 const { nextNumber, getLines, saveLines } = require('../lib/db');
 const { getVehicle, logEvent } = require('../lib/records');
 const { requireOwner } = require('../lib/auth');
@@ -507,7 +507,16 @@ module.exports = function (app) {
         );
         await db.run('UPDATE purchase_order_lines SET received_qty = received_qty + $1, price_item_id = $2 WHERE id = $3', [n, itemId, l.id]);
         if (toJob && !l.from_job) {
-          jobLines.push({ kind: 'part', description: l.code ? `${l.description} (${l.code})` : l.description, qty: n, unit_cents: l.sell_cents || l.cost_cents, gst: l.gst });
+          const sell = l.sell_cents || l.cost_cents;
+          jobLines.push({
+            kind: 'part',
+            description: l.code ? `${l.description} (${l.code})` : l.description,
+            qty: n,
+            unit_cents: sell,
+            gst: l.gst,
+            cost_cents: l.cost_cents,
+            markup_pct: markupOf(sell, l.cost_cents),
+          });
         }
       }
       if (!count) return null;
