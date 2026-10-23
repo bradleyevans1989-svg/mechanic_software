@@ -52,9 +52,10 @@
 
 <form method="post" action="/suppliers/<%= supplier.id %>/import" class="card form">
   <h2>Import their price file</h2>
-  <p class="hint">Ask the supplier for your trade price list as a CSV (or save their spreadsheet as CSV). The first row needs column names: <strong>Code</strong> or Part number, <strong>Description</strong>, <strong>Cost</strong> or Trade, and optionally <strong>Sell</strong> or RRP. Parts already imported are matched on code and their prices updated.</p>
-  <label>CSV file <input type="file" accept=".csv,text/csv" data-csv-into="csv"></label>
-  <label>Or paste it here <textarea name="csv" id="csv" rows="6" placeholder="Code,Description,Cost,RRP&#10;OF123,Oil filter Ryco Z386,8.50,18.95" required></textarea></label>
+  <p class="hint">Ask the supplier for your trade price list as a CSV or Excel file. The first row needs column names: <strong>Code</strong> or Part number, <strong>Description</strong>, <strong>Cost</strong> or Trade, and optionally <strong>Sell</strong> or RRP. Parts already imported are matched on code and their prices updated.</p>
+  <label>CSV or Excel file <input type="file" accept=".csv,.txt,.xlsx,.xls,text/csv" data-file-into="price"></label>
+  <input type="hidden" name="file_name" data-file-name="price"><input type="hidden" name="file_data" data-file-data="price">
+  <label>Or paste it here <textarea name="csv" id="csv" rows="6" placeholder="Code,Description,Cost,RRP&#10;OF123,Oil filter Ryco Z386,8.50,18.95"></textarea></label>
   <div class="grid-3">
     <label>Prices in the file include GST
       <select name="inc_gst"><option value="0">No, ex GST</option><option value="1">Yes, take GST off</option></select>

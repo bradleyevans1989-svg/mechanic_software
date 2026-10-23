@@ -45,8 +45,8 @@ function createApp(store, { autoSync = true } = {}) {
   app.set('trust proxy', 1);
   app.disable('x-powered-by');
 
-  // Supplier price files can be a few megabytes; everything else stays small.
-  app.use(/^\/suppliers\/\d+\/import$/, express.urlencoded({ extended: true, limit: '20mb' }));
+  // Price files and imports from other software can be a few megabytes; everything else stays small.
+  app.use(/^\/(suppliers\/\d+\/import|import\/\w+)$/, express.urlencoded({ extended: true, limit: '30mb', parameterLimit: 5000 }));
   app.use(express.urlencoded({ extended: true, limit: '1mb' }));
   app.use('/static', express.static(path.join(__dirname, 'public'), { maxAge: '1h' }));
   app.get('/healthz', async (req, res) => {
@@ -125,10 +125,12 @@ function createApp(store, { autoSync = true } = {}) {
   require('./routes/integrations')(app, ctx);
   require('./routes/pricelist')(app, ctx);
   require('./routes/parts')(app, ctx);
+  require('./routes/import')(app, ctx);
   require('./routes/reminders')(app, ctx);
   require('./routes/timesheets')(app, ctx);
   require('./routes/calendar')(app, ctx);
   require('./routes/clocking')(app, ctx);
+  require('./routes/liveboard')(app, ctx);
   require('./routes/team')(app, ctx);
   require('./routes/templates')(app, ctx);
   messageRoutes.pages(app, ctx);

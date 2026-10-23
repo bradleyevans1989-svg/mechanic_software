@@ -1,0 +1,78 @@
+<%- include('../partials/header', { title: 'Check the import' }) %>
+<% const STATUS = { new: ['New', 'paid'], existing: ['Already a customer', 'sent'], same: ['Repeat', 'plain'], vehicle: ['Vehicle', 'paid'], update: ['Updates a part', 'sent'], skip: ['Skipped', 'plain'], error: ['Can\'t import', 'overdue'] }; %>
+<div class="page-head">
+  <div>
+    <h1>Check the import</h1>
+    <p class="muted">Nothing has been saved yet. Look over what will happen, then press Import.</p>
+  </div>
+</div>
+<%- include('steps', { step: 3 }) %>
+
+<div class="stats">
+  <% if (kind === 'parts') { %>
+    <div class="stat dark"><span>New parts</span><strong><%= counts.added %></strong><small>Added to your price list</small></div>
+    <div class="stat"><span>Parts updated</span><strong><%= counts.updated %></strong><small>Matched on part number or description</small></div>
+    <div class="stat"><span>New suppliers</span><strong><%= counts.suppliers %></strong><small>Named in the file, not yet set up</small></div>
+  <% } else { %>
+    <div class="stat dark"><span>New customers</span><strong><%= counts.customers %></strong><small><%= options.tag ? 'Tagged ' + options.tag : 'No tag' %></small></div>
+    <div class="stat"><span>Vehicles</span><strong><%= counts.vehicles %></strong><small>Added to their owners</small></div>
+    <div class="stat"><span>Already customers</span><strong><%= counts.matched %></strong><small>Same phone, email or rego; blanks filled in only</small></div>
+  <% } %>
+  <div class="stat <%= counts.errors ? 'warn' : '' %>"><span>Can't import</span><strong><%= counts.errors %></strong><small><%= counts.skipped %> skipped as repeats · <%= counts.warnings %> with notes</small></div>
+</div>
+
+<section class="card">
+  <div class="card-head">
+    <h2>Row by row</h2>
+    <div class="tabs import-filter" data-import-filter>
+      <a href="#" class="active" data-show="">All</a>
+      <a href="#" data-show="error">Can't import</a>
+      <a href="#" data-show="note">With notes</a>
+      <a href="#" data-show="<%= kind === 'parts' ? 'update' : 'existing' %>"><%= kind === 'parts' ? 'Updates' : 'Already customers' %></a>
+      <a href="#" data-show="new">New</a>
+    </div>
+  </div>
+  <div class="scroll-x"><table class="table import-rows">
+    <% if (kind === 'parts') { %>
+      <thead><tr><th>Line</th><th></th><th>Part</th><th class="num">Cost ex</th><th class="num">Sell ex</th><th class="num">Stock</th><th>Notes</th></tr></thead>
+      <% for (const r of rows) { const [label, cls] = STATUS[r.status]; %>
+        <tr data-status="<%= r.status %>" data-note="<%= r.warnings.length ? 1 : 0 %>">
+          <td class="muted"><%= r.line %></td>
+          <td><span class="pill pill-<%= cls %>"><%= label %></span></td>
+          <td><strong><%= r.code %></strong> <%= r.description %><% if (r.supplier) { %><br><small class="muted"><%= r.supplier %></small><% } %></td>
+          <td class="num"><%= r.cost_cents === undefined ? '' : u.money(r.cost_cents) %></td>
+          <td class="num"><%= r.sell_cents === undefined ? '' : u.money(r.sell_cents) %></td>
+          <td class="num"><%= r.qty === undefined ? '' : r.qty %></td>
+          <td class="small"><% if (r.note) { %><div><%= r.note %></div><% } %><% for (const w of r.warnings) { %><div class="warn-text"><%= w %></div><% } %></td>
+        </tr>
+      <% } %>
+    <% } else { %>
+      <thead><tr><th>Line</th><th></th><th>Customer</th><th>Phone</th><th>Email</th><th>Vehicle</th><th>Notes</th></tr></thead>
+      <% for (const r of rows) { const [label, cls] = STATUS[r.status]; %>
+        <tr data-status="<%= r.status === 'vehicle' ? 'new' : r.status %>" data-note="<%= r.warnings.length ? 1 : 0 %>">
+          <td class="muted nowrap"><%= r.file === 'vehicles' ? 'Vehicles ' : '' %><%= r.line %></td>
+          <td><span class="pill pill-<%= cls %>"><%= label %></span></td>
+          <td><%= r.name %></td>
+          <td class="nowrap"><%= r.phone %></td>
+          <td><%= r.email %></td>
+          <td><%= r.vehicle %></td>
+          <td class="small"><% if (r.note) { %><div><%= r.note %></div><% } %><% for (const w of r.warnings) { %><div class="warn-text"><%= w %></div><% } %></td>
+        </tr>
+      <% } %>
+    <% } %>
+  </table></div>
+  <% if (more) { %><p class="hint">And <%= more %> more rows, all new or matched with nothing to note.</p><% } %>
+</section>
+
+<div class="form-actions import-actions">
+  <form method="post" action="/import/columns">
+    <%- include('state', { includeSheets: true, includeMap: true, includeOptions: true }) %>
+    <button class="btn">Back to columns</button>
+  </form>
+  <form method="post" action="/import/run" data-busy="Importing…">
+    <%- include('state', { includeSheets: true, includeMap: true, includeOptions: true }) %>
+    <% const total = kind === 'parts' ? counts.added + counts.updated : counts.customers + counts.vehicles + counts.matched; %>
+    <button class="btn primary" <%= total ? '' : 'disabled' %>><%= kind === 'parts' ? `Import ${counts.added + counts.updated} parts` : `Import ${counts.customers} customers and ${counts.vehicles} vehicles` %></button>
+  </form>
+</div>
+<%- include('../partials/footer') %>

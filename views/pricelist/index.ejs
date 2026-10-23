@@ -5,6 +5,7 @@
     <p class="muted">Saved parts and services you can drop onto a job, estimate or invoice. Prices are ex GST.</p>
   </div>
   <div class="actions">
+    <% if (user.role === 'owner') { %><a class="btn" href="/import?kind=parts">Import parts and stock</a><% } %>
     <form method="post" action="/price-list/starter" data-confirm="Add a starter list of common services and parts? You can edit or delete them after."><button class="btn">Add common items</button></form>
   </div>
 </div>

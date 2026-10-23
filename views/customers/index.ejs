@@ -8,6 +8,7 @@
   <h1><%= deleted ? 'Deleted customers' : 'Customers' %> <span class="muted"><%= customers.length %> shown</span></h1>
   <div class="actions">
     <a class="btn" href="/customers.csv<%= query %>">Download</a>
+    <% if (user.role === 'owner') { %><a class="btn" href="/import?kind=customers">Import</a><% } %>
     <a class="btn primary" href="/customers/new">New customer</a>
   </div>
 </div>

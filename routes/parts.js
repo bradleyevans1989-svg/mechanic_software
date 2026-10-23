@@ -3,6 +3,8 @@ const { nextNumber, getLines, saveLines } = require('../lib/db');
 const { getVehicle, logEvent } = require('../lib/records');
 const { requireOwner } = require('../lib/auth');
 const { CONNECTORS, connectorFor, readConfig, configFrom, priceFileRows } = require('../lib/suppliers');
+const { fromUpload } = require('../lib/sheets');
+const { savePart } = require('../lib/importer');
 
 const PO_STATUSES = {
   draft: 'Draft',
@@ -171,11 +173,17 @@ module.exports = function (app) {
     res.redirect(`/suppliers/${supplier.id}?notice=Saved.`);
   });
 
-  // A supplier's price file (CSV) goes into the price list, matched on part code.
+  // A supplier's price file (CSV or Excel) goes into the price list, matched on part code.
   app.post('/suppliers/:id/import', requireOwner, async (req, res, next) => {
     const supplier = await getSupplier(req.db, req.params.id);
     if (!supplier) return next();
-    const { items, error } = priceFileRows(req.body.csv, { incGst: req.body.inc_gst === '1' });
+    let file = req.body.csv;
+    if (req.body.file_data) {
+      const read = fromUpload(req.body.file_name, req.body.file_data);
+      if (read.error) return res.redirect(`/suppliers/${supplier.id}?error=${encodeURIComponent(read.error)}`);
+      file = read.sheets[0].rows;
+    }
+    const { items, error } = priceFileRows(file, { incGst: req.body.inc_gst === '1' });
     if (error) return res.redirect(`/suppliers/${supplier.id}?error=${encodeURIComponent(error)}`);
     const markup = Math.min(Math.max(parseFloat(req.body.markup) || 0, 0), 1000);
     let added = 0;
@@ -186,16 +194,9 @@ module.exports = function (app) {
         const existing = i.code
           ? await db.get('SELECT id FROM price_items WHERE supplier_id = $1 AND code = $2', [supplier.id, i.code])
           : await db.get('SELECT id FROM price_items WHERE supplier_id = $1 AND lower(description) = lower($2)', [supplier.id, i.description]);
-        if (existing) {
-          await db.run('UPDATE price_items SET description = $1, cost_cents = $2, unit_cents = $3 WHERE id = $4', [i.description, i.cost_cents, sell, existing.id]);
-          updated++;
-        } else {
-          await db.run(
-            `INSERT INTO price_items (kind, code, description, unit_cents, cost_cents, supplier_id) VALUES ('part', $1, $2, $3, $4, $5)`,
-            [i.code, i.description, sell, i.cost_cents, supplier.id]
-          );
-          added++;
-        }
+        await savePart(db, { code: i.code, description: i.description, cost_cents: i.cost_cents, sell_cents: sell, supplier_id: supplier.id }, existing && existing.id);
+        if (existing) updated++;
+        else added++;
       }
     });
     res.redirect(`/suppliers/${supplier.id}?notice=${encodeURIComponent(`Price file imported: ${added} new, ${updated} updated.`)}`);
