@@ -1,0 +1,62 @@
+<%- include('../partials/header', { title: 'Loan car ' + loan.car_rego }) %>
+<div class="page-head">
+  <div>
+    <h1>Loan car <%= loan.car_rego %> <%- include('../partials/pill', { state: loan.status === 'out' ? (loan.due_date < today ? 'overdue' : 'unpaid') : loan.status === 'returned' ? 'paid' : 'draft', label: LOAN_STATUSES[loan.status] }) %></h1>
+    <p><%= [loan.car_make, loan.car_model, loan.car_colour].filter(Boolean).join(' ') %> · <a href="/customers/<%= loan.customer_id %>"><%= loan.customer_name %></a><% if (loan.customer_phone) { %> · <a href="tel:<%= loan.customer_phone %>"><%= loan.customer_phone %></a><% } %><% if (loan.job_number) { %> · job <a href="/jobs/<%= loan.job_id %>">J<%= loan.job_number %></a><% } %></p>
+    <p class="muted"><%= u.fmtDate(loan.start_date) %> to <%= u.fmtDate(loan.due_date) %></p>
+  </div>
+  <div class="actions">
+    <a class="btn" href="/loans/<%= loan.id %>/print" target="_blank">Print agreement</a>
+    <a class="btn" href="/loan-cars">All loan cars</a>
+  </div>
+</div>
+<% if (error) { %><p class="error"><%= error %></p><% } %>
+
+<% if (loan.status === 'booked') { %>
+  <form method="post" action="/loans/<%= loan.id %>/out" class="card form">
+    <h2>Hand over the keys</h2>
+    <div class="grid-3">
+      <label>Driver's licence number <input name="licence_no" required maxlength="40"></label>
+      <label>Licence expiry <input type="date" name="licence_expiry"></label>
+      <label>Odometer (km) <input name="odometer" inputmode="numeric" value="<%= car.odometer ?? '' %>"></label>
+    </div>
+    <fieldset class="choice"><legend>Fuel</legend><div class="checks-row">
+      <% for (const f of FUEL) { %><label class="check"><input type="radio" name="fuel" value="<%= f %>" <%= f === 'F' ? 'checked' : '' %>> <%= f %></label><% } %>
+    </div></fieldset>
+    <label>Condition and damage <textarea name="notes" rows="2" placeholder="Existing scratches, dents, cleanliness"></textarea></label>
+    <details><summary>Terms the customer agrees to</summary><p class="note"><%= terms %></p></details>
+    <label class="check"><input type="checkbox" name="terms" value="1" required> <%= loan.customer_name %> has read and agrees to the terms</label>
+    <div class="form-actions"><button class="btn primary">Hand over</button></div>
+  </form>
+  <form method="post" action="/loans/<%= loan.id %>/cancel" data-confirm="Cancel this loan car booking?"><button class="btn small">Cancel booking</button></form>
+<% } %>
+
+<% if (loan.out_at) { %>
+  <section class="card">
+    <h2>Handed over</h2>
+    <p><%= u.fmtDateTime(loan.out_at, settings.timezone) %><%= loan.out_by_name ? ' by ' + loan.out_by_name : '' %> · licence <%= loan.licence_no %><%= loan.licence_expiry ? ' (expires ' + u.fmtDate(loan.licence_expiry) + ')' : '' %>
+      <br>Odometer <%= loan.out_odometer != null ? loan.out_odometer.toLocaleString('en-AU') + ' km' : 'not recorded' %> · fuel <%= loan.out_fuel || 'not recorded' %> · terms agreed <%= u.fmtDateTime(loan.terms_agreed_at, settings.timezone) %></p>
+    <% if (loan.out_notes) { %><p class="note"><%= loan.out_notes %></p><% } %>
+  </section>
+<% } %>
+
+<% if (loan.status === 'out') { %>
+  <form method="post" action="/loans/<%= loan.id %>/back" class="card form">
+    <h2>Check it back in</h2>
+    <label>Odometer (km) <input name="odometer" inputmode="numeric"></label>
+    <fieldset class="choice"><legend>Fuel</legend><div class="checks-row">
+      <% for (const f of FUEL) { %><label class="check"><input type="radio" name="fuel" value="<%= f %>" <%= f === loan.out_fuel ? 'checked' : '' %>> <%= f %></label><% } %>
+    </div></fieldset>
+    <label>Condition, new damage, anything to charge <textarea name="notes" rows="2"></textarea></label>
+    <div class="form-actions"><button class="btn primary">Returned</button></div>
+  </form>
+<% } %>
+
+<% if (loan.back_at) { %>
+  <section class="card">
+    <h2>Returned</h2>
+    <p><%= u.fmtDateTime(loan.back_at, settings.timezone) %><%= loan.back_by_name ? ' to ' + loan.back_by_name : '' %> · odometer <%= loan.back_odometer != null ? loan.back_odometer.toLocaleString('en-AU') + ' km' : 'not recorded' %><% if (loan.back_odometer != null && loan.out_odometer != null) { %> (<%= (loan.back_odometer - loan.out_odometer).toLocaleString('en-AU') %> km driven)<% } %> · fuel <%= loan.back_fuel || 'not recorded' %><% if (loan.back_fuel && loan.out_fuel && loan.back_fuel !== loan.out_fuel) { %> <strong class="error">(went out <%= loan.out_fuel %>)</strong><% } %></p>
+    <% if (loan.back_notes) { %><p class="note"><%= loan.back_notes %></p><% } %>
+  </section>
+<% } %>
+<%- include('../partials/footer') %>

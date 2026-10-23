@@ -6,7 +6,13 @@ const { createXero } = require('./lib/xero');
 const { createBilling } = require('./lib/stripe');
 const billingRoutes = require('./routes/billing');
 const shareRoutes = require('./routes/share');
+const messageRoutes = require('./routes/messages');
+const bookingPage = require('./routes/online-booking');
+const inspectionApproval = require('./routes/inspection-approval');
+const onlinePayments = require('./routes/online-payments');
 const { INVOICE_TOTAL } = require('./lib/dashboard');
+const sms = require('./lib/sms');
+const vehicleLookup = require('./lib/vehicle-lookup');
 
 const JOB_STATUSES = {
   open: 'Booked in',
@@ -58,6 +64,10 @@ function createApp(store, { autoSync = true } = {}) {
     res.locals.path = req.path;
     res.locals.q = '';
     res.locals.user = null;
+    res.locals.smsReady = sms.configured();
+    res.locals.regoLookup = vehicleLookup.configured();
+    res.locals.REGO_STATES = vehicleLookup.STATES;
+    res.locals.stateFor = vehicleLookup.stateFor;
     next();
   });
 
@@ -74,28 +84,40 @@ function createApp(store, { autoSync = true } = {}) {
   const ctx = { store, xero, billing, JOB_STATUSES, BOOKING_STATUSES, QUOTE_STATUSES };
 
   billingRoutes.webhook(app, ctx);
+  onlinePayments.public(app, ctx);
   shareRoutes.public(app, ctx);
+  messageRoutes.public(app, ctx);
+  bookingPage.public(app, ctx);
+  inspectionApproval.public(app, ctx);
   auth.setup(app, store);
   billingRoutes.gate(app, ctx);
   billingRoutes.pages(app, ctx);
 
-  // What the bell in the top bar counts: open to-dos and overdue invoices.
+  // What the bell in the top bar counts: open to-dos, overdue invoices, unread texts and online booking requests.
   app.use(async (req, res, next) => {
     if (req.method !== 'GET' || !req.db) return next();
     res.locals.notices = await req.db.get(
       `SELECT (SELECT COUNT(*) FROM team_posts WHERE kind = 'todo' AND done_at IS NULL)::int AS todos,
          (SELECT COUNT(*) FROM documents d WHERE d.type = 'invoice' AND d.status != 'void' AND d.due_date < $1
-            AND ${INVOICE_TOTAL} > COALESCE((SELECT SUM(amount_cents) FROM payments WHERE document_id = d.id), 0))::int AS overdue`,
+            AND ${INVOICE_TOTAL} > COALESCE((SELECT SUM(amount_cents) FROM payments WHERE document_id = d.id), 0))::int AS overdue,
+         (SELECT COUNT(*) FROM sms_messages WHERE direction = 'in' AND read_at IS NULL)::int AS texts,
+         (SELECT COUNT(*) FROM booking_requests WHERE status = 'pending')::int AS requests`,
       [res.locals.today]
     );
     next();
   });
 
+  require('./routes/kpi')(app, ctx);
   require('./routes/main')(app, ctx);
   require('./routes/staff')(app, ctx);
   require('./routes/customers')(app, ctx);
+  bookingPage.pages(app, ctx);
+  require('./routes/lookup')(app, ctx);
   require('./routes/bookings')(app, ctx);
+  inspectionApproval.pages(app, ctx);
+  require('./routes/loan-cars')(app, ctx);
   require('./routes/jobs')(app, ctx);
+  onlinePayments.pages(app, ctx);
   require('./routes/documents')(app, ctx);
   require('./routes/integrations')(app, ctx);
   require('./routes/pricelist')(app, ctx);
@@ -107,6 +129,8 @@ function createApp(store, { autoSync = true } = {}) {
   require('./routes/liveboard')(app, ctx);
   require('./routes/team')(app, ctx);
   require('./routes/templates')(app, ctx);
+  messageRoutes.pages(app, ctx);
+  require('./routes/reviews')(app, ctx);
   shareRoutes.pages(app, ctx);
 
   app.use((req, res) => res.status(404).render('message', { title: 'Not found', message: 'That page does not exist.' }));
