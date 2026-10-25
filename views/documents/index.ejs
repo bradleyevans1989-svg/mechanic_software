@@ -56,7 +56,7 @@
       <% for (const d of docs) { %>
         <tr class="rowlink" data-href="/documents/<%= d.id %>">
           <td class="tick-cell"><input type="checkbox" name="ids" value="<%= d.id %>" data-check aria-label="Select <%= u.docNumber(d) %>"></td>
-          <td><a href="/documents/<%= d.id %>"><%= u.docNumber(d) %></a><% if (d.sent_at) { %> <span class="muted small" title="Sent to the customer">✉</span><% } %></td>
+          <td class="nowrap"><a href="/documents/<%= d.id %>"><%= u.docNumber(d) %></a><% if (d.sent_at) { %> <span class="muted small" title="Sent to the customer">✉</span><% } %></td>
           <td><%= u.fmtDate(d.issue_date) %></td>
           <td><%= d.customer_name %></td>
           <td><%= d.rego || '' %> <span class="muted"><%= [d.make, d.model].filter(Boolean).join(' ') %></span></td>
