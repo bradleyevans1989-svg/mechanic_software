@@ -17,6 +17,7 @@
 </div>
 <% if (welcome) { %><p class="flash">Welcome! Fill in your business details so they print on your invoices, then add your staff.</p><% } %>
 <% if (saved) { %><p class="flash">Saved.</p><% } %>
+<% if (starter) { %><p class="flash">Added the <%= vt.label.toLowerCase() %> price list and procedures.</p><% } %>
 <% if (!settings.abn) { %><p class="banner warn">Add your ABN. A tax invoice must show it.</p><% } %>
 <% if (logo === 'saved') { %><p class="flash">Logo saved.</p><% } else if (logo === 'removed') { %><p class="flash">Logo removed.</p><% } else if (logo) { %><p class="error">That image could not be used. Try a PNG or JPG under 1.5 MB.</p><% } %>
 <form method="post" action="/settings/logo" class="card form logo-form" id="logo">
@@ -35,6 +36,14 @@
   </div>
 </form>
 <form method="post" action="/settings" class="card form">
+  <h2>Type of workshop</h2>
+  <p class="hint">Sets what the app calls the things you work on, whether they run on km or engine hours, and the inspection checklist.</p>
+  <div class="type-picker">
+    <% for (const k of TYPE_KEYS) { const t = TYPES[k]; %>
+      <label class="type-option"><input type="radio" name="workshop_type" value="<%= k %>" <%= vt.key === k ? 'checked' : '' %>><span><strong><%= t.label %></strong><span class="muted small"><%= t.terms.assets %> · <%= t.terms.meter.toLowerCase() %> (<%= t.terms.unit %>)</span></span></label>
+    <% } %>
+  </div>
+
   <h2>Business details <span class="muted">(printed on invoices)</span></h2>
   <div class="grid-2">
     <label>Business name <input name="business_name" value="<%= settings.business_name %>" required></label>
@@ -70,7 +79,8 @@
 
   <h2>Inspection checklist</h2>
   <p class="hint">One item per line. Start a line with # for a heading. This is what "Add inspection checklist" puts on a job card.</p>
-  <label>Checklist <textarea name="checklist" rows="10"><%= settings.checklist || DEFAULT_CHECKLIST %></textarea></label>
+  <label>Checklist <textarea name="checklist" rows="10"><%= checklist %></textarea></label>
+  <p class="hint">Left as it comes, it follows your type of workshop.</p>
 
   <h2>Numbering</h2>
   <p class="hint">Set these to carry on from your Mechanic Desk numbers.</p>
@@ -80,5 +90,10 @@
     <label>Next job number <input name="next_job_no" inputmode="numeric" value="<%= settings.next_job_no %>"></label>
   </div>
   <div class="form-actions"><button class="btn primary">Save settings</button></div>
+</form>
+<form method="post" action="/settings/starter" class="card form" data-confirm="Add the <%= vt.label.toLowerCase() %> services, parts and procedures? Items you already have are skipped.">
+  <h2>Starter price list and procedures</h2>
+  <p class="hint">Adds the common services and parts for a <%= vt.label.toLowerCase() %> to your price list, and step-by-step procedures for the team. Anything with the same code or title is left alone.</p>
+  <button class="btn">Add the <%= vt.label.toLowerCase() %> starter set</button>
 </form>
 <%- include('partials/footer') %>

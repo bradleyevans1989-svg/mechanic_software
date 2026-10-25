@@ -38,7 +38,7 @@
   <div class="grid-4">
     <label>Date <input type="date" name="issue_date" value="<%= doc.issue_date %>"></label>
     <label><%= isQuote ? 'Valid until' : 'Due' %> <input type="date" name="due_date" value="<%= doc.due_date || '' %>"></label>
-    <label>Odometer (km) <input name="odometer" inputmode="numeric" value="<%= doc.odometer ?? '' %>"></label>
+    <label><%= vt.meter %> (<%= vt.unit %>) <input name="odometer" inputmode="numeric" value="<%= doc.odometer ?? '' %>"></label>
     <% if (isQuote) { %>
       <label>Status
         <select name="status">

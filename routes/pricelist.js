@@ -1,26 +1,8 @@
 const { parseDollars, parseIntOrNull, LINE_KINDS } = require('../lib/util');
+const { CAR_ITEMS, addStarterItems } = require('../lib/verticals');
 
-// A starter list so a new workshop can pick common items straight away.
-const STARTER_ITEMS = [
-  ['labour', 'LAB', 'Labour', null],
-  ['labour', 'DIAG', 'Diagnostic time', null],
-  ['labour', 'LOG', 'Logbook service', 18000],
-  ['labour', 'MINOR', 'Minor service: oil and filter, check over', 12000],
-  ['labour', 'MAJOR', 'Major service', 32000],
-  ['labour', 'RWC', 'Roadworthy inspection', 9000],
-  ['labour', 'ALIGN', 'Wheel alignment', 9900],
-  ['labour', 'TYREFIT', 'Tyre fit and balance (each)', 2500],
-  ['labour', 'BRAKES', 'Brake pads replacement, front', 15000],
-  ['part', 'OIL', 'Engine oil (per litre)', 1200],
-  ['part', 'OILF', 'Oil filter', 2500],
-  ['part', 'AIRF', 'Air filter', 3500],
-  ['part', 'CABF', 'Cabin filter', 3900],
-  ['part', 'WIPER', 'Wiper blade', 2800],
-  ['part', 'BATT', 'Battery', 22000],
-  ['part', 'COOL', 'Coolant (per litre)', 1500],
-  ['other', 'SUND', 'Shop supplies and sundries', 1500],
-  ['other', 'DISP', 'Waste oil disposal', 500],
-];
+// A starter list so a new workshop can pick common items straight away (the car workshop's).
+const STARTER_ITEMS = CAR_ITEMS;
 
 function itemFrom(body) {
   const g = (k) => String(body[k] ?? '').trim();
@@ -85,13 +67,7 @@ module.exports = function (app) {
   });
 
   app.post('/price-list/starter', async (req, res) => {
-    await req.db.tx(async (db) => {
-      for (const [kind, code, description, cents] of STARTER_ITEMS) {
-        const exists = await db.get('SELECT id FROM price_items WHERE code = $1', [code]);
-        if (exists) continue;
-        await db.run(`INSERT INTO price_items (kind, code, description, unit_cents) VALUES ($1, $2, $3, $4)`, [kind, code, description, cents || 0]);
-      }
-    });
+    await req.db.tx((db) => addStarterItems(db, res.locals.settings.workshop_type));
     res.redirect('/price-list?saved=1');
   });
 

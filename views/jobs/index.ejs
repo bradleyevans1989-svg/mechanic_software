@@ -51,7 +51,7 @@
   </div>
 <% } else { %>
 <table class="table card">
-  <thead><tr><th>Job</th><th>Vehicle</th><th>Customer</th><th>Work</th><th>Mechanic</th><th>Promised</th><th>Status</th></tr></thead>
+  <thead><tr><th>Job</th><th><%= vt.asset %></th><th>Customer</th><th>Work</th><th>Mechanic</th><th>Promised</th><th>Status</th></tr></thead>
   <tbody>
     <% for (const j of jobs) { %>
       <tr class="rowlink <%= j.priority === 'urgent' ? 'urgent' : '' %>" data-href="/jobs/<%= j.id %>">

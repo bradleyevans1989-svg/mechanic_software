@@ -71,7 +71,7 @@
   <% } else { %>
   <form class="search" action="/search" role="search">
     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
-    <input type="search" name="q" value="<%= q %>" placeholder="Search rego, name, phone…" aria-label="Search">
+    <input type="search" name="q" value="<%= q %>" placeholder="Search <%= vt.rego.toLowerCase() %>, name, phone…" aria-label="Search">
   </form>
   <% } %>
   <% if (user) { %>

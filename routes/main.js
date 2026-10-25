@@ -1,7 +1,7 @@
 const { addDays, addMonths, csvCell, parseDollars, parseIntOrNull, docNumber, vehicleLabel } = require('../lib/util');
 const { listDocs } = require('../lib/docs');
 const { requireOwner } = require('../lib/auth');
-const { DEFAULT_CHECKLIST } = require('../lib/records');
+const { TYPES, TYPE_KEYS, typeKey, typeFor, addStarterItems, addStarterProcedures } = require('../lib/verticals');
 const { dashboardData, timeAgo } = require('../lib/dashboard');
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -109,17 +109,29 @@ module.exports = function (app) {
   });
 
   app.get('/settings', requireOwner, (req, res) =>
-    res.render('settings', { saved: req.query.saved === '1', welcome: req.query.welcome === '1', logo: req.query.logo || '', TIMEZONES, DEFAULT_CHECKLIST })
+    res.render('settings', {
+      saved: req.query.saved === '1',
+      welcome: req.query.welcome === '1',
+      starter: req.query.starter === '1',
+      logo: req.query.logo || '',
+      TIMEZONES,
+      TYPES,
+      TYPE_KEYS,
+      checklist: res.locals.settings.checklist || typeFor(res.locals.settings.workshop_type).checklist,
+    })
   );
 
   app.post('/settings', requireOwner, async (req, res) => {
     const g = (k) => String(req.body[k] ?? '').trim().slice(0, 2000);
     const n = (k, min) => Math.min(Math.max(parseIntOrNull(req.body[k]) ?? min, min), 999999999);
+    // A checklist left as one of the stock ones follows the workshop type instead of being saved.
+    const checklist = String(req.body.checklist ?? '').replace(/\r\n/g, '\n').trim().slice(0, 10000);
+    const stock = Object.values(TYPES).some((t) => t.checklist === checklist);
     await req.db.run(
       `UPDATE settings SET business_name = $1, abn = $2, address = $3, phone = $4, email = $5, bank_details = $6,
          invoice_terms = $7, labour_rate_cents = $8, payment_days = $9, next_invoice_no = $10, next_quote_no = $11,
          next_job_no = $12, timezone = $13, checklist = $14, brand_colour = $15, tagline = $16, website = $17, licence = $18, quote_days = $19,
-         markup_pct = $20`,
+         workshop_type = $20, markup_pct = $21`,
       [
         g('business_name') || 'My Workshop',
         g('abn'),
@@ -134,16 +146,25 @@ module.exports = function (app) {
         n('next_quote_no', 1),
         n('next_job_no', 1),
         TIMEZONES[req.body.timezone] ? req.body.timezone : 'Australia/Sydney',
-        String(req.body.checklist ?? '').trim().slice(0, 10000),
+        stock ? '' : checklist,
         /^#[0-9a-f]{6}$/i.test(String(req.body.brand_colour || '')) ? String(req.body.brand_colour).toLowerCase() : '#111111',
         g('tagline').slice(0, 120),
         g('website').slice(0, 120),
         g('licence').slice(0, 120),
         Math.min(n('quote_days', 1), 365),
-        Math.min(Math.max(parseFloat(req.body.markup_pct) || 0, 0), 1000),
+        typeKey(req.body.workshop_type || res.locals.settings.workshop_type),
+        Math.min(Math.max(parseFloat(req.body.markup_pct ?? res.locals.settings.markup_pct) || 0, 0), 1000),
       ]
     );
     res.redirect('/settings?saved=1');
+  });
+
+  app.post('/settings/starter', requireOwner, async (req, res) => {
+    await req.db.tx(async (db) => {
+      await addStarterItems(db, res.locals.settings.workshop_type);
+      await addStarterProcedures(db, res.locals.settings.workshop_type, req.user.id);
+    });
+    res.redirect('/settings?starter=1');
   });
 
   app.get('/reports', requireOwner, async (req, res) => {

@@ -38,7 +38,7 @@
     <section class="parties">
       <div class="party"><h3>Customer</h3><strong><%= customer.name %></strong><div><%= customer.phone %></div><div><%= customer.email %></div><div class="pre"><%= customer.address || '' %></div></div>
       <% if (vehicle) { %>
-        <div class="party"><h3>Vehicle</h3><strong><%= u.vehicleLabel(vehicle) %></strong><div>VIN <%= vehicle.vin || '—' %></div><div>Odometer <%= job.odometer != null ? job.odometer.toLocaleString('en-AU') + ' km' : '__________ km' %></div></div>
+        <div class="party"><h3><%= vt.asset %></h3><strong><%= u.vehicleLabel(vehicle) %></strong><div><%= vt.vin %> <%= vehicle.vin || '—' %></div><div><%= vt.meter %> <%= job.odometer != null ? job.odometer.toLocaleString('en-AU') + ' ' + vt.unit : '__________ ' + vt.unit %></div></div>
       <% } %>
     </section>
     <section class="sec sec-work">

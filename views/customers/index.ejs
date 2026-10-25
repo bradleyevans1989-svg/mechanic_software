@@ -34,7 +34,7 @@
   </div>
 </form>
 <table class="table card">
-  <thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Vehicles</th><th>Tags</th><th>Last visit</th><th class="num">Owing</th></tr></thead>
+  <thead><tr><th>Name</th><th>Phone</th><th>Email</th><th><%= vt.assets %></th><th>Tags</th><th>Last visit</th><th class="num">Owing</th></tr></thead>
   <tbody>
     <% for (const c of customers) { %>
       <tr class="rowlink" data-href="/customers/<%= c.id %>">

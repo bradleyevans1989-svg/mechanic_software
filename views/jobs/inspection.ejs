@@ -15,7 +15,7 @@
   <section class="parties">
     <div><h3>Customer</h3><strong><%= customer.name %></strong><div><%= customer.phone %></div></div>
     <% if (vehicle) { %>
-      <div><h3>Vehicle</h3><strong><%= u.vehicleLabel(vehicle) %></strong><div>Odometer <%= job.odometer != null ? job.odometer.toLocaleString('en-AU') + ' km' : '—' %></div></div>
+      <div><h3><%= vt.asset %></h3><strong><%= u.vehicleLabel(vehicle) %></strong><div><%= vt.meter %> <%= job.odometer != null ? job.odometer.toLocaleString('en-AU') + ' ' + vt.unit : '—' %></div></div>
     <% } %>
   </section>
   <% const flagged = checks.filter(c => !c.heading && (c.result === 'attention' || c.result === 'urgent')); %>

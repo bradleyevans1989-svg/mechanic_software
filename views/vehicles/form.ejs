@@ -1,23 +1,24 @@
-<%- include('../partials/header', { title: vehicle.id ? 'Edit vehicle' : 'New vehicle' }) %>
-<h1><%= vehicle.id ? 'Edit vehicle' : 'New vehicle' %> <span class="muted">for <a href="/customers/<%= customer.id %>"><%= customer.name %></a></span></h1>
-<% if (vehicle.id) { %><p class="hint">Changed hands? <a href="/vehicles/<%= vehicle.id %>">Move it to another customer</a> from the vehicle page instead, so the history is kept.</p><% } %>
+<%- include('../partials/header', { title: (vehicle.id ? 'Edit ' : 'New ') + vt.assetLower }) %>
+<h1><%= vehicle.id ? 'Edit ' + vt.assetLower : 'New ' + vt.assetLower %> <span class="muted">for <a href="/customers/<%= customer.id %>"><%= customer.name %></a></span></h1>
+<% if (vehicle.id) { %><p class="hint">Changed hands? <a href="/vehicles/<%= vehicle.id %>">Move it to another customer</a> from the <%= vt.assetLower %> page instead, so the history is kept.</p><% } %>
 <% if (error) { %><p class="error"><%= error %></p><% } %>
 <form method="post" action="<%= vehicle.id ? '/vehicles/' + vehicle.id : '/customers/' + customer.id + '/vehicles' %>" class="card form">
   <div class="grid-3">
-    <label>Rego <input name="rego" class="upper" value="<%= vehicle.rego || '' %>" autofocus></label>
-    <label>Make <input name="make" value="<%= vehicle.make || '' %>"></label>
+    <label><%= vt.rego %> <input name="rego" class="upper" value="<%= vehicle.rego || '' %>" autofocus></label>
+    <label>Make <input name="make" value="<%= vehicle.make || '' %>" list="makes"></label>
     <label>Model <input name="model" value="<%= vehicle.model || '' %>"></label>
     <label>Year <input name="year" inputmode="numeric" value="<%= vehicle.year || '' %>"></label>
     <label>Colour <input name="colour" value="<%= vehicle.colour || '' %>"></label>
-    <label>VIN <input name="vin" class="upper" value="<%= vehicle.vin || '' %>"></label>
-    <label>Odometer (km) <input name="odometer" inputmode="numeric" value="<%= vehicle.odometer ?? '' %>"></label>
+    <label><%= vt.vin %> <input name="vin" class="upper" value="<%= vehicle.vin || '' %>"></label>
+    <label><%= vt.meter %> (<%= vt.unit %>) <input name="odometer" inputmode="numeric" value="<%= vehicle.odometer ?? '' %>"></label>
     <label>Rego due <input name="rego_due" type="date" value="<%= vehicle.rego_due || '' %>"></label>
     <label>Next service date <input name="next_service_date" type="date" value="<%= vehicle.next_service_date || '' %>"></label>
-    <label>Next service (km) <input name="next_service_km" inputmode="numeric" value="<%= vehicle.next_service_km ?? '' %>"></label>
-    <label>Service every (months) <input name="service_interval_months" inputmode="numeric" value="<%= vehicle.service_interval_months || '' %>" placeholder="6"></label>
-    <label>Service every (km) <input name="service_interval_km" inputmode="numeric" value="<%= vehicle.service_interval_km || '' %>" placeholder="10000"></label>
+    <label>Next service (<%= vt.unit %>) <input name="next_service_km" inputmode="numeric" value="<%= vehicle.next_service_km ?? '' %>"></label>
+    <label>Service every (months) <input name="service_interval_months" inputmode="numeric" value="<%= vehicle.service_interval_months || '' %>" placeholder="<%= vt.interval.months %>"></label>
+    <label>Service every (<%= vt.unit %>) <input name="service_interval_km" inputmode="numeric" value="<%= vehicle.service_interval_km || '' %>" placeholder="<%= vt.interval.meter %>"></label>
   </div>
-  <%- include('../partials/vehicle-lookup', { prefix: '' }) %>
+  <% if (vt.vin === 'VIN') { %><%- include('../partials/vehicle-lookup', { prefix: '' }) %><% } %>
+  <datalist id="makes"><% for (const m of vt.makes) { %><option value="<%= m %>"><% } %></datalist>
   <p class="hint">With intervals set, invoicing a job marked "counts as a service" works out the next service due automatically.</p>
   <label>Notes <textarea name="notes" rows="2"><%= vehicle.notes || '' %></textarea></label>
   <div class="form-actions">
@@ -26,8 +27,8 @@
   </div>
 </form>
 <% if (vehicle.id) { %>
-  <form method="post" action="/vehicles/<%= vehicle.id %>/delete" data-confirm="Delete this vehicle? Its jobs and invoices stay with the customer.">
-    <button class="btn danger small">Delete vehicle</button>
+  <form method="post" action="/vehicles/<%= vehicle.id %>/delete" data-confirm="Delete this <%= vt.assetLower %>? Its jobs and invoices stay with the customer.">
+    <button class="btn danger small">Delete <%= vt.assetLower %></button>
   </form>
 <% } %>
 <%- include('../partials/footer') %>

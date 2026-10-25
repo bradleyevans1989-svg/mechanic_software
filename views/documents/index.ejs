@@ -51,7 +51,7 @@
     <button class="btn small primary" data-confirm-btn="Apply this to the selected <%= isQuote ? 'estimates' : 'invoices' %>?">Apply</button>
   </div>
   <table class="table card">
-    <thead><tr><th class="tick-cell"><input type="checkbox" data-check-all aria-label="Select all"></th><th>#</th><th>Date</th><th>Customer</th><th>Vehicle</th><th class="num">Total</th><% if (!isQuote) { %><th class="num">Balance</th><% } %><th>Status</th></tr></thead>
+    <thead><tr><th class="tick-cell"><input type="checkbox" data-check-all aria-label="Select all"></th><th>#</th><th>Date</th><th>Customer</th><th><%= vt.asset %></th><th class="num">Total</th><% if (!isQuote) { %><th class="num">Balance</th><% } %><th>Status</th></tr></thead>
     <tbody>
       <% for (const d of docs) { %>
         <tr class="rowlink" data-href="/documents/<%= d.id %>">

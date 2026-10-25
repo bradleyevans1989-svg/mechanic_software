@@ -4,6 +4,7 @@ const { getDoc } = require('../lib/docs');
 const { getCustomer, getVehicle, logEvent } = require('../lib/records');
 const { today, docNumber, money } = require('../lib/util');
 const mail = require('../lib/mail');
+const { termsFor } = require('../lib/verticals');
 
 function appUrl(req) {
   return (process.env.APP_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
@@ -51,6 +52,7 @@ module.exports = {
       if (!found) return gone(res);
       const { db, settings, doc } = found;
       res.locals.settings = settings;
+      res.locals.vt = termsFor(settings.workshop_type);
       res.render('documents/print', {
         doc,
         lines: await getLines(db, 'document', doc.id),

@@ -1,40 +1,6 @@
 const { requireOwner } = require('../lib/auth');
 const { stepBlocks } = require('../lib/records');
-
-const STARTER_PROCEDURES = [
-  {
-    title: 'Vehicle check-in',
-    category: 'Front desk',
-    body: `# When the car arrives
-Confirm the customer's name, phone and the work they want done
-Walk around the car with the customer and note any existing damage on the job card
-Record the odometer reading
-Ask for the best number to ring for approvals
-Put the key tag on and hang the keys on the board
-# Before work starts
-Open the job card and set the mechanic
-Check for a service history and any open reminders on the vehicle`,
-  },
-  {
-    title: 'Estimating extra work',
-    category: 'Workshop',
-    body: `Stop and photograph the problem before touching it
-Write the extra work as separate lines on the job card with a price
-Ring the customer, explain what you found and the cost, and get a clear yes or no
-Add a note to the job card with who approved it and when
-Only then carry on with the extra work`,
-  },
-  {
-    title: 'Vehicle handover',
-    category: 'Front desk',
-    body: `Make sure the invoice is issued and matches the job card
-Check the car is clean inside, seat and mirrors back where they were
-Walk the customer through what was done and anything to watch
-Take payment or confirm the account terms
-Set the next service date on the vehicle
-Hand over the keys and thank them`,
-  },
-];
+const { addStarterProcedures } = require('../lib/verticals');
 
 const STARTER_MODULES = [
   { title: 'Hoist safety', description: 'Setting up, lifting and lowering a vehicle safely.', points: 20, body: `# Before lifting
@@ -115,10 +81,7 @@ module.exports = function (app, { store }) {
   });
 
   app.post('/procedures/starter', requireOwner, async (req, res) => {
-    for (const p of STARTER_PROCEDURES) {
-      const exists = await req.db.get('SELECT id FROM procedures WHERE lower(title) = lower($1)', [p.title]);
-      if (!exists) await req.db.run('INSERT INTO procedures (title, category, body, updated_by) VALUES ($1, $2, $3, $4)', [p.title, p.category, p.body, req.user.id]);
-    }
+    await req.db.tx((db) => addStarterProcedures(db, res.locals.settings.workshop_type, req.user.id));
     res.redirect('/procedures');
   });
 
@@ -257,4 +220,3 @@ module.exports = function (app, { store }) {
   });
 };
 
-module.exports.STARTER_PROCEDURES = STARTER_PROCEDURES;
