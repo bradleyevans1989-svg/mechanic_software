@@ -69,6 +69,7 @@
     <label>Labour rate per hour, ex GST <input name="labour_rate" inputmode="decimal" value="<%= u.dollars(settings.labour_rate_cents) %>"></label>
     <label>Days to pay invoices <input name="payment_days" inputmode="numeric" value="<%= settings.payment_days %>"></label>
     <label>Days an estimate stays valid <input name="quote_days" inputmode="numeric" value="<%= settings.quote_days %>"></label>
+    <label>Markup on parts, % <input name="markup_pct" inputmode="decimal" value="<%= +Number(settings.markup_pct ?? 30).toFixed(1) %>"></label>
     <label>Timezone
       <select name="timezone">
         <% for (const [k, l] of Object.entries(TIMEZONES)) { %><option value="<%= k %>" <%= settings.timezone === k ? 'selected' : '' %>><%= l %></option><% } %>

@@ -131,7 +131,7 @@ module.exports = function (app) {
       `UPDATE settings SET business_name = $1, abn = $2, address = $3, phone = $4, email = $5, bank_details = $6,
          invoice_terms = $7, labour_rate_cents = $8, payment_days = $9, next_invoice_no = $10, next_quote_no = $11,
          next_job_no = $12, timezone = $13, checklist = $14, brand_colour = $15, tagline = $16, website = $17, licence = $18, quote_days = $19,
-         workshop_type = $20`,
+         workshop_type = $20, markup_pct = $21`,
       [
         g('business_name') || 'My Workshop',
         g('abn'),
@@ -153,6 +153,7 @@ module.exports = function (app) {
         g('licence').slice(0, 120),
         Math.min(n('quote_days', 1), 365),
         typeKey(req.body.workshop_type || res.locals.settings.workshop_type),
+        Math.min(Math.max(parseFloat(req.body.markup_pct ?? res.locals.settings.markup_pct) || 0, 0), 1000),
       ]
     );
     res.redirect('/settings?saved=1');

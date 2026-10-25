@@ -41,7 +41,28 @@ test('parses dollar amounts and line rows', () => {
     },
   });
   assert.equal(lines.length, 2);
-  assert.deepEqual(lines[1], { kind: 'part', description: 'Oil filter', qty: 1, unit_cents: 1850, gst: 0 });
+  assert.deepEqual(lines[1], { kind: 'part', description: 'Oil filter', qty: 1, unit_cents: 1850, gst: 0, cost_cents: 0, markup_pct: null });
+});
+
+test('cost and markup work out a sell price, and a typed price wins', () => {
+  assert.equal(util.sellFromCost(4000, 50), 6000);
+  assert.equal(util.sellFromCost(1999, 30), 2599); // 25.987 rounds to 25.99
+  assert.equal(util.markupOf(6000, 4000), 50);
+  assert.equal(util.markupOf(6000, 0), null);
+  const lines = util.parseLines({
+    lines: {
+      0: { kind: 'part', description: 'Brake pads', qty: '1', cost: '80', markup: '40', price: '', gst: '1' },
+      1: { kind: 'part', description: 'Wiper blades', qty: '2', cost: '$20.00', markup: '30%', price: '29.95', gst: '1' },
+      2: { kind: 'labour', description: 'Labour', qty: '1', cost: '', markup: '30', price: '120', gst: '1' },
+    },
+  });
+  assert.equal(lines[0].unit_cents, 11200);
+  assert.equal(lines[0].cost_cents, 8000);
+  assert.equal(lines[0].markup_pct, 40);
+  assert.equal(lines[1].unit_cents, 2995);
+  assert.equal(lines[1].markup_pct, 49.8); // what $29.95 over $20 really is
+  assert.equal(lines[2].markup_pct, null);
+  assert.equal(util.costTotal(lines), 8000 + 4000);
 });
 
 test('full workflow: customer, booking, job, invoice, payment', async () => {

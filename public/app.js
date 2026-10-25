@@ -34,15 +34,43 @@ function roundCents(x) {
 function recalc(box) {
   let subtotal = 0;
   let gst = 0;
+  let cost = 0;
   box.querySelectorAll('tr[data-line]').forEach((row) => {
-    const cents = roundCents(num(row.querySelector('[data-qty]').value) * roundCents(num(row.querySelector('[data-price]').value) * 100));
+    const qty = num(row.querySelector('[data-qty]').value);
+    const cents = roundCents(qty * roundCents(num(row.querySelector('[data-price]').value) * 100));
     row.querySelector('[data-amount]').textContent = money(cents);
     subtotal += cents;
     if (row.querySelector('[data-gst]').value === '1') gst += roundCents(cents / 10);
+    const costInput = row.querySelector('[data-cost]');
+    if (costInput) cost += roundCents(qty * roundCents(num(costInput.value) * 100));
   });
   box.querySelector('[data-total="subtotal"]').textContent = money(subtotal);
   box.querySelector('[data-total="gst"]').textContent = money(gst);
   box.querySelector('[data-total="total"]').textContent = money(subtotal + gst);
+  const costCell = box.querySelector('[data-total="cost"]');
+  if (costCell) {
+    costCell.textContent = money(cost);
+    box.querySelector('[data-total="profit"]').textContent = money(subtotal - cost);
+  }
+}
+
+// Cost and markup work out the sell price; typing a price instead works the markup back out.
+function pct(n) {
+  return String(Math.round(n * 10) / 10);
+}
+
+function priceFromCost(box, row, input) {
+  const costInput = row.querySelector('[data-cost]');
+  if (!costInput) return;
+  const markupInput = row.querySelector('[data-markup]');
+  const priceInput = row.querySelector('[data-price]');
+  const cost = roundCents(num(costInput.value) * 100);
+  if (input === priceInput) {
+    if (cost > 0 && priceInput.value.trim() !== '') markupInput.value = pct((roundCents(num(priceInput.value) * 100) / cost - 1) * 100);
+    return;
+  }
+  if (input === costInput && markupInput.value.trim() === '') markupInput.value = box.dataset.defaultMarkup || '0';
+  if (cost > 0) priceInput.value = (roundCents(cost * (1 + num(markupInput.value) / 100)) / 100).toFixed(2);
 }
 
 document.querySelectorAll('[data-lines]').forEach((box) => {
@@ -50,7 +78,11 @@ document.querySelectorAll('[data-lines]').forEach((box) => {
   const template = box.querySelector('[data-line-template]');
   let next = tbody.querySelectorAll('tr').length;
 
-  box.addEventListener('input', () => recalc(box));
+  box.addEventListener('input', (e) => {
+    const row = e.target.closest('tr[data-line]');
+    if (row && e.target.matches('[data-cost], [data-markup], [data-price]')) priceFromCost(box, row, e.target);
+    recalc(box);
+  });
   box.addEventListener('change', () => recalc(box));
 
   box.addEventListener('click', (e) => {
@@ -134,6 +166,11 @@ document.querySelectorAll('[data-lines]').forEach((box) => {
     row.querySelector('[data-desc]').value = it.description;
     row.querySelector('[data-price]').value = (it.unit_cents / 100).toFixed(2);
     row.querySelector('[data-gst]').value = it.gst ? '1' : '0';
+    const costInput = row.querySelector('[data-cost]');
+    if (costInput && it.cost_cents > 0) {
+      costInput.value = (it.cost_cents / 100).toFixed(2);
+      row.querySelector('[data-markup]').value = pct((it.unit_cents / it.cost_cents - 1) * 100);
+    }
     recalc(box);
     markDirty(box);
     input.value = '';

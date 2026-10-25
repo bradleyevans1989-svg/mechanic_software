@@ -6,6 +6,10 @@
   </td>
   <td><input name="lines[<%= i %>][description]" value="<%= l.description %>" placeholder="Description" data-desc></td>
   <td class="num"><input name="lines[<%= i %>][qty]" value="<%= l.qty %>" inputmode="decimal" data-qty></td>
+  <% if (showCost) { %>
+    <td class="num"><input name="lines[<%= i %>][cost]" value="<%= l.cost_cents ? u.dollars(l.cost_cents) : '' %>" inputmode="decimal" placeholder="—" aria-label="Cost ex GST" data-cost></td>
+    <td class="num"><input name="lines[<%= i %>][markup]" value="<%= l.cost_cents && l.markup_pct != null ? +Number(l.markup_pct).toFixed(1) : '' %>" inputmode="decimal" placeholder="—" aria-label="Markup %" class="pct" data-markup></td>
+  <% } %>
   <td class="num"><input name="lines[<%= i %>][price]" value="<%= u.dollars(l.unit_cents) %>" inputmode="decimal" data-price></td>
   <td>
     <select name="lines[<%= i %>][gst]" data-gst>
