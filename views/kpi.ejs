@@ -54,14 +54,16 @@
 <section class="card">
   <h2>By mechanic</h2>
   <% if (!now.mechanics.length) { %><p class="muted">No invoices from jobs in this period.</p><% } else { %>
-    <table class="table">
-      <thead><tr><th>Mechanic</th><th class="num">Jobs</th><th class="num">Sales ex GST</th><th class="num">Hours sold</th><th class="num">Hours clocked</th><th class="num">Efficiency</th></tr></thead>
-      <tbody>
-        <% for (const m of now.mechanics) { %>
-          <tr><td><%= m.name %></td><td class="num"><%= m.jobs %></td><td class="num"><%= u.money(m.sales) %></td><td class="num"><%= hrs(m.sold) %></td><td class="num"><%= hrs(m.clocked) %></td><td class="num"><%= pct(m.efficiency) %></td></tr>
-        <% } %>
-      </tbody>
-    </table>
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Mechanic</th><th class="num">Jobs</th><th class="num">Sales ex GST</th><th class="num">Hours sold</th><th class="num">Hours clocked</th><th class="num">Efficiency</th></tr></thead>
+        <tbody>
+          <% for (const m of now.mechanics) { %>
+            <tr><td><%= m.name %></td><td class="num"><%= m.jobs %></td><td class="num"><%= u.money(m.sales) %></td><td class="num"><%= hrs(m.sold) %></td><td class="num"><%= hrs(m.clocked) %></td><td class="num"><%= pct(m.efficiency) %></td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
   <% } %>
   <p class="hint">Efficiency is labour hours charged on a mechanic's invoiced jobs against the time clocked on them. Over 100% means jobs are beating the book time. Labour hours come from the quantity on labour lines.</p>
 </section>

@@ -33,7 +33,7 @@
     <table class="table">
       <% for (const d of recent) { %>
         <tr>
-          <td><a href="/documents/<%= d.id %>"><%= u.docNumber(d) %></a></td>
+          <td class="nowrap"><a href="/documents/<%= d.id %>"><%= u.docNumber(d) %></a></td>
           <td><%= d.customer_name %></td>
           <td><%= d.review_via === 'sms' ? 'Text' : d.review_via === 'auto' ? 'Email, when paid' : 'Email' %></td>
           <td class="num"><%= u.fmtDateTime(d.review_requested_at, settings.timezone) %></td>

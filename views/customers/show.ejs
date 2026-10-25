@@ -48,34 +48,38 @@
 <div class="grid-2">
   <section class="card">
     <h2>Invoices and estimates</h2>
-    <table class="table">
-      <% for (const d of docs) { %>
-        <tr>
-          <td><a href="/documents/<%= d.id %>"><%= u.docNumber(d) %></a></td>
-          <td><%= u.fmtDate(d.issue_date) %></td>
-          <td><%= d.rego || '' %></td>
-          <td class="num"><%= u.money(d.total) %></td>
-          <td><%- include('../partials/pill', { state: d.state, label: d.state }) %></td>
-        </tr>
-      <% } %>
-      <% if (!docs.length) { %><tr><td class="muted">None yet.</td></tr><% } %>
-    </table>
+    <div class="table-wrap">
+      <table class="table">
+        <% for (const d of docs) { %>
+          <tr>
+            <td class="nowrap"><a href="/documents/<%= d.id %>"><%= u.docNumber(d) %></a></td>
+            <td><%= u.fmtDate(d.issue_date) %></td>
+            <td><%= d.rego || '' %></td>
+            <td class="num"><%= u.money(d.total) %></td>
+            <td><%- include('../partials/pill', { state: d.state, label: d.state }) %></td>
+          </tr>
+        <% } %>
+        <% if (!docs.length) { %><tr><td class="muted">None yet.</td></tr><% } %>
+      </table>
+    </div>
     <p><a href="/documents/new?type=invoice&customer_id=<%= customer.id %>">New invoice</a> · <a href="/documents/new?type=quote&customer_id=<%= customer.id %>">New estimate</a> · <a href="/customers/<%= customer.id %>/statement?show=all" target="_blank">Statement</a></p>
   </section>
   <section class="card">
     <h2>Jobs</h2>
-    <table class="table">
-      <% for (const j of jobs) { %>
-        <tr>
-          <td><a href="/jobs/<%= j.id %>">J<%= j.number %></a></td>
-          <td><%= u.fmtDate(j.created_at) %></td>
-          <td><%= j.rego || '' %></td>
-          <td><%= j.description %></td>
-          <td><%- include('../partials/pill', { state: j.status, label: JOB_STATUSES[j.status] }) %></td>
-        </tr>
-      <% } %>
-      <% if (!jobs.length) { %><tr><td class="muted">None yet.</td></tr><% } %>
-    </table>
+    <div class="table-wrap">
+      <table class="table">
+        <% for (const j of jobs) { %>
+          <tr>
+            <td><a href="/jobs/<%= j.id %>">J<%= j.number %></a></td>
+            <td><%= u.fmtDate(j.created_at) %></td>
+            <td><%= j.rego || '' %></td>
+            <td><%= j.description %></td>
+            <td><%- include('../partials/pill', { state: j.status, label: JOB_STATUSES[j.status] }) %></td>
+          </tr>
+        <% } %>
+        <% if (!jobs.length) { %><tr><td class="muted">None yet.</td></tr><% } %>
+      </table>
+    </div>
     <% if (bookings.length) { %>
       <h3>Bookings</h3>
       <ul class="list compact">

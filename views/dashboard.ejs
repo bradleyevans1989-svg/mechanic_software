@@ -192,7 +192,7 @@
     <table class="table">
       <% for (const d of unpaid.slice(0, 8)) { %>
         <tr>
-          <td><a href="/documents/<%= d.id %>"><%= u.docNumber(d) %></a></td>
+          <td class="nowrap"><a href="/documents/<%= d.id %>"><%= u.docNumber(d) %></a></td>
           <td><%= d.customer_name %><div class="muted small">Due <%= u.fmtDate(d.due_date) %></div></td>
           <td class="num"><%= u.money(d.balance) %></td>
           <td><%- include('partials/pill', { state: d.state, label: d.state }) %></td>
